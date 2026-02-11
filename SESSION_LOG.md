@@ -409,3 +409,42 @@ Do not rewrite history. Always add new entries at the bottom.
 - Update `continue.txt` before session close, then run `npm run mvp:backup`.
 
 ---
+
+**Date:** 2026-02-11  
+**Tool:** codex CLI  
+**Context Loaded:** CLEARCASE_HANDOFF.txt, continue.txt, NEXT_STEPS.md, SESSION_LOG.md  
+**Goal:** Implement Phase 6 truth layer and add verification script
+
+### What was done
+- Added deterministic truth-layer transformer at `apps/worker/src/lib/truth-layer.ts`.
+- Updated worker flow in `apps/worker/src/worker.ts` to:
+  - derive truth-layer facts from extraction data
+  - update case truth fields (`documentType`, `classificationConfidence`, `timeSensitive`, `earliestDeadline`)
+  - persist `TRUTH_LAYER_RUN` audit payload
+- Added `scripts/mvp/phase6-smoke.ps1` and npm command `mvp:phase6-smoke`.
+- Updated `NEXT_STEPS.md` and `continue.txt` to reflect Phase 6 implementation status.
+- Ran `npm run api:typecheck` and `npm run worker:typecheck` successfully.
+
+### Decisions made
+- Keep Phase 6 deterministic and extraction-driven only (no LLM, no schema changes).
+- Merge truth updates conservatively:
+  - keep earliest known deadline across runs
+  - keep `timeSensitive=true` once triggered
+  - replace classification only when incoming confidence is not lower.
+
+### Problems encountered
+- Live `mvp:phase6-smoke` failed to enqueue SQS message due endpoint connectivity restriction in this environment.
+- Local `tsx` runtime execution also hit sandbox `spawn EPERM`, limiting non-typecheck runtime validation.
+
+### Resolutions
+- Completed compile-time validation via TypeScript checks.
+- Left Phase 6 marked as implemented with live smoke verification pending in a network-enabled environment.
+
+### Open questions
+- None for implementation scope; only runtime environment access is pending for smoke confirmation.
+
+### Notes for next session
+- Run `npm run mvp:phase6-smoke` where AWS SQS endpoint is reachable.
+- After smoke success, mark Phase 6 complete and start Phase 7 formatting layer.
+
+---

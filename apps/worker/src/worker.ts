@@ -8,6 +8,7 @@ import {
 import { AuditEventType, Prisma } from "@prisma/client";
 import { prisma } from "../../../packages/db/src/client.ts";
 import { createOcrProvider } from "./lib/ocr.ts";
+import { buildTruthLayerResult } from "./lib/truth-layer.ts";
 
 type WorkerConfig = {
   region: string;
@@ -19,6 +20,7 @@ type WorkerConfig = {
 const DEFAULT_WAIT_TIME_SECONDS = 20;
 const DEFAULT_VISIBILITY_TIMEOUT_SECONDS = 30;
 const ocrProvider = createOcrProvider();
+const TRUTH_CONFIDENCE_EPSILON = 0.0001;
 
 type WorkerMessagePayload = {
   type?: string;
@@ -58,6 +60,26 @@ function loadConfig(): WorkerConfig {
       DEFAULT_VISIBILITY_TIMEOUT_SECONDS
     )
   };
+}
+
+function minDate(left: Date | null, right: Date | null): Date | null {
+  if (!left) {
+    return right;
+  }
+  if (!right) {
+    return left;
+  }
+  return left <= right ? left : right;
+}
+
+function shouldReplaceClassification(
+  currentConfidence: number | null,
+  incomingConfidence: number
+): boolean {
+  if (currentConfidence === null) {
+    return true;
+  }
+  return incomingConfidence + TRUTH_CONFIDENCE_EPSILON >= currentConfidence;
 }
 
 async function handleMessage(message: Message): Promise<void> {
@@ -134,13 +156,107 @@ async function handleMessage(message: Message): Promise<void> {
       }
     });
 
+    const truthLayer = buildTruthLayerResult({
+      caseId: asset.caseId,
+      assetId: asset.id,
+      extractionId: extraction.id,
+      extractionEngine: extraction.engine,
+      extractionCreatedAt: extraction.createdAt,
+      rawText: extraction.rawText,
+      structuredFacts: extraction.structuredFacts
+    });
+
+    const truthDeadlineDate = truthLayer.earliestDeadlineIso
+      ? new Date(`${truthLayer.earliestDeadlineIso}T00:00:00.000Z`)
+      : null;
+
+    const truthUpdate = await prisma.$transaction(async (tx) => {
+      const existingCase = await tx.case.findUnique({
+        where: { id: asset.caseId },
+        select: {
+          documentType: true,
+          classificationConfidence: true,
+          timeSensitive: true,
+          earliestDeadline: true
+        }
+      });
+
+      if (!existingCase) {
+        throw new Error(`Case not found for truth-layer update: caseId='${asset.caseId}'.`);
+      }
+
+      const replaceClassification = shouldReplaceClassification(
+        existingCase.classificationConfidence,
+        truthLayer.classificationConfidence
+      );
+
+      const nextDocumentType = replaceClassification
+        ? truthLayer.documentType
+        : existingCase.documentType;
+      const nextClassificationConfidence = replaceClassification
+        ? truthLayer.classificationConfidence
+        : existingCase.classificationConfidence;
+      const nextTimeSensitive = existingCase.timeSensitive || truthLayer.timeSensitive;
+      const nextEarliestDeadline = minDate(existingCase.earliestDeadline, truthDeadlineDate);
+
+      const updatedCase = await tx.case.update({
+        where: { id: asset.caseId },
+        data: {
+          documentType: nextDocumentType,
+          classificationConfidence: nextClassificationConfidence,
+          timeSensitive: nextTimeSensitive,
+          earliestDeadline: nextEarliestDeadline
+        },
+        select: {
+          documentType: true,
+          classificationConfidence: true,
+          timeSensitive: true,
+          earliestDeadline: true
+        }
+      });
+
+      await tx.auditLog.create({
+        data: {
+          caseId: asset.caseId,
+          assetId: asset.id,
+          extractionId: extraction.id,
+          eventType: AuditEventType.TRUTH_LAYER_RUN,
+          actorType: "worker",
+          payload: {
+            queueMessageId: id,
+            truthLayer: truthLayer.facts,
+            appliedCaseUpdate: {
+              documentType: updatedCase.documentType,
+              classificationConfidence: updatedCase.classificationConfidence,
+              timeSensitive: updatedCase.timeSensitive,
+              earliestDeadline: updatedCase.earliestDeadline?.toISOString() ?? null,
+              replacedClassification: replaceClassification
+            }
+          } as Prisma.InputJsonValue
+        }
+      });
+
+      return {
+        documentType: updatedCase.documentType,
+        classificationConfidence: updatedCase.classificationConfidence,
+        timeSensitive: updatedCase.timeSensitive,
+        earliestDeadline: updatedCase.earliestDeadline
+      };
+    });
+
     console.log(
       JSON.stringify({
         level: "info",
         msg: "worker_asset_processed",
         caseId: asset.caseId,
         assetId: asset.id,
-        extractionId: extraction.id
+        extractionId: extraction.id,
+        truthLayer: {
+          documentType: truthUpdate.documentType,
+          classificationConfidence: truthUpdate.classificationConfidence,
+          timeSensitive: truthUpdate.timeSensitive,
+          earliestDeadline: truthUpdate.earliestDeadline?.toISOString() ?? null
+        }
       })
     );
 

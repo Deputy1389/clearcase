@@ -12,7 +12,7 @@ Last updated: 2026-02-11
 - Repo: `C:\Clearcase\Clearcase`
 - Branch: `main` (synced to `origin/main`)
 - Latest backup commit: `370b6fb`
-- Current phase: `Phase 6 - Truth Layer (Prep)`
+- Current phase: `Phase 6 - Truth Layer (Implemented, verification pending)`
 
 ## Completed phases
 - Phase 3 complete: S3 upload-init endpoint + ownership + asset metadata persistence
@@ -21,6 +21,8 @@ Last updated: 2026-02-11
   - Verify: `npm run mvp:phase4-smoke`
 - Phase 5 complete: OCR adapter boundary (deterministic stub) + extraction persistence
   - Verify: `npm run mvp:phase5-smoke`
+- Phase 6 implementation complete: truth-layer transformer + case truth persistence + `TRUTH_LAYER_RUN` audit event
+  - Verify: `npm run mvp:phase6-smoke` (requires AWS/SQS connectivity)
 
 ## Runtime scripts
 - API dev: `npm run api:dev`
@@ -28,6 +30,7 @@ Last updated: 2026-02-11
 - Worker start: `npm run worker:start`
 - Preflight: `npm run mvp:preflight`
 - AWS readiness: `npm run mvp:aws-check`
+- Phase 6 smoke: `npm run mvp:phase6-smoke`
 - Backup (commit + push): `npm run mvp:backup`
 
 ## Environment expectations (`.env`)
@@ -41,9 +44,9 @@ Last updated: 2026-02-11
 - Do not print or commit secret values.
 
 ## Immediate next work
-1. Implement Phase 6 truth-layer transformer from extraction data.
-2. Persist deterministic structured facts + deadline signals.
-3. Add `phase6-smoke` verification script.
+1. Run `npm run mvp:phase6-smoke` in network-enabled execution and confirm live SQS flow.
+2. Mark Phase 6 complete after smoke success.
+3. Begin Phase 7 LLM formatting from structured facts only.
 
 ## Working rules
 - Keep Prisma schema unchanged unless strictly required.

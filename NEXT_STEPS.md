@@ -6,15 +6,15 @@ Unlike SESSION_LOG.md, this file SHOULD be edited as things change.
 ---
 
 ## Current Phase
-Phase 6 - Truth Layer (Prep)
+Phase 6 - Truth Layer (Implemented, verification pending)
 
 ---
 
 ## Immediate Next Steps
 
-1. Build Phase 6 truth-layer transformer from extraction output to structured case facts.
-2. Persist structured case facts/deadline signals on case update path (deterministic only).
-3. Add `phase6-smoke` verification path and replayability checks.
+1. Run `npm run mvp:phase6-smoke` in a network-enabled environment to verify live SQS/API worker flow.
+2. Confirm Phase 6 exit criteria and mark phase complete after successful smoke run.
+3. Begin Phase 7 LLM formatting from structured facts only.
 4. Keep OCR provider boundary deterministic (no provider swap yet) until truth-layer is stable.
 
 ---
@@ -65,6 +65,22 @@ Phase 6 - Truth Layer (Prep)
 - Phase 4 smoke command: `npm run mvp:phase4-smoke`.
 - Phase 5 smoke command: `npm run mvp:phase5-smoke`.
 - `.env` now includes `SQS_QUEUE_URL`.
+
+---
+
+## Phase 6 - Truth Layer (Implemented; live smoke pending)
+
+- Added deterministic truth-layer transformer at `apps/worker/src/lib/truth-layer.ts`.
+- Worker now derives structured facts/deadline signals from extraction data and updates case-level truth fields:
+  - `documentType`
+  - `classificationConfidence`
+  - `timeSensitive`
+  - `earliestDeadline`
+- Added `TRUTH_LAYER_RUN` audit persistence with structured payload for replayability.
+- Added `scripts/mvp/phase6-smoke.ps1` and npm command `mvp:phase6-smoke`.
+- Local typechecks pass (`api:typecheck`, `worker:typecheck`).
+- Live smoke run is currently blocked in this environment due AWS endpoint connectivity restriction.
+
 - Execution preference: batch mode by default, no routine confirmation prompts
 - Only stop for confirmation on destructive actions (data deletion, DB drop, migration removal, or large code removal)
 
