@@ -448,3 +448,41 @@ Do not rewrite history. Always add new entries at the bottom.
 - After smoke success, mark Phase 6 complete and start Phase 7 formatting layer.
 
 ---
+
+**Date:** 2026-02-11  
+**Tool:** codex CLI  
+**Context Loaded:** CLEARCASE_HANDOFF.txt, continue.txt, NEXT_STEPS.md, SESSION_LOG.md  
+**Goal:** Execute next steps and implement Phase 7 LLM formatting boundary
+
+### What was done
+- Re-ran `npm run mvp:phase6-smoke`; run is still blocked in this environment by SQS endpoint connectivity.
+- Added deterministic formatter boundary at `apps/worker/src/lib/formatter.ts`.
+- Updated worker flow in `apps/worker/src/worker.ts` to:
+  - format from truth-layer structured facts only
+  - persist `Verdict` (`llmModel`, `inputHash`, `outputJson`)
+  - persist case-level `plainEnglishExplanation` and `nonLegalAdviceDisclaimer`
+  - persist `LLM_FORMAT_RUN` audit event with receipts metadata
+- Added `scripts/mvp/phase7-smoke.ps1` and npm command `mvp:phase7-smoke`.
+- Ran `npm run worker:typecheck` and `npm run api:typecheck` successfully.
+- Ran `npm run mvp:phase7-smoke`; run is blocked in this environment by SQS endpoint connectivity.
+- Updated `NEXT_STEPS.md` and `continue.txt` to reflect Phase 7 implementation status.
+
+### Decisions made
+- Keep Phase 7 deterministic and structured-data-only (no raw images, no schema changes).
+- Keep `LLM_PROVIDER=stub` as the only implemented formatter provider until live validation is stable.
+
+### Problems encountered
+- Both Phase 6 and Phase 7 smoke scripts cannot enqueue to SQS in this execution environment.
+
+### Resolutions
+- Completed compile-time verification via TypeScript checks.
+- Left both phases marked as implemented with live smoke verification pending in network-enabled execution.
+
+### Open questions
+- None for implementation scope; runtime environment access remains the only blocker for live smoke proofs.
+
+### Notes for next session
+- Run `npm run mvp:phase6-smoke` and `npm run mvp:phase7-smoke` where AWS SQS endpoint is reachable.
+- After both smoke runs pass, start stabilization and idempotency hardening.
+
+---

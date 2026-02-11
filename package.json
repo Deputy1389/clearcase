@@ -16,6 +16,7 @@
     "mvp:phase4-smoke": "powershell -ExecutionPolicy Bypass -File scripts/mvp/phase4-smoke.ps1 -StartWorker",
     "mvp:phase5-smoke": "powershell -ExecutionPolicy Bypass -File scripts/mvp/phase5-smoke.ps1 -StartApi -StartWorker",
     "mvp:phase6-smoke": "powershell -ExecutionPolicy Bypass -File scripts/mvp/phase6-smoke.ps1 -StartApi -StartWorker",
+    "mvp:phase7-smoke": "powershell -ExecutionPolicy Bypass -File scripts/mvp/phase7-smoke.ps1 -StartApi -StartWorker",
     "mvp:backup": "powershell -ExecutionPolicy Bypass -File scripts/mvp/backup.ps1",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",

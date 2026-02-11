@@ -6,16 +6,16 @@ Unlike SESSION_LOG.md, this file SHOULD be edited as things change.
 ---
 
 ## Current Phase
-Phase 6 - Truth Layer (Implemented, verification pending)
+Phase 7 - LLM Formatting (Implemented, verification pending)
 
 ---
 
 ## Immediate Next Steps
 
-1. Run `npm run mvp:phase6-smoke` in a network-enabled environment to verify live SQS/API worker flow.
-2. Confirm Phase 6 exit criteria and mark phase complete after successful smoke run.
-3. Begin Phase 7 LLM formatting from structured facts only.
-4. Keep OCR provider boundary deterministic (no provider swap yet) until truth-layer is stable.
+1. Run `npm run mvp:phase6-smoke` and `npm run mvp:phase7-smoke` in a network-enabled environment to verify live SQS/API worker flows.
+2. Confirm Phase 6 and Phase 7 exit criteria and mark both complete after successful smoke runs.
+3. Begin stabilization pass (idempotency, error handling, replay checks).
+4. Keep OCR provider and formatter boundaries deterministic (no provider swap yet) until stable.
 
 ---
 
@@ -78,6 +78,20 @@ Phase 6 - Truth Layer (Implemented, verification pending)
   - `earliestDeadline`
 - Added `TRUTH_LAYER_RUN` audit persistence with structured payload for replayability.
 - Added `scripts/mvp/phase6-smoke.ps1` and npm command `mvp:phase6-smoke`.
+- Local typechecks pass (`api:typecheck`, `worker:typecheck`).
+- Live smoke run is currently blocked in this environment due AWS endpoint connectivity restriction.
+
+---
+
+## Phase 7 - LLM Formatting (Implemented; live smoke pending)
+
+- Added deterministic formatter boundary at `apps/worker/src/lib/formatter.ts`.
+- Worker now formats from structured truth-layer facts only and persists:
+  - `Verdict` row (`llmModel`, `inputHash`, `outputJson`)
+  - case-level `plainEnglishExplanation`
+  - case-level `nonLegalAdviceDisclaimer`
+- Added `LLM_FORMAT_RUN` audit event with receipts metadata.
+- Added `scripts/mvp/phase7-smoke.ps1` and npm command `mvp:phase7-smoke`.
 - Local typechecks pass (`api:typecheck`, `worker:typecheck`).
 - Live smoke run is currently blocked in this environment due AWS endpoint connectivity restriction.
 

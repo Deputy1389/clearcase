@@ -9,6 +9,7 @@ import { AuditEventType, Prisma } from "@prisma/client";
 import { prisma } from "../../../packages/db/src/client.ts";
 import { createOcrProvider } from "./lib/ocr.ts";
 import { buildTruthLayerResult } from "./lib/truth-layer.ts";
+import { createCaseFormatter } from "./lib/formatter.ts";
 
 type WorkerConfig = {
   region: string;
@@ -20,6 +21,7 @@ type WorkerConfig = {
 const DEFAULT_WAIT_TIME_SECONDS = 20;
 const DEFAULT_VISIBILITY_TIMEOUT_SECONDS = 30;
 const ocrProvider = createOcrProvider();
+const formatter = createCaseFormatter();
 const TRUTH_CONFIDENCE_EPSILON = 0.0001;
 
 type WorkerMessagePayload = {
@@ -244,6 +246,62 @@ async function handleMessage(message: Message): Promise<void> {
       };
     });
 
+    const formatted = await formatter.format({
+      caseId: asset.caseId,
+      extractionId: extraction.id,
+      truth: truthLayer
+    });
+
+    const verdict = await prisma.$transaction(async (tx) => {
+      const createdVerdict = await tx.verdict.create({
+        data: {
+          caseId: asset.caseId,
+          extractionId: extraction.id,
+          llmModel: formatted.llmModel,
+          inputHash: formatted.inputHash,
+          outputJson: formatted.outputJson as Prisma.InputJsonValue
+        },
+        select: {
+          id: true,
+          llmModel: true,
+          inputHash: true
+        }
+      });
+
+      await tx.case.update({
+        where: { id: asset.caseId },
+        data: {
+          plainEnglishExplanation: formatted.plainEnglishExplanation,
+          nonLegalAdviceDisclaimer: formatted.nonLegalAdviceDisclaimer
+        }
+      });
+
+      await tx.auditLog.create({
+        data: {
+          caseId: asset.caseId,
+          assetId: asset.id,
+          extractionId: extraction.id,
+          verdictId: createdVerdict.id,
+          eventType: AuditEventType.LLM_FORMAT_RUN,
+          actorType: "worker",
+          payload: {
+            queueMessageId: id,
+            llmModel: createdVerdict.llmModel,
+            inputHash: createdVerdict.inputHash,
+            source: "structured_truth_layer_only",
+            receipts: {
+              extractionId: extraction.id,
+              documentType: truthLayer.documentType,
+              matchedKeywords: truthLayer.matchedKeywords,
+              deadlineSignalCount: truthLayer.deadlineSignals.length
+            }
+          } as Prisma.InputJsonValue
+        }
+      });
+
+      return createdVerdict;
+    });
+
     console.log(
       JSON.stringify({
         level: "info",
@@ -256,7 +314,9 @@ async function handleMessage(message: Message): Promise<void> {
           classificationConfidence: truthUpdate.classificationConfidence,
           timeSensitive: truthUpdate.timeSensitive,
           earliestDeadline: truthUpdate.earliestDeadline?.toISOString() ?? null
-        }
+        },
+        verdictId: verdict.id,
+        llmModel: verdict.llmModel
       })
     );
 
