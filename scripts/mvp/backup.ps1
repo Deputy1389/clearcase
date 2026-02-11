@@ -26,8 +26,14 @@ if ([string]::IsNullOrWhiteSpace($Message)) {
 git add -A
 git commit -m $Message
 
-$origin = git remote get-url origin 2>$null
-if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($origin)) {
+$remotes = @(git remote)
+if (-not ($remotes -contains "origin")) {
+  Write-Host "Commit created locally. No 'origin' remote configured yet."
+  exit 0
+}
+
+$origin = git remote get-url origin
+if ([string]::IsNullOrWhiteSpace($origin)) {
   Write-Host "Commit created locally. No 'origin' remote configured yet."
   exit 0
 }
