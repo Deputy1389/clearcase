@@ -10,6 +10,7 @@
     "mvp:preflight": "powershell -ExecutionPolicy Bypass -File scripts/mvp/preflight.ps1",
     "mvp:aws-check": "powershell -ExecutionPolicy Bypass -File scripts/mvp/aws-ready.ps1",
     "mvp:start": "powershell -ExecutionPolicy Bypass -File scripts/mvp/start-dev.ps1",
+    "mvp:backup": "powershell -ExecutionPolicy Bypass -File scripts/mvp/backup.ps1",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio"
