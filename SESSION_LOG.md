@@ -293,3 +293,42 @@ Do not rewrite history. Always add new entries at the bottom.
 - Verify worker consume/ack/retry behavior with a real queued message.
 
 ---
+
+**Date:** 2026-02-11  
+**Tool:** codex CLI  
+**Context Loaded:** CLEARCASE_HANDOFF.txt, startClearCase.txt, NEXT_STEPS.md, SESSION_LOG.md  
+**Goal:** Configure Phase 4 queue access and verify worker consume/ack flow
+
+### What was done
+- Created/fetched dev queue URL: `https://sqs.us-west-2.amazonaws.com/905418215132/clearcase-phase4-dev`.
+- Updated `.env` with `SQS_QUEUE_URL`.
+- Ran live worker consume/ack verification on dev queue:
+  - enqueued test message
+  - started worker
+  - confirmed queue visible/not-visible counts returned to `0`.
+- Enhanced worker skeleton in `apps/worker/src/worker.ts`:
+  - configurable `SQS_VISIBILITY_TIMEOUT_SECONDS`
+  - deterministic `forceFail=true` failure hook for retry testing.
+- Re-ran `npm run worker:typecheck` successfully.
+
+### Decisions made
+- Keep retry simulation deterministic via message body (`forceFail`) to support repeatable queue tests.
+- Keep queue config in `.env` and worker env variables only; no schema changes.
+
+### Problems encountered
+- IAM policy scope allowed SQS actions only on `clearcase-phase4-dev`, which blocked isolated queue tests.
+- Background node processes made isolated retry verification less deterministic on the shared dev queue.
+
+### Resolutions
+- Completed reliable consume/ack validation on the permitted queue.
+- Marked isolated retry verification as a remaining step requiring broader queue-policy scope.
+
+### Open questions
+- Whether to widen SQS IAM policy to allow isolated test queues (`clearcase-phase4-isolated-*`) for deterministic retry verification.
+
+### Notes for next session
+- Optionally widen SQS policy scope for isolated queue testing.
+- Add dedicated `phase4-smoke` script and finish retry proof in isolated queue.
+- Move into Phase 5 OCR adapter boundary after Phase 4 checklist completion.
+
+---

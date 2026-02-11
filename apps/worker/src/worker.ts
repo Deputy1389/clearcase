@@ -10,6 +10,7 @@ type WorkerConfig = {
   region: string;
   queueUrl: string;
   waitTimeSeconds: number;
+  visibilityTimeoutSeconds: number;
 };
 
 const DEFAULT_WAIT_TIME_SECONDS = 20;
@@ -39,7 +40,11 @@ function loadConfig(): WorkerConfig {
   return {
     region: readRequiredEnv("AWS_REGION"),
     queueUrl: readRequiredEnv("SQS_QUEUE_URL"),
-    waitTimeSeconds: readNumberEnv("SQS_WAIT_TIME_SECONDS", DEFAULT_WAIT_TIME_SECONDS)
+    waitTimeSeconds: readNumberEnv("SQS_WAIT_TIME_SECONDS", DEFAULT_WAIT_TIME_SECONDS),
+    visibilityTimeoutSeconds: readNumberEnv(
+      "SQS_VISIBILITY_TIMEOUT_SECONDS",
+      DEFAULT_VISIBILITY_TIMEOUT_SECONDS
+    )
   };
 }
 
@@ -55,6 +60,15 @@ async function handleMessage(message: Message): Promise<void> {
     } catch {
       parsedBody = body;
     }
+  }
+
+  if (
+    parsedBody &&
+    typeof parsedBody === "object" &&
+    "forceFail" in parsedBody &&
+    (parsedBody as { forceFail?: unknown }).forceFail === true
+  ) {
+    throw new Error("Forced message failure (forceFail=true).");
   }
 
   // Phase 4 skeleton: consume and acknowledge; domain handling comes in later phases.
@@ -75,7 +89,7 @@ async function pollOnce(client: SQSClient, config: WorkerConfig): Promise<void> 
       QueueUrl: config.queueUrl,
       MaxNumberOfMessages: 1,
       WaitTimeSeconds: config.waitTimeSeconds,
-      VisibilityTimeout: DEFAULT_VISIBILITY_TIMEOUT_SECONDS
+      VisibilityTimeout: config.visibilityTimeoutSeconds
     })
   );
 
@@ -136,7 +150,8 @@ async function main(): Promise<void> {
       level: "info",
       msg: "worker_started",
       queueUrl: config.queueUrl,
-      waitTimeSeconds: config.waitTimeSeconds
+      waitTimeSeconds: config.waitTimeSeconds,
+      visibilityTimeoutSeconds: config.visibilityTimeoutSeconds
     })
   );
 
