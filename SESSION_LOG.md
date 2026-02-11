@@ -198,3 +198,50 @@ Do not rewrite history. Always add new entries at the bottom.
   3. begin Phase 3 `POST /cases/:id/assets` presigned URL implementation.
 
 ---
+
+**Date:** 2026-02-11  
+**Tool:** codex CLI  
+**Context Loaded:** CLEARCASE_HANDOFF.txt, startClearCase.txt, NEXT_STEPS.md, SESSION_LOG.md  
+**Goal:** Resume and implement Phase 3 upload-init endpoint
+
+### What was done
+- Resumed from prior checkpoint and confirmed AWS keys in `.env` are still empty.
+- Implemented new upload helper at `apps/api/src/lib/uploads.ts`:
+  - upload config validation from env
+  - S3 key generation
+  - presigned PUT URL generation
+- Implemented `POST /cases/:id/assets` in `apps/api/src/server.ts` with:
+  - params/body validation
+  - case ownership enforcement
+  - metadata-only `Asset` DB write
+  - 503 response when AWS upload env is not configured
+- Added AWS SDK dependencies for presigned URL generation:
+  - `@aws-sdk/client-s3`
+  - `@aws-sdk/s3-request-presigner`
+- Ran `npm run api:typecheck` successfully.
+- Ran runtime smoke check outside sandbox; endpoint currently returns 503 as expected until AWS env values are populated.
+- Updated `NEXT_STEPS.md` to reflect Phase 3 implementation progress and remaining verification steps.
+
+### Decisions made
+- Keep upload-init behavior explicit when env is missing: return `503 AWS_UPLOADS_NOT_CONFIGURED` with missing keys list.
+- Keep Prisma schema unchanged; Phase 3 implemented within existing models.
+
+### Problems encountered
+- `npm install` failed under sandbox due permission/network access constraints.
+- Local `api:start` under sandbox hit `spawn EPERM` for tsx/esbuild runtime.
+- Initial curl-based runtime checks had PowerShell escaping issues.
+
+### Resolutions
+- Re-ran package install with escalated permissions.
+- Performed runtime endpoint verification outside sandbox.
+- Switched runtime verification to PowerShell-native JSON requests.
+
+### Open questions
+- None.
+
+### Notes for next session
+- Fill `.env` AWS keys and run `npm run mvp:aws-check`.
+- Validate happy-path `POST /cases/:id/assets` (expect 201 + presigned URL).
+- Continue Phase 3 verification with an actual PUT upload to S3.
+
+---

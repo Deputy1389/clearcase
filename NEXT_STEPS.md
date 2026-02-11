@@ -6,18 +6,17 @@ Unlike SESSION_LOG.md, this file SHOULD be edited as things change.
 ---
 
 ## Current Phase
-Phase 3 - S3 Uploads + Assets (Prep Pending)
+Phase 3 - S3 Uploads + Assets (Implementation In Progress)
 
 ---
 
 ## Immediate Next Steps
 
-1. Prepare AWS account + S3 bucket + IAM access keys
-2. Add AWS/S3 env vars to `.env` (`AWS_REGION`, `S3_BUCKET`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`)
-3. Confirm upload mode: presigned URL flow
-4. Implement `POST /cases/:id/assets` (metadata only, ownership enforced)
-5. Verify end-to-end upload init flow from API
-6. Use `MVP_WEEK_EXECUTION.md` and startup scripts (`npm run mvp:preflight`, `npm run mvp:aws-check`, `npm run mvp:start`)
+1. Fill AWS/S3 env vars in `.env` (`AWS_REGION`, `S3_BUCKET`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`)
+2. Run `npm run mvp:aws-check`
+3. Verify `POST /cases/:id/assets` returns 201 with `assetId`, `s3Key`, and `uploadUrl`
+4. Verify presigned PUT upload against S3
+5. Use `MVP_WEEK_EXECUTION.md` and startup scripts (`npm run mvp:preflight`, `npm run mvp:aws-check`, `npm run mvp:start`)
 
 ---
 
@@ -33,7 +32,7 @@ Phase 3 - S3 Uploads + Assets (Prep Pending)
 
 ## Blockers / Risks
 
-- AWS account and S3 credentials are not configured yet, so Phase 3 implementation is paused.
+- AWS env values are still empty in `.env`, so live presigned upload verification is blocked.
 
 ---
 
@@ -43,6 +42,7 @@ Phase 3 - S3 Uploads + Assets (Prep Pending)
 - Keep uploads isolated from OCR logic
 - Maintain deterministic pipeline order
 - Do not proceed to SQS/OCR until Phase 3 is complete
+- `POST /cases/:id/assets` is now implemented (ownership + metadata DB write + presigned URL creation)
 - Execution preference: batch mode by default, no routine confirmation prompts
 - Only stop for confirmation on destructive actions (data deletion, DB drop, migration removal, or large code removal)
 

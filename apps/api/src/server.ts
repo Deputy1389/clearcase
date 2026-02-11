@@ -1,9 +1,10 @@
 import "dotenv/config";
 import Fastify, { type FastifyReply } from "fastify";
-import { Prisma, type User } from "@prisma/client";
+import { AssetType, Prisma, type User } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "../../../packages/db/src/client.ts";
 import { normalizeZipCode, stateFromZipCode } from "./lib/profile.ts";
+import { createUploadPlan, getUploadConfigStatus } from "./lib/uploads.ts";
 import { authPlugin, type AuthContext } from "./plugins/auth.ts";
 
 const patchMeSchema = z
@@ -25,6 +26,15 @@ const createCaseSchema = z
 const caseParamsSchema = z
   .object({
     id: z.string().trim().min(1)
+  })
+  .strict();
+
+const createAssetSchema = z
+  .object({
+    fileName: z.string().trim().min(1).max(255),
+    mimeType: z.string().trim().min(3).max(200),
+    byteSize: z.number().int().positive().max(25 * 1024 * 1024),
+    assetType: z.nativeEnum(AssetType).optional()
   })
   .strict();
 
@@ -230,6 +240,84 @@ app.get("/cases/:id", async (request, reply) => {
   }
 
   return foundCase;
+});
+
+app.post("/cases/:id/assets", async (request, reply) => {
+  const paramsParse = caseParamsSchema.safeParse(request.params);
+  if (!paramsParse.success) {
+    sendValidationError(reply, paramsParse.error.issues);
+    return;
+  }
+
+  const bodyParse = createAssetSchema.safeParse(request.body ?? {});
+  if (!bodyParse.success) {
+    sendValidationError(reply, bodyParse.error.issues);
+    return;
+  }
+
+  const user = await getOrCreateUser(request.auth);
+  const foundCase = await prisma.case.findFirst({
+    where: {
+      id: paramsParse.data.id,
+      userId: user.id
+    },
+    select: {
+      id: true
+    }
+  });
+
+  if (!foundCase) {
+    reply.status(404).send({ error: "NOT_FOUND" });
+    return;
+  }
+
+  const uploadConfigStatus = getUploadConfigStatus();
+  if (!uploadConfigStatus.configured) {
+    reply.status(503).send({
+      error: "AWS_UPLOADS_NOT_CONFIGURED",
+      missing: uploadConfigStatus.missing
+    });
+    return;
+  }
+
+  const requestBody = bodyParse.data;
+  let uploadPlan: Awaited<ReturnType<typeof createUploadPlan>>;
+
+  try {
+    uploadPlan = await createUploadPlan({
+      caseId: foundCase.id,
+      fileName: requestBody.fileName,
+      mimeType: requestBody.mimeType
+    });
+  } catch (error) {
+    request.log.error({ err: error }, "Failed to create presigned upload URL");
+    reply.status(502).send({ error: "UPLOAD_URL_GENERATION_FAILED" });
+    return;
+  }
+
+  const createdAsset = await prisma.asset.create({
+    data: {
+      caseId: foundCase.id,
+      uploaderUserId: user.id,
+      assetType: requestBody.assetType ?? AssetType.DOCUMENT_IMAGE,
+      s3Key: uploadPlan.s3Key,
+      fileName: requestBody.fileName,
+      mimeType: requestBody.mimeType,
+      byteSize: requestBody.byteSize
+    }
+  });
+
+  reply.status(201).send({
+    assetId: createdAsset.id,
+    caseId: foundCase.id,
+    s3Key: createdAsset.s3Key,
+    uploadUrl: uploadPlan.uploadUrl,
+    uploadMethod: "PUT",
+    uploadHeaders: {
+      "Content-Type": requestBody.mimeType
+    },
+    expiresInSeconds: uploadPlan.expiresInSeconds
+  });
 });
 
 const apiPort = Number(process.env.API_PORT ?? 3001);
