@@ -4,8 +4,9 @@ You are resuming work on the ClearCase project.
 
 Before doing anything else:
 1. Load and treat as authoritative: CLEARCASE_HANDOFF.txt
-2. Read the most recent entry in SESSION_LOG.md
-3. Read NEXT_STEPS.md
+2. Read continue.txt (quick resume snapshot)
+3. Read the most recent entry in SESSION_LOG.md
+4. Read NEXT_STEPS.md
 
 Rules:
 - Do not re-architect or simplify unless explicitly instructed

@@ -1,0 +1,61 @@
+# continue.txt
+
+Last updated: 2026-02-11
+
+## Load order on restart
+1. `CLEARCASE_HANDOFF.txt` (authoritative product/architecture constraints)
+2. `continue.txt` (this file, quick resume snapshot)
+3. `SESSION_LOG.md` (most recent entry)
+4. `NEXT_STEPS.md` (current phase + immediate tasks)
+
+## Current state
+- Repo: `C:\Clearcase\Clearcase`
+- Branch: `main` (synced to `origin/main`)
+- Latest backup commit: `370b6fb`
+- Current phase: `Phase 6 - Truth Layer (Prep)`
+
+## Completed phases
+- Phase 3 complete: S3 upload-init endpoint + ownership + asset metadata persistence
+  - Verify: `npm run mvp:phase3-smoke`
+- Phase 4 complete: SQS worker consume/ack/retry basics
+  - Verify: `npm run mvp:phase4-smoke`
+- Phase 5 complete: OCR adapter boundary (deterministic stub) + extraction persistence
+  - Verify: `npm run mvp:phase5-smoke`
+
+## Runtime scripts
+- API dev: `npm run api:dev`
+- API start: `npm run api:start`
+- Worker start: `npm run worker:start`
+- Preflight: `npm run mvp:preflight`
+- AWS readiness: `npm run mvp:aws-check`
+- Backup (commit + push): `npm run mvp:backup`
+
+## Environment expectations (`.env`)
+- Required and already configured locally:
+  - `DATABASE_URL`
+  - `AWS_REGION`
+  - `S3_BUCKET`
+  - `AWS_ACCESS_KEY_ID`
+  - `AWS_SECRET_ACCESS_KEY`
+  - `SQS_QUEUE_URL`
+- Do not print or commit secret values.
+
+## Immediate next work
+1. Implement Phase 6 truth-layer transformer from extraction data.
+2. Persist deterministic structured facts + deadline signals.
+3. Add `phase6-smoke` verification script.
+
+## Working rules
+- Keep Prisma schema unchanged unless strictly required.
+- Batch mode execution: do not pause for routine non-destructive steps.
+- Only pause on destructive actions.
+- Run `npm run mvp:backup` at the end of each work block.
+
+## Skills installed (Codex)
+- `find-skills`
+- `security-threat-model`
+- `security-best-practices`
+- `playwright`
+- `pdf`
+
+Note: restart Codex to pick up newly installed skills.

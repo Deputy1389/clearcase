@@ -383,3 +383,29 @@ Do not rewrite history. Always add new entries at the bottom.
 - Add `phase6-smoke` after initial truth-layer persistence path is implemented.
 
 ---
+
+**Date:** 2026-02-11  
+**Tool:** codex CLI  
+**Context Loaded:** CLEARCASE_HANDOFF.txt, startClearCase.txt, NEXT_STEPS.md, SESSION_LOG.md  
+**Goal:** Add restart handoff file for faster session continuity
+
+### What was done
+- Added `continue.txt` with current project snapshot, resume commands, phase status, and immediate next work.
+- Updated `startClearCase.txt` startup checklist to read `continue.txt` before `SESSION_LOG.md` and `NEXT_STEPS.md`.
+
+### Decisions made
+- Keep `continue.txt` concise and operational (what to run, where we are, what’s next), not a full narrative log.
+
+### Problems encountered
+- None.
+
+### Resolutions
+- N/A.
+
+### Open questions
+- None.
+
+### Notes for next session
+- Update `continue.txt` before session close, then run `npm run mvp:backup`.
+
+---
