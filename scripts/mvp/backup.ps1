@@ -24,7 +24,19 @@ if ([string]::IsNullOrWhiteSpace($Message)) {
 }
 
 git add -A
+if ($LASTEXITCODE -ne 0) {
+  throw "git add failed."
+}
+
 git commit -m $Message
+if ($LASTEXITCODE -ne 0) {
+  $postCommitStatus = git status --porcelain
+  if (-not $postCommitStatus) {
+    Write-Host "No changes to back up."
+    exit 0
+  }
+  throw "git commit failed."
+}
 
 $remotes = @(git remote)
 if (-not ($remotes -contains "origin")) {
@@ -39,4 +51,8 @@ if ([string]::IsNullOrWhiteSpace($origin)) {
 }
 
 git push origin main
+if ($LASTEXITCODE -ne 0) {
+  throw "git push failed."
+}
+
 Write-Host "Backup complete: pushed to origin/main."
