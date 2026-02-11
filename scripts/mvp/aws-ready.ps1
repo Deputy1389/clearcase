@@ -6,6 +6,13 @@ function Step([string]$Message) {
   Write-Host "==> $Message" -ForegroundColor Cyan
 }
 
+function Invoke-CheckedCommand([scriptblock]$Command, [string]$FailureMessage) {
+  & $Command
+  if ($LASTEXITCODE -ne 0) {
+    throw $FailureMessage
+  }
+}
+
 function Resolve-AwsCliPath {
   if (Get-Command aws -ErrorAction SilentlyContinue) {
     return "aws"
@@ -84,11 +91,11 @@ if ([string]::IsNullOrWhiteSpace($awsCli)) {
 }
 
 Step "Running aws sts get-caller-identity"
-& $awsCli sts get-caller-identity --output json
+Invoke-CheckedCommand { & $awsCli sts get-caller-identity --output json } "AWS credentials are invalid or not usable."
 
 Step "Checking S3 bucket access"
 $bucket = $envMap["S3_BUCKET"]
-& $awsCli s3api head-bucket --bucket $bucket
+Invoke-CheckedCommand { & $awsCli s3api head-bucket --bucket $bucket } "S3 bucket access check failed for '$bucket'. Verify bucket name, region, and IAM policy."
 
 Step "AWS readiness complete"
 Write-Host "AWS credentials and bucket access are valid." -ForegroundColor Green
