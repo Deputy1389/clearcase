@@ -1,0 +1,387 @@
+CLEARCASE - SHARK TANK INVESTOR BRIEF
+Version: Draft 1
+Date: 2026-02-11
+
+==================================================
+1) ONE-LINE PITCH
+==================================================
+ClearCase is a legal clarity platform that helps everyday people understand legal documents, track deadlines, and decide when to escalate to a lawyer - before they overpay or miss critical steps.
+
+==================================================
+2) THE ASK
+==================================================
+We are seeking: $[FILL] for [FILL]% equity.
+Implied valuation: $[FILL].
+
+Use of funds (12-18 months runway):
+- 40% product engineering (uploads, OCR, truth layer, compliant chat)
+- 25% go-to-market (content, partnerships, paid acquisition testing)
+- 20% legal/compliance and attorney network development
+- 10% cloud/AI infrastructure
+- 5% ops and contingency
+
+==================================================
+3) THE PROBLEM
+==================================================
+Consumers face three painful realities:
+1. Legal processes are confusing, time-sensitive, and intimidating.
+2. Lawyer time is expensive, even for basic document interpretation.
+3. People often do not know what to do next, what to gather, or whether they even need a lawyer yet.
+
+Current alternatives are poor:
+- Generic internet searches are unreliable.
+- Traditional legal services are expensive and slow for early triage.
+- AI chatbots can hallucinate and often lack auditable grounding.
+
+==================================================
+4) THE SOLUTION
+==================================================
+ClearCase provides:
+1. Document-first intake (image/PDF upload).
+2. Deterministic OCR extraction.
+3. Structured fact/deadline classification.
+4. Plain-English explanations with explicit uncertainty.
+5. Evidence and action checklist.
+6. Escalation path to a human lawyer when needed.
+
+Core product principle:
+- Legal clarity, not legal advice.
+- LLMs format and explain extracted structured data.
+- No raw images sent to LLMs.
+- Outputs are auditable ("show receipts").
+
+==================================================
+5) WHY NOW
+==================================================
+- AI tooling has matured enough for practical document pipelines.
+- Consumers are more willing to use legal-tech self-service products.
+- Economic pressure makes transparent, lower-cost legal support attractive.
+- Courts and legal workflows are still document-heavy and process-heavy.
+
+==================================================
+6) TARGET CUSTOMER
+==================================================
+Primary:
+- Individuals with civil legal paperwork (landlord/tenant, debt, family, small claims, notices, demand letters).
+
+Secondary:
+- Families assisting relatives through legal processes.
+- Small business owners handling low-complexity legal paperwork.
+
+Initial persona:
+- Cost-conscious, high anxiety, time-sensitive user who needs "what do I do next?" quickly.
+
+==================================================
+7) MARKET OPPORTUNITY
+==================================================
+Top-down TAM framing:
+- US legal services and legal-adjacent consumer spend is large and fragmented.
+- Even a narrow segment of self-serve civil-document support is sizable.
+
+Bottom-up SOM framing (recommended for investor discussion):
+- Start with one or two high-volume use cases.
+- Example: [FILL monthly target users] x [FILL conversion] x [FILL ARPU].
+
+Investor-ready numbers to prepare before pitch:
+- TAM ($)
+- SAM ($)
+- 3-year SOM ($ and customer count)
+- Key assumptions for each layer
+
+==================================================
+8) BUSINESS MODEL
+==================================================
+Hybrid model:
+1. Freemium entry
+- Limited cases and basic summary.
+
+2. Subscription tiers
+- Core: $12-$19/month
+- Plus: $29-$39/month
+
+3. Optional paid human escalation
+- Fixed-price attorney consult add-ons
+- Clear, transparent pricing and scope
+
+Monetization logic:
+- Subscription supports recurring revenue.
+- Consult handoff captures high-intent moments.
+- Better preparation lowers lawyer time and raises user trust.
+
+==================================================
+9) PRICING STRATEGY
+==================================================
+Proposed launch pricing:
+- Free: 1 case, limited uploads, basic explanation
+- Core ($15/mo target): multi-case tracking, deadline timeline, richer summaries
+- Plus ($35/mo target): priority processing, exports/case packet, advanced support
+
+Add-ons:
+- Lawyer consult slots (15/30 minutes)
+- Priority turnaround
+- Document packet export
+
+==================================================
+10) PRODUCT ROADMAP
+==================================================
+Current status:
+- Phase 2 API skeleton completed and verified.
+
+Near-term roadmap:
+- Phase 3: S3 upload plumbing + asset metadata
+- Phase 4: async worker (SQS)
+- Phase 5: OCR adapter
+- Phase 6: truth layer (structured extraction and deadlines)
+- Phase 7: LLM formatting and explanation layer
+
+Future roadmap:
+- Grounded chat on extracted facts
+- Lawyer escalation workflow and marketplace-style routing
+- Consumer case timeline and reminders
+
+==================================================
+11) GO-TO-MARKET
+==================================================
+Primary channels:
+1. SEO/content around specific legal document questions.
+2. Short-form educational content (TikTok/Reels/YouTube Shorts).
+3. Partnerships with community legal aid and advocacy groups.
+4. Referral loops from successful outcomes.
+
+Acquisition wedge:
+- Solve one urgent document type exceptionally well first.
+
+Activation strategy:
+- "Upload your notice -> get next steps in minutes."
+
+Retention strategy:
+- Ongoing deadline tracking and case progress reminders.
+
+==================================================
+12) TRACTION (FILL WITH REAL DATA)
+==================================================
+Replace placeholders with live numbers before any pitch.
+
+Product:
+- Waitlist size: [FILL]
+- Monthly active users: [FILL]
+- Cases created: [FILL]
+- Documents processed: [FILL]
+
+Conversion:
+- Free -> paid conversion: [FILL]%
+- Trial -> paid conversion: [FILL]%
+- 30-day retention: [FILL]%
+- Monthly churn: [FILL]%
+
+Revenue:
+- MRR: $[FILL]
+- ARPU: $[FILL]
+- Gross margin: [FILL]%
+- CAC: $[FILL]
+- LTV: $[FILL]
+- LTV/CAC: [FILL]x
+
+==================================================
+13) UNIT ECONOMICS FRAMEWORK
+==================================================
+Per paid user per month:
+- Revenue: $[R]
+- Variable costs:
+  - OCR: $[A]
+  - LLM/API: $[B]
+  - Storage/bandwidth: $[C]
+  - Payment processing: $[D]
+  - Support: $[E]
+- Contribution margin = R - (A+B+C+D+E)
+
+Break-even users:
+- Fixed monthly burn / contribution margin per paid user
+
+Example:
+- ARPU = $18
+- Variable cost = $5
+- Contribution margin = $13
+- If burn = $12,000/mo, break-even = ~923 paid users
+
+==================================================
+14) COMPETITIVE LANDSCAPE
+==================================================
+Who you compete with:
+- Consumer legal subscriptions
+- AI legal assistant tools
+- DIY form/document tools
+- Traditional attorney consults
+
+Differentiation:
+1. Document-first, workflow-first, not chat-first.
+2. Deterministic extraction before AI explanation.
+3. Auditability and transparency.
+4. Cost-saving pre-lawyer preparation.
+5. Human escalation built into the funnel.
+
+==================================================
+15) DEFENSIBILITY / MOAT
+==================================================
+Near-term moat:
+- Proprietary workflow + UX for legal clarity
+- Structured legal document dataset accumulation
+- Feedback loops on extraction quality and outcome quality
+
+Long-term moat:
+- Case outcome-linked accuracy improvements
+- Distribution and trust brand in a high-friction category
+- Lawyer network + consumer-side workflow integration
+
+==================================================
+16) LEGAL / COMPLIANCE POSITIONING
+==================================================
+Positioning rules:
+- "Legal clarity" and "information," not legal advice.
+- Clear disclaimers and escalation for legal counsel.
+- No fabricated certainty; explicit uncertainty signaling.
+- Jurisdiction-aware wording.
+
+Investor talking point:
+- Compliance-by-design is a product feature and market advantage.
+
+==================================================
+17) RISKS AND MITIGATIONS
+==================================================
+Risk: Hallucinated or incorrect guidance
+Mitigation:
+- Deterministic extraction first
+- Grounded outputs only from structured facts
+- Confidence labels and disclaimers
+
+Risk: High AI/OCR cost
+Mitigation:
+- Strict prompt/input minimization
+- Tier limits and rate controls
+- Async architecture and caching
+
+Risk: Regulatory/ethics concerns
+Mitigation:
+- Clear non-advice framing
+- Counsel review on product language and flows
+- Audit logs for outputs
+
+Risk: Customer acquisition cost
+Mitigation:
+- Focused wedge use case first
+- Content and partnership-led distribution
+- Conversion and retention instrumentation from day one
+
+==================================================
+18) FINANCIAL PROJECTIONS (3-YEAR TEMPLATE)
+==================================================
+Year 1:
+- Paid users: [FILL]
+- ARR: $[FILL]
+- Gross margin: [FILL]%
+- Net burn: $[FILL]
+
+Year 2:
+- Paid users: [FILL]
+- ARR: $[FILL]
+- Gross margin: [FILL]%
+- Net burn / profitability: [FILL]
+
+Year 3:
+- Paid users: [FILL]
+- ARR: $[FILL]
+- Gross margin: [FILL]%
+- EBITDA: $[FILL]
+
+Prepare three scenarios:
+- Conservative
+- Base
+- Upside
+
+==================================================
+19) WHAT SHARKS WILL ASK (AND HOW TO ANSWER)
+==================================================
+Q: "Why will users trust you?"
+A: We are document-first, grounded, and auditable. We do not pretend to replace lawyers.
+
+Q: "What keeps a big player from copying this?"
+A: Specialized workflow, quality loops, trust brand, and distribution in targeted legal categories.
+
+Q: "How do you make money?"
+A: Subscription core + paid escalation moments + optional add-ons.
+
+Q: "What proof do you have?"
+A: Show traction metrics, conversion, retention, and unit economics.
+
+Q: "What are you raising and why now?"
+A: Capital accelerates go-to-market and execution of the core document pipeline and lawyer handoff.
+
+==================================================
+20) 90-SECOND SHARK TANK SCRIPT (DRAFT)
+==================================================
+Hi Sharks, I'm [NAME], founder of ClearCase.
+
+When people receive legal documents, they are confused, stressed, and often overpay for basic clarification.
+ClearCase gives them legal clarity before they make expensive mistakes.
+
+Users upload a legal document, we extract facts and deadlines deterministically, and return plain-English next steps with receipts and uncertainty labels.
+When needed, we escalate to a human lawyer.
+
+We are not replacing lawyers. We are reducing confusion and unnecessary legal spend while improving preparedness for paid counsel.
+
+Our business model is freemium plus subscription, with optional paid lawyer escalation.
+We're raising $[FILL] for [FILL]% to accelerate product, distribution, and compliance-safe growth.
+
+Join us in making legal help more accessible and less intimidating for everyday people.
+
+==================================================
+21) DUE DILIGENCE CHECKLIST TO PREP BEFORE PITCH
+==================================================
+- Cap table and entity docs
+- 12-24 month financial model (3 scenarios)
+- Cohort retention and churn analysis
+- CAC by channel
+- Conversion funnel metrics
+- Product demo flow and reliability metrics
+- Security/privacy policy drafts
+- Terms of service + disclaimers
+- Compliance counsel notes (if available)
+- Roadmap with milestones and budget
+
+==================================================
+22) INVESTOR ONE-PAGER METRICS SNAPSHOT (FILL)
+==================================================
+Problem:
+- [1 sentence]
+
+Solution:
+- [1 sentence]
+
+Traction:
+- MRR: $[FILL]
+- Paid users: [FILL]
+- Growth MoM: [FILL]%
+- Churn: [FILL]%
+
+Economics:
+- ARPU: $[FILL]
+- Gross margin: [FILL]%
+- CAC: $[FILL]
+- LTV/CAC: [FILL]x
+
+Fundraise:
+- Raise: $[FILL]
+- Runway target: [FILL] months
+- Milestones: [Top 3]
+
+==================================================
+23) WHAT TO DO NEXT
+==================================================
+Before investor outreach, finalize:
+1. Real traction dashboard (even if small)
+2. Clear pricing page and conversion funnel
+3. Repeatable customer acquisition experiment
+4. One polished end-to-end demo
+5. Tight legal positioning language reviewed by counsel
+
+End of file.

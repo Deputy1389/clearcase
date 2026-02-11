@@ -1,0 +1,121 @@
+CLEARCASE — MASTER HANDOFF CONTEXT (AUTHORITATIVE)
+
+You are taking over as the primary development environment for this project.
+This file replaces all prior chat context. Treat it as canonical.
+
+Do not re-architect, simplify, or reinterpret unless explicitly instructed.
+
+PROJECT SUMMARY
+ClearCase is a product that gives people legal clarity, not legal advice.
+
+Users upload photos of legal documents (initial scope). The system:
+- Extracts text deterministically (OCR)
+- Classifies what the document is
+- Identifies deadlines / time sensitivity
+- Explains what this usually means in plain English
+- Lists what evidence to gather
+- Signals when escalation to a lawyer may make sense
+
+This is not:
+- a chatbot-first product
+- a legal advice engine
+- an AI that guesses facts
+
+NON-NEGOTIABLE PRODUCT RULES
+- No legal advice
+- No LLM inference of facts
+- No raw images sent to LLMs
+- No chat-first UX
+- No silent assumptions
+
+- OCR first (deterministic)
+- Truth-layer classification & extraction
+- LLM only formats/explains structured data
+- All outputs must be auditable (“show receipts”)
+- Calm, non-alarming language
+- Explicit uncertainty when applicable
+
+LOCKED TECH STACK
+- Node.js + TypeScript
+- Fastify
+- Postgres
+- Prisma v7.x
+- AWS SQS
+- AWS S3
+- Google Vision OCR
+- OpenAI API (post-extraction only)
+- Managed auth (Clerk-style)
+- Windows / PowerShell
+
+PRISMA V7 RULES
+- schema.prisma MUST NOT contain datasource.url
+- Connection string lives in prisma.config.ts
+- Prisma Client uses @prisma/adapter-pg
+- .env loading must be explicit
+- No Prisma Accelerate unless requested
+
+ARCHITECTURE CONSTRAINTS
+- Monorepo
+- API and worker are separate processes
+- Database is the system of record
+- Case is the core domain object
+- Users own cases
+- Async processing via SQS
+- OCR → Truth Layer → LLM
+- LLM never reads raw images
+- Everything must be debuggable and replayable
+
+DATABASE DESIGN (INTENTIONAL)
+- Users (managed auth, no passwords)
+- Cases (owned by users)
+- Assets (uploads)
+- Extractions (deterministic outputs)
+- Verdicts (LLM-formatted JSON)
+- Audit logs
+- Lawyer + Chat tables for future expansion
+- ZIP code + jurisdiction included by design
+
+CURRENT STATUS
+- Prisma v7 stabilized and passing
+- Postgres running via Docker
+- Prisma Studio opens
+- API Phase 2 in progress with success
+
+CURRENT PHASE
+Phase 2 — API Skeleton
+- Fastify server
+- Auth stub
+- /health
+- /me (GET + PATCH)
+- /cases (POST + GET)
+
+NEXT PHASES
+Phase 3 — S3 uploads + Assets
+Phase 4 — SQS Worker
+Phase 5 — OCR Adapter
+Phase 6 — Truth Layer
+Phase 7 — LLM Formatting
+
+HOW TO WORK
+- Assume PowerShell
+- Be explicit and boring
+- Show file paths and diffs
+- Warn if brittle
+- Do not redesign without asking
+
+EXECUTION MODE (USER PREFERENCE)
+- Work in batch mode by default.
+- Do not ask for confirmation for routine non-destructive actions.
+- If a step is part of the agreed plan and is non-destructive, execute it directly.
+- Only pause for confirmation when an action would:
+  - delete data
+  - drop the database
+  - remove migrations
+  - remove large portions of code
+
+IMMEDIATE TASK
+Continue from Phase 2.
+Prepare Phase 3: S3 asset upload design.
+Do not touch Prisma schema unless required.
+
+This file is authoritative.

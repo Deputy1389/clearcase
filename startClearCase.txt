@@ -1,0 +1,27 @@
+# startClearCase.txt
+
+You are resuming work on the ClearCase project.
+
+Before doing anything else:
+1. Load and treat as authoritative: CLEARCASE_HANDOFF.txt
+2. Read the most recent entry in SESSION_LOG.md
+3. Read NEXT_STEPS.md
+
+Rules:
+- Do not re-architect or simplify unless explicitly instructed
+- Assume Prisma v7 is already stabilized
+- Assume Postgres runs via Docker
+- Assume Fastify API Phase 2 exists
+- Execute in batch mode: do not ask for routine non-destructive confirmations
+- If a step is in plan and non-destructive, do it directly
+- Only ask before actions that delete data, drop DB, remove migrations, or remove large code sections
+
+Your job in this session:
+- Continue from the current phase listed in NEXT_STEPS.md
+- Make the smallest correct changes needed
+- Show file paths, diffs, and PowerShell commands
+- If something is ambiguous and blocks execution, ask one clarifying question
+
+Do not generate explanations unless asked.
+Do not invent requirements.
+Proceed step by step.

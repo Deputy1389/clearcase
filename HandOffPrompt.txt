@@ -1,0 +1,55 @@
+You are resuming work on the ClearCase repo in the current directory.
+
+First, load and treat as authoritative context:
+- CLEARCASE_HANDOFF.txt
+- startClearCase.txt
+- NEXT_STEPS.md
+- SESSION_LOG.md (latest entry only)
+
+Goal: Phase 2 (API skeleton) ONLY. Do not proceed to S3/SQS/OCR yet.
+
+Hard constraints:
+- Node + TypeScript, Fastify
+- Postgres + Prisma v7 (already stabilized)
+- Do not change Prisma schema unless required to unblock Phase 2
+- Auth is a stub for now (header-based or similar), designed so Clerk can replace it later
+- User accounts exist in v1; Case must be owned by a user
+- ZIP and jurisdiction are part of the onboarding/profile flow
+
+Step 1 — Verify Phase 1 is stable (run these in PowerShell and show raw output):
+- docker ps
+- docker compose up -d
+- docker ps
+- npx prisma validate --schema=packages/db/prisma/schema.prisma
+- npx prisma migrate status --schema=packages/db/prisma/schema.prisma
+- (If migrations not applied) run: npx prisma migrate dev --schema=packages/db/prisma/schema.prisma --name init
+- npx prisma generate --schema=packages/db/prisma/schema.prisma
+
+If any command fails, fix it with minimal changes and re-run until success. Do not move on until these pass.
+
+Step 2 — Implement Phase 2 API skeleton (Fastify) with TypeScript:
+Required endpoints:
+- GET /health -> { ok: true }
+- GET /me -> returns { user, needsProfile }
+- PATCH /me -> updates { fullName, zipCode }, derives and stores state if zipCode provided
+- POST /cases -> creates a user-owned case snapshotting zipCode and jurisdiction/state
+- GET /cases/:id -> returns case + related objects; must enforce ownership
+
+Auth stub:
+- Implement a Fastify plugin/middleware that sets req.auth = { provider, subject, email? }
+- For dev, read headers: x-auth-subject, x-user-email; fallback to a stable dev identity
+- Implement getOrCreateUser by authSubject.
+
+Requirements:
+- Strict request validation (zod or similar) for PATCH /me.
+- Do not add chat UI or lawyer matching endpoints in Phase 2.
+- Use boring, explicit, minimal code.
+- All routes must enforce user ownership.
+
+Deliverables:
+- Create/confirm file tree under apps/api
+- Add npm scripts to run the API (e.g. npm run api:dev)
+- Provide commands to start the API and test endpoints with curl in PowerShell
+- Add a short entry to SESSION_LOG.md with what changed and decisions made
+
+Stop after Phase 2 works and endpoints respond correctly.

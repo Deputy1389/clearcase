@@ -1,0 +1,54 @@
+You are acting as a senior engineer doing a deterministic verification pass.
+
+Context:
+- OS: Windows PowerShell
+- Repo root: the current directory (ClearCase/clearcase)
+- Stack: Node + TypeScript, Fastify, Postgres (Docker), Prisma v7.x
+- Prisma v7 uses prisma.config.ts, and schema.prisma MUST NOT contain datasource.url
+- Goal: verify database + Prisma + basic runtime sanity
+
+TASK:
+1) Inspect the repo tree and locate:
+   - prisma.config.ts
+   - packages/db/prisma/schema.prisma
+   - docker-compose.yml
+   - any .env files
+   - prisma client initialization (e.g. packages/db/src/client.ts)
+2) Validate that Prisma v7 is configured correctly:
+   - schema.prisma has datasource provider=postgresql and DOES NOT have url=...
+   - prisma.config.ts provides datasource url via env("DATABASE_URL") (Prisma config API)
+   - Prisma Client uses @prisma/adapter-pg for direct Postgres connections (not Accelerate)
+3) Make sure DATABASE_URL is resolvable for Prisma CLI:
+   - On Windows, prefer a root .env that contains DATABASE_URL, OR make prisma.config.ts explicitly load packages/db/.env via dotenv config.
+   - Do not leave env resolution ambiguous.
+
+EXECUTE these PowerShell commands and paste their outputs (do not paraphrase):
+A) Docker / Postgres
+   - docker ps
+   - docker compose up -d
+   - docker ps
+   - docker exec -it clearcase-postgres psql -U postgres -d clearcase -c "SELECT 1;"
+
+B) Prisma schema & migrations
+   - npx prisma validate --schema=packages/db/prisma/schema.prisma
+   - npx prisma migrate status --schema=packages/db/prisma/schema.prisma
+   - npx prisma migrate dev --schema=packages/db/prisma/schema.prisma --name init
+   - npx prisma generate --schema=packages/db/prisma/schema.prisma
+   - npx prisma studio --schema=packages/db/prisma/schema.prisma (only to confirm it launches; you can stop it immediately)
+
+4) If ANY command errors, fix the repo (files/config) so that all commands succeed.
+   - Apply the smallest possible changes.
+   - Show diffs or list exact file edits.
+   - Re-run the failed command(s) until success.
+
+5) When everything passes, output a short “Verification Report”:
+   - Docker: running container name + port
+   - Prisma: CLI version + schema path
+   - DB: migration status + tables created
+   - Env: where DATABASE_URL is loaded from
+   - Next recommended step: create Fastify API /me endpoint with auth stub
+
+Important:
+- Do not redesign architecture.
+- Do not introduce new tools.
+- Do not assume success; always run the commands and show output.

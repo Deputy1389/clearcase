@@ -1,0 +1,33 @@
+{
+  "name": "clearcase",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "api:dev": "tsx watch apps/api/src/server.ts",
+    "api:start": "tsx apps/api/src/server.ts",
+    "api:typecheck": "tsc -p apps/api/tsconfig.json --noEmit",
+    "mvp:preflight": "powershell -ExecutionPolicy Bypass -File scripts/mvp/preflight.ps1",
+    "mvp:aws-check": "powershell -ExecutionPolicy Bypass -File scripts/mvp/aws-ready.ps1",
+    "mvp:start": "powershell -ExecutionPolicy Bypass -File scripts/mvp/start-dev.ps1",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:studio": "prisma studio"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "^7.0.0",
+    "@prisma/client": "^7.0.0",
+    "dotenv": "^17.2.3",
+    "fastify": "^5.6.1",
+    "pg": "^8.16.3",
+    "zipcodes": "^8.0.0",
+    "zod": "^4.1.5"
+  },
+  "devDependencies": {
+    "@types/node": "^25.2.3",
+    "@types/pg": "^8.16.0",
+    "prisma": "^7.0.0",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.3"
+  }
+}
