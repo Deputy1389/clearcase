@@ -245,3 +245,51 @@ Do not rewrite history. Always add new entries at the bottom.
 - Continue Phase 3 verification with an actual PUT upload to S3.
 
 ---
+
+**Date:** 2026-02-11  
+**Tool:** codex CLI  
+**Context Loaded:** CLEARCASE_HANDOFF.txt, startClearCase.txt, NEXT_STEPS.md, SESSION_LOG.md  
+**Goal:** Complete Phase 3 verification and begin Phase 4 worker skeleton
+
+### What was done
+- Added reusable Phase 3 smoke test script at `scripts/mvp/phase3-smoke.ps1`.
+- Added npm command `mvp:phase3-smoke` to run the full upload-init + presigned PUT flow.
+- Ran `npm run mvp:phase3-smoke` with network-enabled execution and verified:
+  - case creation
+  - upload-init response
+  - successful PUT to S3
+  - asset linked to case
+  - cross-user case read blocked with 404
+- Added worker skeleton under `apps/worker`:
+  - `apps/worker/src/worker.ts`
+  - `apps/worker/tsconfig.json`
+- Added npm commands:
+  - `worker:start`
+  - `worker:typecheck`
+- Added `@aws-sdk/client-sqs` dependency for worker polling.
+- Verified `npm run api:typecheck` and `npm run worker:typecheck` both pass.
+- Verified worker runtime fails fast with clear message when `SQS_QUEUE_URL` is missing.
+- Added `SQS_QUEUE_URL` placeholder in `.env`.
+- Updated `NEXT_STEPS.md` to mark Phase 3 completed and Phase 4 as current.
+
+### Decisions made
+- Keep Phase 4 worker minimal and explicit: receive one message, process stub, ack on success, retry by non-delete on failure.
+- Use command-driven verification (`mvp:phase3-smoke`) to make handoff and repeatability deterministic.
+
+### Problems encountered
+- Phase 3 smoke PUT to S3 failed under sandbox due restricted network path.
+- Worker/API runtime via `tsx` can hit sandbox `spawn EPERM`.
+
+### Resolutions
+- Re-ran external network/runtime verification with escalated execution.
+- Kept compile checks available in normal mode and runtime checks for escalated mode.
+
+### Open questions
+- None.
+
+### Notes for next session
+- Create/configure SQS queue and IAM permissions.
+- Set `SQS_QUEUE_URL` in `.env`.
+- Verify worker consume/ack/retry behavior with a real queued message.
+
+---

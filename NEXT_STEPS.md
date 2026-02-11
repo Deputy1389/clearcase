@@ -6,33 +6,32 @@ Unlike SESSION_LOG.md, this file SHOULD be edited as things change.
 ---
 
 ## Current Phase
-Phase 3 - S3 Uploads + Assets (Implementation In Progress)
+Phase 4 - SQS Worker (Skeleton In Progress)
 
 ---
 
 ## Immediate Next Steps
 
-1. Fill AWS/S3 env vars in `.env` (`AWS_REGION`, `S3_BUCKET`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`)
-2. Run `npm run mvp:aws-check`
-3. Verify `POST /cases/:id/assets` returns 201 with `assetId`, `s3Key`, and `uploadUrl`
-4. Verify presigned PUT upload against S3
-5. Use `MVP_WEEK_EXECUTION.md` and startup scripts (`npm run mvp:preflight`, `npm run mvp:aws-check`, `npm run mvp:start`)
+1. Create/confirm SQS queue for worker consumption (dev queue).
+2. Add IAM permissions for queue consume/ack (`sqs:ReceiveMessage`, `sqs:DeleteMessage`, `sqs:GetQueueAttributes`, `sqs:ChangeMessageVisibility`).
+3. Set `SQS_QUEUE_URL` in `.env`.
+4. Start worker with `npm run worker:start` and verify it boots without env errors.
+5. Enqueue a test message and verify worker logs message receive + ack behavior.
 
 ---
 
-## Phase 3 - S3 Uploads + Assets (Planned)
+## Phase 3 - S3 Uploads + Assets (Completed)
 
-- Decide on presigned URL flow vs proxy upload
-- Define Asset lifecycle states
-- Add `POST /cases/:id/assets`
-- Store metadata only (no OCR yet)
-- Ensure user ownership enforced
+- Presigned URL flow implemented.
+- `POST /cases/:id/assets` implemented and ownership enforced.
+- Metadata-only `Asset` record creation implemented.
+- End-to-end verified: upload-init + presigned PUT + case asset linkage + cross-user 404.
 
 ---
 
 ## Blockers / Risks
 
-- AWS env values are still empty in `.env`, so live presigned upload verification is blocked.
+- Worker runtime is blocked on missing `SQS_QUEUE_URL` and queue IAM permissions.
 
 ---
 
@@ -41,7 +40,7 @@ Phase 3 - S3 Uploads + Assets (Implementation In Progress)
 - Do not modify Prisma schema unless strictly required
 - Keep uploads isolated from OCR logic
 - Maintain deterministic pipeline order
-- Do not proceed to SQS/OCR until Phase 3 is complete
+- Phase 3 is complete and verified via `npm run mvp:phase3-smoke`.
 - `POST /cases/:id/assets` is now implemented (ownership + metadata DB write + presigned URL creation)
 - Execution preference: batch mode by default, no routine confirmation prompts
 - Only stop for confirmation on destructive actions (data deletion, DB drop, migration removal, or large code removal)
