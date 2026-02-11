@@ -6,16 +6,16 @@ Unlike SESSION_LOG.md, this file SHOULD be edited as things change.
 ---
 
 ## Current Phase
-Phase 4 - SQS Worker (Skeleton In Progress)
+Phase 6 - Truth Layer (Prep)
 
 ---
 
 ## Immediate Next Steps
 
-1. Expand IAM policy scope if needed for isolated retry testing (current policy is queue-specific to `clearcase-phase4-dev`).
-2. Add a dedicated Phase 4 smoke script (`send -> consume -> ack -> retry check`) for repeatable verification.
-3. Verify retry behavior in an isolated queue context (force-fail message remains retriable).
-4. Begin Phase 5 OCR adapter boundary once Phase 4 verification checklist is complete.
+1. Build Phase 6 truth-layer transformer from extraction output to structured case facts.
+2. Persist structured case facts/deadline signals on case update path (deterministic only).
+3. Add `phase6-smoke` verification path and replayability checks.
+4. Keep OCR provider boundary deterministic (no provider swap yet) until truth-layer is stable.
 
 ---
 
@@ -28,9 +28,30 @@ Phase 4 - SQS Worker (Skeleton In Progress)
 
 ---
 
+## Phase 4 - SQS Worker (Completed)
+
+- Worker process scaffold implemented under `apps/worker`.
+- SQS queue wiring via `.env` `SQS_QUEUE_URL`.
+- Consume/ack path verified on dev queue.
+- Retry behavior verified via `mvp:phase4-smoke` (`forceFail=true` message reappears and is cleaned up).
+
+---
+
+## Phase 5 - OCR Adapter Boundary (Completed - Stub Provider)
+
+- OCR provider boundary added at `apps/worker/src/lib/ocr.ts`.
+- Worker now processes `asset_uploaded` messages and persists `Extraction` + `AuditLog`.
+- End-to-end verified via `mvp:phase5-smoke`:
+  - API case + asset creation
+  - queue message publish
+  - worker processing
+  - extraction persistence on case.
+
+---
+
 ## Blockers / Risks
 
-- Queue-specific IAM policy blocks isolated queue testing (`sqs:SendMessage`/`sqs:GetQueueAttributes` denied outside `clearcase-phase4-dev`).
+- No active blockers for Phase 6 prep.
 
 ---
 
@@ -41,7 +62,8 @@ Phase 4 - SQS Worker (Skeleton In Progress)
 - Maintain deterministic pipeline order
 - Phase 3 is complete and verified via `npm run mvp:phase3-smoke`.
 - `POST /cases/:id/assets` is now implemented (ownership + metadata DB write + presigned URL creation)
-- Phase 4 skeleton is implemented (`apps/worker/src/worker.ts`) and verified for startup + basic consume/ack on `clearcase-phase4-dev`.
+- Phase 4 smoke command: `npm run mvp:phase4-smoke`.
+- Phase 5 smoke command: `npm run mvp:phase5-smoke`.
 - `.env` now includes `SQS_QUEUE_URL`.
 - Execution preference: batch mode by default, no routine confirmation prompts
 - Only stop for confirmation on destructive actions (data deletion, DB drop, migration removal, or large code removal)

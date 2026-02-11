@@ -5,6 +5,9 @@ import {
   SQSClient,
   type Message
 } from "@aws-sdk/client-sqs";
+import { AuditEventType, Prisma } from "@prisma/client";
+import { prisma } from "../../../packages/db/src/client.ts";
+import { createOcrProvider } from "./lib/ocr.ts";
 
 type WorkerConfig = {
   region: string;
@@ -15,6 +18,15 @@ type WorkerConfig = {
 
 const DEFAULT_WAIT_TIME_SECONDS = 20;
 const DEFAULT_VISIBILITY_TIMEOUT_SECONDS = 30;
+const ocrProvider = createOcrProvider();
+
+type WorkerMessagePayload = {
+  type?: string;
+  caseId?: string;
+  assetId?: string;
+  forceFail?: boolean;
+  [key: string]: unknown;
+};
 
 function readRequiredEnv(name: string): string {
   const value = process.env[name]?.trim();
@@ -62,13 +74,77 @@ async function handleMessage(message: Message): Promise<void> {
     }
   }
 
+  if (!parsedBody || typeof parsedBody !== "object") {
+    throw new Error("Message body must be a JSON object.");
+  }
+
+  const payload = parsedBody as WorkerMessagePayload;
   if (
-    parsedBody &&
-    typeof parsedBody === "object" &&
-    "forceFail" in parsedBody &&
-    (parsedBody as { forceFail?: unknown }).forceFail === true
+    "forceFail" in payload &&
+    payload.forceFail === true
   ) {
     throw new Error("Forced message failure (forceFail=true).");
+  }
+
+  if (payload.type === "asset_uploaded") {
+    if (!payload.caseId || !payload.assetId) {
+      throw new Error("asset_uploaded message must include caseId and assetId.");
+    }
+
+    const asset = await prisma.asset.findFirst({
+      where: {
+        id: payload.assetId,
+        caseId: payload.caseId
+      }
+    });
+    if (!asset) {
+      throw new Error(`Asset not found for caseId='${payload.caseId}' assetId='${payload.assetId}'.`);
+    }
+
+    const ocr = await ocrProvider.run({
+      caseId: asset.caseId,
+      assetId: asset.id,
+      s3Key: asset.s3Key,
+      fileName: asset.fileName,
+      mimeType: asset.mimeType
+    });
+
+    const extraction = await prisma.extraction.create({
+      data: {
+        caseId: asset.caseId,
+        assetId: asset.id,
+        engine: ocr.engine,
+        engineVersion: ocr.engineVersion,
+        rawText: ocr.rawText,
+        structuredFacts: ocr.structuredFacts as Prisma.InputJsonValue
+      }
+    });
+
+    await prisma.auditLog.create({
+      data: {
+        caseId: asset.caseId,
+        assetId: asset.id,
+        extractionId: extraction.id,
+        eventType: AuditEventType.OCR_RUN,
+        actorType: "worker",
+        payload: {
+          queueMessageId: id,
+          provider: ocr.engine
+        } as Prisma.InputJsonValue
+      }
+    });
+
+    console.log(
+      JSON.stringify({
+        level: "info",
+        msg: "worker_asset_processed",
+        caseId: asset.caseId,
+        assetId: asset.id,
+        extractionId: extraction.id
+      })
+    );
+
+    return;
   }
 
   // Phase 4 skeleton: consume and acknowledge; domain handling comes in later phases.

@@ -332,3 +332,54 @@ Do not rewrite history. Always add new entries at the bottom.
 - Move into Phase 5 OCR adapter boundary after Phase 4 checklist completion.
 
 ---
+
+**Date:** 2026-02-11  
+**Tool:** codex CLI  
+**Context Loaded:** CLEARCASE_HANDOFF.txt, startClearCase.txt, NEXT_STEPS.md, SESSION_LOG.md  
+**Goal:** Finalize Phase 4 smoke automation and implement Phase 5 OCR boundary with persistence
+
+### What was done
+- Added `scripts/mvp/phase4-smoke.ps1` and npm command `mvp:phase4-smoke`.
+- Hardened Phase 4 smoke script:
+  - drains queue before checks
+  - starts/stops worker process trees reliably
+  - verifies ACK path
+  - verifies RETRY path with `forceFail=true`
+  - uses file-based SQS message-body payloads to preserve valid JSON
+- Added OCR adapter boundary at `apps/worker/src/lib/ocr.ts` with deterministic stub provider (`OCR_PROVIDER=stub`).
+- Updated worker processing in `apps/worker/src/worker.ts`:
+  - handles `asset_uploaded` messages
+  - loads asset metadata from DB
+  - runs OCR provider
+  - persists `Extraction`
+  - writes `AuditLog` event (`OCR_RUN`)
+  - retains existing consume/ack/retry skeleton behavior
+- Added `scripts/mvp/phase5-smoke.ps1` and npm command `mvp:phase5-smoke`.
+- Verified end-to-end Phase 5 flow:
+  - created case + asset via API
+  - queued `asset_uploaded` message
+  - worker processed message
+  - extraction persisted and visible via `GET /cases/:id`
+- Re-ran API and worker typechecks successfully.
+
+### Decisions made
+- Keep OCR provider deterministic and local-stub only until truth layer is implemented.
+- Use script-based smoke checks (`phase3`, `phase4`, `phase5`) as the standard repeatable verification path.
+
+### Problems encountered
+- SQS message JSON payloads were being transformed when passed directly via AWS CLI `--message-body`.
+- Retry checks appeared flaky until worker process tree termination and payload correctness were enforced.
+
+### Resolutions
+- Switched queue publish in smoke scripts to file-based payloads (`file://...`) for exact JSON preservation.
+- Added process-tree stop logic to avoid stale worker interference.
+- Added deterministic `forceFail` path in worker and verified retry visibility behavior.
+
+### Open questions
+- None.
+
+### Notes for next session
+- Begin Phase 6 truth layer using persisted extraction outputs.
+- Add `phase6-smoke` after initial truth-layer persistence path is implemented.
+
+---
