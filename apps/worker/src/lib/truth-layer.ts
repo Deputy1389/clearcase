@@ -33,20 +33,206 @@ export type TruthLayerResult = {
 
 const DOCUMENT_RULES: DocumentRule[] = [
   {
+    documentType: "protective_order_notice",
+    keywords: [
+      "restraining order",
+      "protective order",
+      "order of protection",
+      "no contact order",
+      "temporary restraining order"
+    ]
+  },
+  {
+    documentType: "family_court_notice",
+    keywords: [
+      "family court",
+      "child support",
+      "custody",
+      "visitation",
+      "parenting plan",
+      "domestic relations"
+    ]
+  },
+  {
+    documentType: "small_claims_complaint",
+    keywords: ["small claims", "statement of claim", "claim amount", "small claims court"]
+  },
+  {
     documentType: "summons_complaint",
     keywords: ["summons", "complaint", "plaintiff", "defendant", "served"]
+  },
+  {
+    documentType: "subpoena_notice",
+    keywords: ["subpoena", "testify", "produce documents", "deposition", "records request"]
+  },
+  {
+    documentType: "judgment_notice",
+    keywords: ["judgment", "default judgment", "entered judgment", "judgment creditor", "court judgment"]
+  },
+  {
+    documentType: "court_hearing_notice",
+    keywords: ["hearing", "court date", "appearance", "courtroom", "docket", "hearing notice"]
+  },
+  {
+    documentType: "demand_letter",
+    keywords: [
+      "demand letter",
+      "formal demand",
+      "demand for payment",
+      "cease and desist",
+      "failure to comply"
+    ]
   },
   {
     documentType: "eviction_notice",
     keywords: ["eviction", "notice to vacate", "pay or quit", "landlord", "tenant"]
   },
   {
+    documentType: "foreclosure_default_notice",
+    keywords: [
+      "foreclosure",
+      "notice of default",
+      "notice of sale",
+      "trustee sale",
+      "mortgage default"
+    ]
+  },
+  {
+    documentType: "repossession_notice",
+    keywords: ["repossession", "intent to repossess", "right to cure", "vehicle repossession", "collateral"]
+  },
+  {
+    documentType: "landlord_security_deposit_notice",
+    keywords: [
+      "security deposit",
+      "itemized deductions",
+      "deposit return",
+      "move-out",
+      "tenant damages"
+    ]
+  },
+  {
+    documentType: "lease_violation_notice",
+    keywords: [
+      "lease violation",
+      "notice to cure",
+      "cure or quit",
+      "breach of lease",
+      "unauthorized occupant"
+    ]
+  },
+  {
     documentType: "debt_collection_notice",
     keywords: ["debt", "collector", "collection", "creditor", "amount due", "validation notice"]
   },
   {
-    documentType: "court_hearing_notice",
-    keywords: ["hearing", "court date", "appearance", "courtroom", "docket"]
+    documentType: "wage_garnishment_notice",
+    keywords: [
+      "wage garnishment",
+      "garnishment order",
+      "earnings withholding",
+      "withhold earnings",
+      "employer withholding"
+    ]
+  },
+  {
+    documentType: "tax_notice",
+    keywords: [
+      "irs notice",
+      "state tax notice",
+      "tax due",
+      "deficiency notice",
+      "levy",
+      "lien"
+    ]
+  },
+  {
+    documentType: "unemployment_benefits_denial",
+    keywords: [
+      "unemployment benefits",
+      "benefits denied",
+      "denial determination",
+      "appeal deadline",
+      "agency determination"
+    ]
+  },
+  {
+    documentType: "workers_comp_denial_notice",
+    keywords: [
+      "workers compensation",
+      "workers' compensation",
+      "claim denied",
+      "compensation board",
+      "injury claim denial"
+    ]
+  },
+  {
+    documentType: "benefits_overpayment_notice",
+    keywords: [
+      "overpayment notice",
+      "benefit overpayment",
+      "repayment demand",
+      "waiver request",
+      "recoupment"
+    ]
+  },
+  {
+    documentType: "insurance_denial_letter",
+    keywords: [
+      "claim denial",
+      "denial of claim",
+      "coverage denied",
+      "policy exclusion",
+      "appeal rights"
+    ]
+  },
+  {
+    documentType: "insurance_subrogation_notice",
+    keywords: [
+      "subrogation",
+      "reimbursement claim",
+      "recovery rights",
+      "third-party recovery",
+      "lien notice"
+    ]
+  },
+  {
+    documentType: "incident_evidence_photo",
+    keywords: [
+      "accident",
+      "car crash",
+      "collision",
+      "rear ended",
+      "rear-ended",
+      "hit and run",
+      "hit-and-run",
+      "property damage",
+      "vehicle damage",
+      "injury photo",
+      "scene photo",
+      "evidence photo",
+      "damage"
+    ]
+  },
+  {
+    documentType: "utility_shutoff_notice",
+    keywords: [
+      "shutoff notice",
+      "service disconnection",
+      "final utility notice",
+      "disconnect date",
+      "utility account past due"
+    ]
+  },
+  {
+    documentType: "license_suspension_notice",
+    keywords: [
+      "license suspension",
+      "suspension effective",
+      "driving privilege",
+      "dmv notice",
+      "administrative suspension"
+    ]
   },
   {
     documentType: "citation_ticket",
@@ -158,11 +344,26 @@ function uniqueByDate(signals: DeadlineSignal[]): DeadlineSignal[] {
   return deduped;
 }
 
+function isPathSegmentDate(text: string, startIndex: number, tokenLength: number): boolean {
+  if (startIndex < 0) {
+    return false;
+  }
+
+  const endIndex = startIndex + tokenLength;
+  const prev = startIndex > 0 ? text[startIndex - 1] : "";
+  const next = endIndex < text.length ? text[endIndex] : "";
+  return prev === "/" || next === "/";
+}
+
 function extractAbsoluteDateSignals(text: string): DeadlineSignal[] {
   const signals: DeadlineSignal[] = [];
 
   const isoPattern = /\b(20\d{2})-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])\b/g;
   for (const match of text.matchAll(isoPattern)) {
+    if (typeof match.index === "number" && isPathSegmentDate(text, match.index, match[0].length)) {
+      continue;
+    }
+
     const year = Number(match[1]);
     const month = Number(match[2]);
     const day = Number(match[3]);
@@ -261,7 +462,14 @@ function extractUrgentSignals(text: string): DeadlineSignal[] {
     "hearing",
     "deadline",
     "respond by",
-    "pay or quit"
+    "pay or quit",
+    "notice of sale",
+    "garnishment order",
+    "failure to comply",
+    "subpoena",
+    "suspension effective",
+    "disconnect date",
+    "appeal deadline"
   ];
 
   const matches: DeadlineSignal[] = [];
@@ -296,7 +504,18 @@ function chooseDocumentType(text: string): {
   }
 
   if (bestMatches.length === 0) {
-    if (text.includes("notice") || text.includes("court")) {
+    const legalSignals = [
+      "notice",
+      "court",
+      "summons",
+      "complaint",
+      "subpoena",
+      "judgment",
+      "garnishment",
+      "eviction",
+      "hearing"
+    ];
+    if (legalSignals.some((signal) => text.includes(signal))) {
       return {
         documentType: "general_legal_notice",
         confidence: 0.55,
@@ -304,8 +523,8 @@ function chooseDocumentType(text: string): {
       };
     }
     return {
-      documentType: bestType,
-      confidence: 0.4,
+      documentType: "non_legal_or_unclear_image",
+      confidence: 0.2,
       matchedKeywords: []
     };
   }

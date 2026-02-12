@@ -1,0 +1,30 @@
+You are my “parallel agent team” setup lead for this repo.
+
+Goal:
+Set up a reliable workflow where I can run 3–5 Codex CLI agents in parallel without stepping on each other, using git worktrees + branches.
+
+What I need from you:
+1) Inspect this repo and tell me the best 3–5 parallel agent roles for THIS project right now (e.g., Feature, Bugfix, Tests, Docs/Refactor, Infra).
+2) Create a concrete worktree plan:
+   - branch names
+   - folder names
+   - exact git commands to create each worktree
+3) For each agent, write a tight “mission prompt” (what to do, what not to do, definition of done).
+4) Tell me exactly how to run each agent in separate terminals (cd path + codex command).
+5) Provide a safe merge plan back into main:
+   - review steps
+   - merge order
+   - conflict strategy
+6) Include a cleanup plan (removing worktrees + deleting branches).
+
+Constraints:
+- Keep diffs small and scoped per agent.
+- No changes to production secrets or credentials.
+- Prefer tests for any behavior change.
+- If the repo has a linter/test runner, use it.
+- Don’t guess tool commands for this repo; discover them from package files (package.json, pyproject, Makefile, etc.) and then use those.
+
+Start by:
+- identifying the project type and existing scripts/commands
+- then propose the agent team structure
+- then output the exact commands and prompts in copy/paste blocks.

@@ -1,3 +1,7 @@
 node_modules/
 .env
 dist/
+logs/
+.api.log
+.worker.log
+.playwright-cli/

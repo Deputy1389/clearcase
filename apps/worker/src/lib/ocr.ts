@@ -4,6 +4,7 @@ export type OcrInput = {
   s3Key: string;
   fileName: string;
   mimeType: string;
+  userDescription?: string;
 };
 
 export type OcrResult = {
@@ -25,8 +26,10 @@ class DeterministicStubOcrProvider implements OcrProvider {
       `ASSET: ${input.assetId}`,
       `FILE: ${input.fileName}`,
       `MIME: ${input.mimeType}`,
-      `S3: ${input.s3Key}`
-    ].join("\n");
+      input.userDescription ? `USER_CONTEXT: ${input.userDescription}` : null
+    ]
+      .filter((line): line is string => typeof line === "string")
+      .join("\n");
 
     return {
       engine: "stub-deterministic-ocr",
@@ -36,7 +39,7 @@ class DeterministicStubOcrProvider implements OcrProvider {
         source: "deterministic_stub",
         fileName: input.fileName,
         mimeType: input.mimeType,
-        s3Key: input.s3Key
+        userDescription: input.userDescription ?? null
       }
     };
   }

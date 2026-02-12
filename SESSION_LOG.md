@@ -486,3 +486,41 @@ Do not rewrite history. Always add new entries at the bottom.
 - After both smoke runs pass, start stabilization and idempotency hardening.
 
 ---
+
+---
+
+**Date:** 2026-02-12  
+**Tool:** codex CLI  
+**Context Loaded:** CLEARCASE_HANDOFF.txt, NEXT_STEPS.md, SESSION_LOG.md, team.txt  
+**Goal:** Stabilize mobile-first UX, complete upload/case flows, and prepare repository for push
+
+### What was done
+- Added/iterated mobile workspace UX for actionable guidance, including top-priority recommended next-steps card.
+- Added manual category override flow (`/cases/:id/classification`) wiring from mobile to API.
+- Added case context persistence + reprocessing behavior.
+- Fixed API 404 issue caused by stale API process; restarted API and validated classification endpoint.
+- Implemented severity states (high/medium/low) for workspace recommendations with red/yellow/green visual treatment.
+- Fixed checklist text wrapping/overflow in workspace action items.
+- Updated `NEXT_STEPS.md` to reflect current phase and runtime commands.
+
+### Decisions made
+- Keep "recommended next steps" visible and prioritized near top of workspace.
+- Use deterministic severity mapping from case signals (time sensitivity, deadline, document type) for UX emphasis.
+- Keep manual category override as fallback when auto-classification is uncertain.
+
+### Problems encountered
+- Manual category save initially returned API 404.
+- Workspace checklist text overflowed toward the right edge on some layouts.
+
+### Resolutions
+- Restarted API server from current source; confirmed `/cases/:id/classification` responds correctly.
+- Updated workspace checklist row/text styles to enforce safe wrapping.
+
+### Open questions
+- Whether to add an in-app "Find legal help" action scoped by ZIP/jurisdiction.
+- Whether to tune severity thresholds and category-to-severity mapping with user testing.
+
+### Notes for next session
+- Start API + worker + Expo first, then verify upload-to-verdict path on physical device.
+- Continue UI polish against latest figma assets while preserving current functional behavior.
+- Prioritize full E2E smoke (auth -> upload -> process -> category override -> context reprocess).

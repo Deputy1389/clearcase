@@ -1,6 +1,7 @@
 import "dotenv/config";
 import Fastify, { type FastifyReply } from "fastify";
-import { AssetType, Prisma, type User } from "@prisma/client";
+import { SendMessageCommand, SQSClient } from "@aws-sdk/client-sqs";
+import { AssetType, AuditEventType, Prisma, type User } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "../../../packages/db/src/client.ts";
 import { normalizeZipCode, stateFromZipCode } from "./lib/profile.ts";
@@ -29,12 +30,68 @@ const caseParamsSchema = z
   })
   .strict();
 
+const assetParamsSchema = z
+  .object({
+    id: z.string().trim().min(1),
+    assetId: z.string().trim().min(1)
+  })
+  .strict();
+
 const createAssetSchema = z
   .object({
     fileName: z.string().trim().min(1).max(255),
     mimeType: z.string().trim().min(3).max(200),
     byteSize: z.number().int().positive().max(25 * 1024 * 1024),
     assetType: z.nativeEnum(AssetType).optional()
+  })
+  .strict();
+
+const finalizeAssetSchema = z
+  .object({
+    userDescription: z.string().trim().min(1).max(2000).optional()
+  })
+  .strict();
+
+const caseContextSchema = z
+  .object({
+    description: z.string().trim().min(1).max(2000)
+  })
+  .strict();
+
+const MANUAL_DOCUMENT_TYPES = [
+  "protective_order_notice",
+  "family_court_notice",
+  "small_claims_complaint",
+  "summons_complaint",
+  "subpoena_notice",
+  "judgment_notice",
+  "court_hearing_notice",
+  "demand_letter",
+  "eviction_notice",
+  "foreclosure_default_notice",
+  "repossession_notice",
+  "landlord_security_deposit_notice",
+  "lease_violation_notice",
+  "debt_collection_notice",
+  "wage_garnishment_notice",
+  "tax_notice",
+  "unemployment_benefits_denial",
+  "workers_comp_denial_notice",
+  "benefits_overpayment_notice",
+  "insurance_denial_letter",
+  "insurance_subrogation_notice",
+  "incident_evidence_photo",
+  "utility_shutoff_notice",
+  "license_suspension_notice",
+  "citation_ticket",
+  "general_legal_notice",
+  "non_legal_or_unclear_image",
+  "unknown_legal_document"
+] as const;
+
+const caseClassificationSchema = z
+  .object({
+    documentType: z.enum(MANUAL_DOCUMENT_TYPES)
   })
   .strict();
 
@@ -72,11 +129,57 @@ function needsProfile(user: User): boolean {
   return !user.fullName || !user.zipCode || !user.jurisdictionState;
 }
 
-function sendValidationError(reply: FastifyReply, issues: unknown): void {
+function sendValidationError(reply: FastifyReply, requestId: string, issues: unknown): void {
   reply.status(400).send({
     error: "BAD_REQUEST",
+    requestId,
     issues
   });
+}
+
+type QueueConfigStatus =
+  | { configured: true; region: string; queueUrl: string }
+  | { configured: false; missing: string[] };
+
+let cachedSqsClient: SQSClient | null = null;
+let cachedSqsRegion = "";
+
+function getQueueConfigStatus(): QueueConfigStatus {
+  const region = process.env.AWS_REGION?.trim();
+  const queueUrl = process.env.SQS_QUEUE_URL?.trim();
+  const missing: string[] = [];
+
+  if (!region) missing.push("AWS_REGION");
+  if (!queueUrl) missing.push("SQS_QUEUE_URL");
+
+  if (!region || !queueUrl || missing.length > 0) {
+    return { configured: false, missing };
+  }
+
+  return { configured: true, region, queueUrl };
+}
+
+function getSqsClient(region: string): SQSClient {
+  if (cachedSqsClient && cachedSqsRegion === region) {
+    return cachedSqsClient;
+  }
+
+  cachedSqsClient = new SQSClient({ region });
+  cachedSqsRegion = region;
+  return cachedSqsClient;
+}
+
+function extractCaseContextFromPayload(payload: unknown): string | null {
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+    return null;
+  }
+  const record = payload as Record<string, unknown>;
+  if (record.subtype !== "case_context_set") {
+    return null;
+  }
+  return typeof record.description === "string" && record.description.trim()
+    ? record.description.trim()
+    : null;
 }
 
 async function getOrCreateUser(auth: AuthContext): Promise<User> {
@@ -133,6 +236,34 @@ const app = Fastify({
 
 await authPlugin(app);
 
+app.setErrorHandler((error, request, reply) => {
+  request.log.error(
+    {
+      err: error,
+      requestId: request.id,
+      method: request.method,
+      url: request.url
+    },
+    "Unhandled API error"
+  );
+
+  if (reply.sent) {
+    return;
+  }
+
+  reply.status(500).send({
+    error: "INTERNAL_SERVER_ERROR",
+    requestId: request.id
+  });
+});
+
+app.setNotFoundHandler((request, reply) => {
+  reply.status(404).send({
+    error: "NOT_FOUND",
+    requestId: request.id
+  });
+});
+
 app.get("/health", async () => {
   return { ok: true };
 });
@@ -149,7 +280,7 @@ app.get("/me", async (request) => {
 app.patch("/me", async (request, reply) => {
   const parsed = patchMeSchema.safeParse(request.body ?? {});
   if (!parsed.success) {
-    sendValidationError(reply, parsed.error.issues);
+    sendValidationError(reply, request.id, parsed.error.issues);
     return;
   }
 
@@ -169,7 +300,9 @@ app.patch("/me", async (request, reply) => {
     const state = stateFromZipCode(normalizedZipCode);
 
     if (!state) {
-      sendValidationError(reply, [{ message: "zipCode could not be mapped to a US state." }]);
+      sendValidationError(reply, request.id, [
+        { message: "zipCode could not be mapped to a US state." }
+      ]);
       return;
     }
 
@@ -191,7 +324,7 @@ app.patch("/me", async (request, reply) => {
 app.post("/cases", async (request, reply) => {
   const parsed = createCaseSchema.safeParse(request.body ?? {});
   if (!parsed.success) {
-    sendValidationError(reply, parsed.error.issues);
+    sendValidationError(reply, request.id, parsed.error.issues);
     return;
   }
 
@@ -208,10 +341,36 @@ app.post("/cases", async (request, reply) => {
   reply.status(201).send(createdCase);
 });
 
+app.get("/cases", async (request) => {
+  const user = await getOrCreateUser(request.auth);
+
+  const cases = await prisma.case.findMany({
+    where: {
+      userId: user.id
+    },
+    orderBy: {
+      updatedAt: "desc"
+    },
+    include: {
+      _count: {
+        select: {
+          assets: true,
+          extractions: true,
+          verdicts: true
+        }
+      }
+    }
+  });
+
+  return {
+    cases
+  };
+});
+
 app.get("/cases/:id", async (request, reply) => {
   const paramsParse = caseParamsSchema.safeParse(request.params);
   if (!paramsParse.success) {
-    sendValidationError(reply, paramsParse.error.issues);
+    sendValidationError(reply, request.id, paramsParse.error.issues);
     return;
   }
 
@@ -222,10 +381,26 @@ app.get("/cases/:id", async (request, reply) => {
       userId: user.id
     },
     include: {
-      assets: true,
-      extractions: true,
-      verdicts: true,
-      auditLogs: true,
+      assets: {
+        orderBy: {
+          createdAt: "desc"
+        }
+      },
+      extractions: {
+        orderBy: {
+          createdAt: "desc"
+        }
+      },
+      verdicts: {
+        orderBy: {
+          createdAt: "desc"
+        }
+      },
+      auditLogs: {
+        orderBy: {
+          createdAt: "desc"
+        }
+      },
       chatSessions: {
         include: {
           messages: true
@@ -235,23 +410,22 @@ app.get("/cases/:id", async (request, reply) => {
   });
 
   if (!foundCase) {
-    reply.status(404).send({ error: "NOT_FOUND" });
+    reply.status(404).send({ error: "NOT_FOUND", requestId: request.id });
     return;
   }
 
   return foundCase;
 });
 
-app.post("/cases/:id/assets", async (request, reply) => {
+app.post("/cases/:id/context", async (request, reply) => {
   const paramsParse = caseParamsSchema.safeParse(request.params);
   if (!paramsParse.success) {
-    sendValidationError(reply, paramsParse.error.issues);
+    sendValidationError(reply, request.id, paramsParse.error.issues);
     return;
   }
-
-  const bodyParse = createAssetSchema.safeParse(request.body ?? {});
+  const bodyParse = caseContextSchema.safeParse(request.body ?? {});
   if (!bodyParse.success) {
-    sendValidationError(reply, bodyParse.error.issues);
+    sendValidationError(reply, request.id, bodyParse.error.issues);
     return;
   }
 
@@ -267,7 +441,118 @@ app.post("/cases/:id/assets", async (request, reply) => {
   });
 
   if (!foundCase) {
-    reply.status(404).send({ error: "NOT_FOUND" });
+    reply.status(404).send({ error: "NOT_FOUND", requestId: request.id });
+    return;
+  }
+
+  const description = bodyParse.data.description.trim();
+  await prisma.auditLog.create({
+    data: {
+      caseId: foundCase.id,
+      eventType: AuditEventType.CASE_UPDATED,
+      actorType: "user",
+      actorId: user.id,
+      requestId: request.id,
+      payload: {
+        subtype: "case_context_set",
+        description
+      } as Prisma.InputJsonValue
+    }
+  });
+
+  reply.status(200).send({
+    saved: true,
+    caseId: foundCase.id,
+    description
+  });
+});
+
+app.post("/cases/:id/classification", async (request, reply) => {
+  const paramsParse = caseParamsSchema.safeParse(request.params);
+  if (!paramsParse.success) {
+    sendValidationError(reply, request.id, paramsParse.error.issues);
+    return;
+  }
+  const bodyParse = caseClassificationSchema.safeParse(request.body ?? {});
+  if (!bodyParse.success) {
+    sendValidationError(reply, request.id, bodyParse.error.issues);
+    return;
+  }
+
+  const user = await getOrCreateUser(request.auth);
+  const foundCase = await prisma.case.findFirst({
+    where: {
+      id: paramsParse.data.id,
+      userId: user.id
+    },
+    select: {
+      id: true
+    }
+  });
+
+  if (!foundCase) {
+    reply.status(404).send({ error: "NOT_FOUND", requestId: request.id });
+    return;
+  }
+
+  const updated = await prisma.$transaction(async (tx) => {
+    const nextCase = await tx.case.update({
+      where: { id: foundCase.id },
+      data: {
+        documentType: bodyParse.data.documentType,
+        classificationConfidence: 1
+      }
+    });
+
+    await tx.auditLog.create({
+      data: {
+        caseId: foundCase.id,
+        eventType: AuditEventType.CASE_UPDATED,
+        actorType: "user",
+        actorId: user.id,
+        requestId: request.id,
+        payload: {
+          subtype: "manual_document_type_set",
+          documentType: bodyParse.data.documentType
+        } as Prisma.InputJsonValue
+      }
+    });
+
+    return nextCase;
+  });
+
+  reply.status(200).send({
+    saved: true,
+    case: updated
+  });
+});
+
+app.post("/cases/:id/assets", async (request, reply) => {
+  const paramsParse = caseParamsSchema.safeParse(request.params);
+  if (!paramsParse.success) {
+    sendValidationError(reply, request.id, paramsParse.error.issues);
+    return;
+  }
+
+  const bodyParse = createAssetSchema.safeParse(request.body ?? {});
+  if (!bodyParse.success) {
+    sendValidationError(reply, request.id, bodyParse.error.issues);
+    return;
+  }
+
+  const user = await getOrCreateUser(request.auth);
+  const foundCase = await prisma.case.findFirst({
+    where: {
+      id: paramsParse.data.id,
+      userId: user.id
+    },
+    select: {
+      id: true
+    }
+  });
+
+  if (!foundCase) {
+    reply.status(404).send({ error: "NOT_FOUND", requestId: request.id });
     return;
   }
 
@@ -275,6 +560,7 @@ app.post("/cases/:id/assets", async (request, reply) => {
   if (!uploadConfigStatus.configured) {
     reply.status(503).send({
       error: "AWS_UPLOADS_NOT_CONFIGURED",
+      requestId: request.id,
       missing: uploadConfigStatus.missing
     });
     return;
@@ -290,8 +576,16 @@ app.post("/cases/:id/assets", async (request, reply) => {
       mimeType: requestBody.mimeType
     });
   } catch (error) {
-    request.log.error({ err: error }, "Failed to create presigned upload URL");
-    reply.status(502).send({ error: "UPLOAD_URL_GENERATION_FAILED" });
+    request.log.error(
+      {
+        err: error,
+        requestId: request.id,
+        caseId: foundCase.id,
+        uploaderUserId: user.id
+      },
+      "Failed to create presigned upload URL"
+    );
+    reply.status(502).send({ error: "UPLOAD_URL_GENERATION_FAILED", requestId: request.id });
     return;
   }
 
@@ -318,6 +612,117 @@ app.post("/cases/:id/assets", async (request, reply) => {
     },
     expiresInSeconds: uploadPlan.expiresInSeconds
   });
+});
+
+app.post("/cases/:id/assets/:assetId/finalize", async (request, reply) => {
+  const paramsParse = assetParamsSchema.safeParse(request.params);
+  if (!paramsParse.success) {
+    sendValidationError(reply, request.id, paramsParse.error.issues);
+    return;
+  }
+  const bodyParse = finalizeAssetSchema.safeParse(request.body ?? {});
+  if (!bodyParse.success) {
+    sendValidationError(reply, request.id, bodyParse.error.issues);
+    return;
+  }
+
+  const { id: caseId, assetId } = paramsParse.data;
+  const explicitUserDescription = bodyParse.data.userDescription?.trim();
+  const user = await getOrCreateUser(request.auth);
+  const foundAsset = await prisma.asset.findFirst({
+    where: {
+      id: assetId,
+      caseId,
+      case: {
+        userId: user.id
+      }
+    },
+    select: {
+      id: true,
+      caseId: true
+    }
+  });
+
+  if (!foundAsset) {
+    reply.status(404).send({ error: "NOT_FOUND", requestId: request.id });
+    return;
+  }
+
+  const queueStatus = getQueueConfigStatus();
+  if (!queueStatus.configured) {
+    reply.status(503).send({
+      error: "WORKER_QUEUE_NOT_CONFIGURED",
+      requestId: request.id,
+      missing: queueStatus.missing
+    });
+    return;
+  }
+
+  try {
+    let resolvedUserDescription = explicitUserDescription;
+    if (!resolvedUserDescription) {
+      const recentLogs = await prisma.auditLog.findMany({
+        where: {
+          caseId: foundAsset.caseId,
+          eventType: AuditEventType.CASE_UPDATED
+        },
+        orderBy: {
+          createdAt: "desc"
+        },
+        take: 40,
+        select: {
+          payload: true
+        }
+      });
+      resolvedUserDescription =
+        recentLogs.map((row) => extractCaseContextFromPayload(row.payload)).find((value) => Boolean(value)) ?? undefined;
+    }
+
+    const sendResult = await getSqsClient(queueStatus.region).send(
+      new SendMessageCommand({
+        QueueUrl: queueStatus.queueUrl,
+        MessageBody: JSON.stringify({
+          type: "asset_uploaded",
+          caseId: foundAsset.caseId,
+          assetId: foundAsset.id,
+          userDescription: resolvedUserDescription || undefined
+        })
+      })
+    );
+
+    await prisma.auditLog.create({
+      data: {
+        caseId: foundAsset.caseId,
+        assetId: foundAsset.id,
+        eventType: AuditEventType.CASE_UPDATED,
+        actorType: "api",
+        requestId: request.id,
+        payload: {
+          subtype: "asset_uploaded_enqueued",
+          queueMessageId: sendResult.MessageId ?? null,
+          hasUserDescription: Boolean(resolvedUserDescription)
+        } as Prisma.InputJsonValue
+      }
+    });
+
+    reply.status(202).send({
+      queued: true,
+      messageId: sendResult.MessageId ?? null,
+      caseId: foundAsset.caseId,
+      assetId: foundAsset.id
+    });
+  } catch (error) {
+    request.log.error(
+      {
+        err: error,
+        requestId: request.id,
+        caseId: foundAsset.caseId,
+        assetId: foundAsset.id
+      },
+      "Failed to enqueue asset_uploaded message"
+    );
+    reply.status(502).send({ error: "QUEUE_ENQUEUE_FAILED", requestId: request.id });
+  }
 });
 
 const apiPort = Number(process.env.API_PORT ?? 3001);

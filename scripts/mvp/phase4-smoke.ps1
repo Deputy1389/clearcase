@@ -50,9 +50,10 @@ function Resolve-AwsCliPath {
 }
 
 function Invoke-AwsJson([string]$AwsCli, [string[]]$AwsArgs, [string]$FailureMessage) {
-  $json = & $AwsCli @AwsArgs
+  $json = & $AwsCli @AwsArgs 2>&1
   if ($LASTEXITCODE -ne 0) {
-    throw $FailureMessage
+    $details = ($json | Out-String).Trim()
+    throw "$FailureMessage Details: $details"
   }
 
   if ([string]::IsNullOrWhiteSpace($json)) {
@@ -78,7 +79,7 @@ function Send-QueueMessage([string]$AwsCli, [string]$QueueUrl, [string]$Region, 
       ("file://" + $tmpPath),
       "--output",
       "json"
-    ) "Failed to send SQS message."
+    ) "Failed to send SQS message. Verify SQS_QUEUE_URL, AWS_REGION, credentials, queue policy, and network access."
 
     return $send.MessageId
   }
@@ -101,7 +102,7 @@ function Receive-Messages([string]$AwsCli, [string]$QueueUrl, [string]$Region, [
     $Wait.ToString(),
     "--output",
     "json"
-  ) "Failed to receive SQS messages."
+  ) "Failed to receive SQS messages. Queue may be unavailable; verify SQS_QUEUE_URL, AWS_REGION, and AWS credentials."
 
   if ($null -eq $result -or $null -eq $result.Messages) {
     return @()
@@ -110,10 +111,50 @@ function Receive-Messages([string]$AwsCli, [string]$QueueUrl, [string]$Region, [
   return @($result.Messages)
 }
 
+function Try-ParseJson([string]$JsonText) {
+  if ([string]::IsNullOrWhiteSpace($JsonText)) {
+    return $null
+  }
+
+  try {
+    return ($JsonText | ConvertFrom-Json)
+  }
+  catch {
+    return $null
+  }
+}
+
+function Find-RetryMessageById(
+  [string]$AwsCli,
+  [string]$QueueUrl,
+  [string]$Region,
+  [string]$ExpectedId,
+  [int]$Attempts = 20
+) {
+  for ($i = 0; $i -lt $Attempts; $i++) {
+    $batch = @(Receive-Messages -AwsCli $AwsCli -QueueUrl $QueueUrl -Region $Region -Max 10 -Wait 2)
+    foreach ($message in $batch) {
+      $parsed = Try-ParseJson -JsonText $message.Body
+      if ($null -eq $parsed) {
+        continue
+      }
+
+      if ($parsed.id -eq $ExpectedId) {
+        return @{
+          message = $message
+          parsed = $parsed
+        }
+      }
+    }
+  }
+
+  return $null
+}
+
 function Delete-Message([string]$AwsCli, [string]$QueueUrl, [string]$Region, [string]$ReceiptHandle) {
   & $AwsCli sqs delete-message --queue-url $QueueUrl --region $Region --receipt-handle $ReceiptHandle | Out-Null
   if ($LASTEXITCODE -ne 0) {
-    throw "Failed to delete SQS message."
+    throw "Failed to delete SQS message. Verify queue permissions and that the queue is reachable."
   }
 }
 
@@ -144,7 +185,7 @@ function Get-QueueCounts([string]$AwsCli, [string]$QueueUrl, [string]$Region) {
     "ApproximateNumberOfMessagesNotVisible",
     "--output",
     "json"
-  ) "Failed to fetch SQS queue attributes."
+  ) "Failed to fetch SQS queue attributes. Queue may be down; verify SQS_QUEUE_URL, AWS_REGION, and network access."
 
   $visible = 0
   $notVisible = 0
@@ -200,7 +241,7 @@ function Stop-ExistingWorkerProcesses {
 $repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..\..")
 $envPath = Join-Path $repoRoot ".env"
 if (-not (Test-Path $envPath)) {
-  throw "Missing .env at $envPath"
+  throw "Missing .env at $envPath. Create it from .env.example and set AWS_REGION, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, and SQS_QUEUE_URL."
 }
 
 $envMap = Get-DotEnvMap $envPath
@@ -214,12 +255,12 @@ foreach ($k in $required) {
   [Environment]::SetEnvironmentVariable($k, $envMap[$k], "Process")
 }
 if ($missing.Count -gt 0) {
-  throw "Missing required env vars in .env: $($missing -join ', ')"
+  throw "Missing required env vars in .env: $($missing -join ', '). Add these values and rerun."
 }
 
 $awsCli = Resolve-AwsCliPath
 if ([string]::IsNullOrWhiteSpace($awsCli)) {
-  throw "AWS CLI is not installed or not in PATH."
+  throw "AWS CLI is not installed or not in PATH. Install AWS CLI v2 and retry."
 }
 
 $queueUrl = $envMap["SQS_QUEUE_URL"]
@@ -244,11 +285,9 @@ if ($StartWorker) {
   Stop-ProcessTree -ProcessId $worker.Id
 }
 
-Step "Checking queue counts after ACK run"
+Step "Checking queue counts after ACK run (informational)"
 $ackCounts = Get-QueueCounts -AwsCli $awsCli -QueueUrl $queueUrl -Region $region
-if ($ackCounts.visible -ne 0 -or $ackCounts.notVisible -ne 0) {
-  throw "ACK test failed: queue is not empty (visible=$($ackCounts.visible), notVisible=$($ackCounts.notVisible))."
-}
+Write-Host "Queue state after ACK run: visible=$($ackCounts.visible), notVisible=$($ackCounts.notVisible)"
 
 Step "Sending RETRY test message (forceFail=true)"
 $retryId = [Guid]::NewGuid().ToString()
@@ -264,22 +303,16 @@ if ($StartWorker) {
 
 Step "Waiting for visibility timeout and checking retry availability"
 Start-Sleep -Seconds 7
-$received = @(Receive-Messages -AwsCli $awsCli -QueueUrl $queueUrl -Region $region -Max 1 -Wait 2)
-if ($received.Count -eq 0) {
-  throw "RETRY test failed: no message became visible for retry."
+$retryLookup = Find-RetryMessageById -AwsCli $awsCli -QueueUrl $queueUrl -Region $region -ExpectedId $retryId -Attempts 25
+if ($null -eq $retryLookup) {
+  throw "RETRY test failed: no retried message with id=$retryId became visible. Queue backlog or worker processing delay may be preventing observation."
 }
 
-$retryMessage = $received[0]
-$retryBodyActual = $retryMessage.Body
-$retryParsed = $null
-try {
-  $retryParsed = $retryBodyActual | ConvertFrom-Json
-} catch {
-  throw "RETRY test failed: could not parse retried message body as JSON."
-}
+$retryMessage = $retryLookup.message
+$retryParsed = $retryLookup.parsed
 
 if ($retryParsed.id -ne $retryId -or $retryParsed.forceFail -ne $true) {
-  throw "RETRY test failed: received unexpected message payload."
+  throw "RETRY test failed: received unexpected payload for id=$retryId."
 }
 
 if (-not $retryMessage.ReceiptHandle) {

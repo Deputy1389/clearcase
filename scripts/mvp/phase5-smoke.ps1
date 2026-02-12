@@ -49,6 +49,18 @@ function Stop-ProcessTree([int]$ProcessId) {
   & cmd.exe /c "taskkill /PID $ProcessId /T /F >NUL 2>&1"
 }
 
+function Stop-ExistingApiProcesses {
+  $processes = Get-CimInstance Win32_Process -ErrorAction SilentlyContinue |
+    Where-Object {
+      ($_.Name -eq "node.exe" -and $_.CommandLine -like "*apps/api/src/server.ts*") -or
+      ($_.Name -eq "cmd.exe" -and $_.CommandLine -like "*npm run api:start*")
+    }
+
+  foreach ($proc in $processes) {
+    Stop-ProcessTree -ProcessId $proc.ProcessId
+  }
+}
+
 function Wait-ApiHealthy([int]$TimeoutSeconds = 35) {
   $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
   do {
@@ -59,13 +71,44 @@ function Wait-ApiHealthy([int]$TimeoutSeconds = 35) {
     Start-Sleep -Milliseconds 750
   } while ((Get-Date) -lt $deadline)
 
-  throw "API did not become healthy in time."
+  throw "API health check failed at http://127.0.0.1:3001/health after $TimeoutSeconds seconds. The API may be down or crashed; run 'npm run api:start' and retry."
+}
+
+function Wait-ExtractionPersisted(
+  [string]$CaseId,
+  [string]$AssetId,
+  [hashtable]$Headers,
+  [int]$TimeoutSeconds = 240
+) {
+  $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+  $lastError = ""
+  do {
+    try {
+      $caseAfter = Invoke-RestMethod -Method Get -Uri "http://127.0.0.1:3001/cases/$CaseId" -Headers $Headers
+      $extraction = $caseAfter.extractions | Where-Object { $_.assetId -eq $AssetId } | Select-Object -First 1
+      if ($null -ne $extraction) {
+        return @{
+          caseAfter = $caseAfter
+          extraction = $extraction
+        }
+      }
+    }
+    catch {
+      $lastError = $_.Exception.Message
+    }
+    Start-Sleep -Milliseconds 900
+  } while ((Get-Date) -lt $deadline)
+
+  if (-not [string]::IsNullOrWhiteSpace($lastError)) {
+    throw "Timed out waiting for extraction persistence (caseId=$CaseId, assetId=$AssetId). Last API error: $lastError"
+  }
+  throw "Timed out waiting for extraction persistence (caseId=$CaseId, assetId=$AssetId). Queue backlog or worker/API issues may be delaying processing."
 }
 
 $repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..\..")
 $envPath = Join-Path $repoRoot ".env"
 if (-not (Test-Path $envPath)) {
-  throw "Missing .env at $envPath"
+  throw "Missing .env at $envPath. Create it from .env.example and set AWS_REGION, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, and SQS_QUEUE_URL."
 }
 
 $envMap = Get-DotEnvMap $envPath
@@ -79,26 +122,45 @@ foreach ($k in $required) {
   [Environment]::SetEnvironmentVariable($k, $envMap[$k], "Process")
 }
 if ($missing.Count -gt 0) {
-  throw "Missing required env vars in .env: $($missing -join ', ')"
+  throw "Missing required env vars in .env: $($missing -join ', '). Add these values and rerun."
 }
 
 $awsCli = Resolve-AwsCliPath
 if ([string]::IsNullOrWhiteSpace($awsCli)) {
-  throw "AWS CLI is not installed or not in PATH."
+  throw "AWS CLI is not installed or not in PATH. Install AWS CLI v2 and retry."
 }
 
 $apiProc = $null
 $workerProc = $null
 $tmpMsgPath = $null
+$apiStdoutPath = $null
+$apiStderrPath = $null
 
 try {
   if ($StartApi) {
+    Step "Stopping existing API processes"
+    Stop-ExistingApiProcesses
+
     Step "Starting API"
-    $apiProc = Start-Process -FilePath "cmd.exe" -ArgumentList "/c", "npm run api:start" -WorkingDirectory $repoRoot -PassThru
+    $apiStdoutPath = Join-Path $env:TEMP ("cc-phase5-api-out-" + [Guid]::NewGuid().ToString() + ".log")
+    $apiStderrPath = Join-Path $env:TEMP ("cc-phase5-api-err-" + [Guid]::NewGuid().ToString() + ".log")
+    $apiProc = Start-Process -FilePath "cmd.exe" -ArgumentList "/c", "npm run api:start" -WorkingDirectory $repoRoot -PassThru -RedirectStandardOutput $apiStdoutPath -RedirectStandardError $apiStderrPath
+    Start-Sleep -Milliseconds 750
+    if ($apiProc.HasExited) {
+      $stderr = if (Test-Path $apiStderrPath) { (Get-Content $apiStderrPath -Tail 40 | Out-String).Trim() } else { "" }
+      $stdout = if (Test-Path $apiStdoutPath) { (Get-Content $apiStdoutPath -Tail 40 | Out-String).Trim() } else { "" }
+      throw "API process exited immediately (exitCode=$($apiProc.ExitCode)). stderr=`"$stderr`" stdout=`"$stdout`""
+    }
   }
 
   Step "Waiting for API health"
-  Wait-ApiHealthy
+  try {
+    Wait-ApiHealthy
+  } catch {
+    $stderr = if ($apiStderrPath -and (Test-Path $apiStderrPath)) { (Get-Content $apiStderrPath -Tail 40 | Out-String).Trim() } else { "" }
+    $stdout = if ($apiStdoutPath -and (Test-Path $apiStdoutPath)) { (Get-Content $apiStdoutPath -Tail 40 | Out-String).Trim() } else { "" }
+    throw "$($_.Exception.Message) API stderr tail: `"$stderr`" stdout tail: `"$stdout`""
+  }
 
   $headers = @{
     "x-auth-subject" = "phase5-smoke-user"
@@ -125,9 +187,10 @@ try {
   $tmpMsgPath = Join-Path $env:TEMP ("cc-phase5-msg-" + [Guid]::NewGuid().ToString() + ".json")
   Set-Content -Path $tmpMsgPath -Value $messageBody -Encoding ASCII -NoNewline
 
-  & $awsCli sqs send-message --queue-url $envMap["SQS_QUEUE_URL"] --region $envMap["AWS_REGION"] --message-body ("file://" + $tmpMsgPath) --output json | Out-Null
+  $sendResult = & $awsCli sqs send-message --queue-url $envMap["SQS_QUEUE_URL"] --region $envMap["AWS_REGION"] --message-body ("file://" + $tmpMsgPath) --output json 2>&1
   if ($LASTEXITCODE -ne 0) {
-    throw "Failed to enqueue asset_uploaded message."
+    $details = ($sendResult | Out-String).Trim()
+    throw "Failed to enqueue asset_uploaded message. Verify queue connectivity (SQS_QUEUE_URL/AWS_REGION/credentials). Details: $details"
   }
 
   if ($StartWorker) {
@@ -142,16 +205,12 @@ try {
       "npm run worker:start"
     ) -join "&& "
     $workerProc = Start-Process -FilePath "cmd.exe" -ArgumentList "/c", $workerCmd -WorkingDirectory $repoRoot -PassThru
-    Start-Sleep -Seconds 8
-    Stop-ProcessTree -ProcessId $workerProc.Id
   }
 
   Step "Verifying extraction persistence"
-  $caseAfter = Invoke-RestMethod -Method Get -Uri "http://127.0.0.1:3001/cases/$($case.id)" -Headers $headers
-  $extraction = $caseAfter.extractions | Where-Object { $_.assetId -eq $asset.assetId } | Select-Object -First 1
-  if ($null -eq $extraction) {
-    throw "No extraction persisted for assetId=$($asset.assetId)."
-  }
+  $waitResult = Wait-ExtractionPersisted -CaseId $case.id -AssetId $asset.assetId -Headers $headers -TimeoutSeconds 240
+  $caseAfter = $waitResult.caseAfter
+  $extraction = $waitResult.extraction
 
   Step "Phase 5 smoke test passed"
   [ordered]@{
@@ -171,5 +230,11 @@ finally {
   }
   if ($apiProc -ne $null) {
     Stop-ProcessTree -ProcessId $apiProc.Id
+  }
+  if ($apiStdoutPath) {
+    Remove-Item $apiStdoutPath -ErrorAction SilentlyContinue
+  }
+  if ($apiStderrPath) {
+    Remove-Item $apiStderrPath -ErrorAction SilentlyContinue
   }
 }

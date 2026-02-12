@@ -1,101 +1,64 @@
 # NEXT_STEPS.md
 
 This file represents the **current authoritative task list**.
-Unlike SESSION_LOG.md, this file SHOULD be edited as things change.
+Unlike `SESSION_LOG.md`, this file SHOULD be edited as things change.
 
 ---
 
 ## Current Phase
-Phase 7 - LLM Formatting (Implemented, verification pending)
+Mobile product pass + backend/worker stabilization (post Phase 7).
+
+---
+
+## Completed Milestones
+
+1. API/worker pipeline through Phase 7 is implemented and validated.
+2. Replay/idempotency hardening and regression coverage landed.
+3. Mobile app scaffolding and core flows are in place:
+   - auth/profile onboarding
+   - dashboard/cases/workspace/account screens
+   - upload from file or camera (multi-photo)
+   - finalize enqueue after upload
+   - case context save + reprocess
+   - manual category override
+4. Workspace now has severity-based top action card (red/yellow/green).
 
 ---
 
 ## Immediate Next Steps
 
-1. Run `npm run mvp:phase6-smoke` and `npm run mvp:phase7-smoke` in a network-enabled environment to verify live SQS/API worker flows.
-2. Confirm Phase 6 and Phase 7 exit criteria and mark both complete after successful smoke runs.
-3. Begin stabilization pass (idempotency, error handling, replay checks).
-4. Keep OCR provider and formatter boundaries deterministic (no provider swap yet) until stable.
+1. Mobile UX polish pass:
+   - spacing/typography consistency in Workspace
+   - tighter hierarchy for summary/category/context cards
+   - verify no overflow/truncation on narrow devices
+2. End-to-end device verification:
+   - create account
+   - new case upload from camera
+   - processing completion under active worker
+   - manual category override + refresh consistency
+3. Reliability checks:
+   - ensure API base auto-detection is stable on LAN
+   - handle API offline/reconnect paths without stale errors
+4. Curate realistic test assets:
+   - add public/synthetic legal document samples for smoke testing.
 
 ---
 
-## Phase 3 - S3 Uploads + Assets (Completed)
+## Runtime Commands
 
-- Presigned URL flow implemented.
-- `POST /cases/:id/assets` implemented and ownership enforced.
-- Metadata-only `Asset` record creation implemented.
-- End-to-end verified: upload-init + presigned PUT + case asset linkage + cross-user 404.
+Run each in its own terminal from `C:\Clearcase\Clearcase`:
 
----
-
-## Phase 4 - SQS Worker (Completed)
-
-- Worker process scaffold implemented under `apps/worker`.
-- SQS queue wiring via `.env` `SQS_QUEUE_URL`.
-- Consume/ack path verified on dev queue.
-- Retry behavior verified via `mvp:phase4-smoke` (`forceFail=true` message reappears and is cleaned up).
-
----
-
-## Phase 5 - OCR Adapter Boundary (Completed - Stub Provider)
-
-- OCR provider boundary added at `apps/worker/src/lib/ocr.ts`.
-- Worker now processes `asset_uploaded` messages and persists `Extraction` + `AuditLog`.
-- End-to-end verified via `mvp:phase5-smoke`:
-  - API case + asset creation
-  - queue message publish
-  - worker processing
-  - extraction persistence on case.
-
----
-
-## Blockers / Risks
-
-- No active blockers for Phase 6 prep.
+1. `npm run api:start`
+2. `npm run worker:start`
+3. `npm --prefix apps/mobile run start -- --lan --clear --port 8081`
+4. Optional web preview: `npm --prefix apps/mobile run web -- --non-interactive --port 8090`
 
 ---
 
 ## Notes
 
-- Do not modify Prisma schema unless strictly required
-- Keep uploads isolated from OCR logic
-- Maintain deterministic pipeline order
-- Phase 3 is complete and verified via `npm run mvp:phase3-smoke`.
-- `POST /cases/:id/assets` is now implemented (ownership + metadata DB write + presigned URL creation)
-- Phase 4 smoke command: `npm run mvp:phase4-smoke`.
-- Phase 5 smoke command: `npm run mvp:phase5-smoke`.
-- `.env` now includes `SQS_QUEUE_URL`.
-
----
-
-## Phase 6 - Truth Layer (Implemented; live smoke pending)
-
-- Added deterministic truth-layer transformer at `apps/worker/src/lib/truth-layer.ts`.
-- Worker now derives structured facts/deadline signals from extraction data and updates case-level truth fields:
-  - `documentType`
-  - `classificationConfidence`
-  - `timeSensitive`
-  - `earliestDeadline`
-- Added `TRUTH_LAYER_RUN` audit persistence with structured payload for replayability.
-- Added `scripts/mvp/phase6-smoke.ps1` and npm command `mvp:phase6-smoke`.
-- Local typechecks pass (`api:typecheck`, `worker:typecheck`).
-- Live smoke run is currently blocked in this environment due AWS endpoint connectivity restriction.
-
----
-
-## Phase 7 - LLM Formatting (Implemented; live smoke pending)
-
-- Added deterministic formatter boundary at `apps/worker/src/lib/formatter.ts`.
-- Worker now formats from structured truth-layer facts only and persists:
-  - `Verdict` row (`llmModel`, `inputHash`, `outputJson`)
-  - case-level `plainEnglishExplanation`
-  - case-level `nonLegalAdviceDisclaimer`
-- Added `LLM_FORMAT_RUN` audit event with receipts metadata.
-- Added `scripts/mvp/phase7-smoke.ps1` and npm command `mvp:phase7-smoke`.
-- Local typechecks pass (`api:typecheck`, `worker:typecheck`).
-- Live smoke run is currently blocked in this environment due AWS endpoint connectivity restriction.
-
-- Execution preference: batch mode by default, no routine confirmation prompts
-- Only stop for confirmation on destructive actions (data deletion, DB drop, migration removal, or large code removal)
-
----
+- Keep deterministic boundaries:
+  - OCR/truth extraction deterministic
+  - LLM formatting only from structured truth payload
+- Do not commit logs/runtime artifacts (`.api.log`, `.worker.log`, `.playwright-cli/`).
+- Keep schema changes explicit and minimal.
