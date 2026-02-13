@@ -1,0 +1,51 @@
+
+> clearcase-mobile@1.0.0 start
+> expo start --host lan --port 8081 --clear
+
+env: load .env
+env: export EXPO_PUBLIC_API_BASE
+Starting project at C:\Clearcase\Clearcase\apps\mobile
+Starting Metro Bundler
+warning: Bundler cache is empty, rebuilding (this may take a minute)
+Waiting on http://localhost:8081
+Logs for your project will appear below.
+Android .\index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android .\index.ts ▓░░░░░░░░░░░░░░░ 11.1% ( 12/114)
+Android .\index.ts ▓▓▓▓░░░░░░░░░░░░ 26.2% (154/301)
+Android .\index.ts ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 99.3% (607/609)
+Android .\index.ts ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 99.7% (682/683)
+Android Bundled 16492ms index.ts (827 modules)
+Android .\index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 56ms index.ts (1 module)
+Android .\index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 79ms index.ts (1 module)
+Android .\index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 54ms index.ts (1 module)
+Android .\index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 55ms index.ts (1 module)
+Android .\index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 61ms index.ts (1 module)
+ WARN  [expo-image-picker] `ImagePicker.MediaTypeOptions` have been deprecated. Use `ImagePicker.MediaType` or an array of `ImagePicker.MediaType` instead.
+Android .\index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundling failed 9090ms index.ts (1 module)
+Android .\index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Unable to resolve "expo-image-manipulator" from "App.tsx"
+[0m [90m 3 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mDocumentPicker[39m [36mfrom[39m [32m"expo-document-picker"[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mImagePicker[39m [36mfrom[39m [32m"expo-image-picker"[39m[33m;[39m
+[31m[1m>[22m[39m[90m 5 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mImageManipulator[39m [36mfrom[39m [32m"expo-image-manipulator"[39m[33m;[39m
+ [90m   |[39m                                    [31m[1m^[22m[39m
+ [90m 6 |[39m [36mimport[39m { useFonts } [36mfrom[39m [32m"expo-font"[39m[33m;[39m
+ [90m 7 |[39m [36mimport[39m { [33mLinearGradient[39m } [36mfrom[39m [32m"expo-linear-gradient"[39m[33m;[39m
+ [90m 8 |[39m [36mimport[39m { [33mNewsreader_600SemiBold[39m[33m,[39m [33mNewsreader_700Bold[39m } [36mfrom[39m [32m"@expo-google-fonts/newsreader"[39m[33m;[39m[0m
+
+Import stack:
+
+ App.tsx
+ | import "expo-image-manipulator"
+
+ index.ts
+ | import "./App"
+
+ 
+ | import "./index.ts"
+

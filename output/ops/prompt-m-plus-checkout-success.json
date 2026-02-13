@@ -1,0 +1,13 @@
+{
+  "generatedAt": "2026-02-13T00:53:37.115Z",
+  "apiBase": "http://127.0.0.1:3001",
+  "subject": "prompt-m-plus-20260213005336-1228",
+  "email": "prompt.m.plus.20260213005336-1228@example.com",
+  "caseId": "cmlk6ccbg000mvswoxpbybbsg",
+  "checkoutSessionId": "chk_9d8320c876324220ad5fad2c",
+  "checkoutUrl": "https://billing.clearcase.local/checkout?session_id=chk_9d8320c876324220ad5fad2c&plan=plus_monthly&uid=cmlk6ccax000kvswo0idbbtbd&success_url=https%3A%2F%2Fapp.clearcase.local%2Fbilling%2Fsuccess&cancel_url=https%3A%2F%2Fapp.clearcase.local%2Fbilling%2Fcancel",
+  "webhookTransition": "plus_active",
+  "isPlus": true,
+  "entitlementStatus": "active",
+  "plainMeaningRows": 1
+}

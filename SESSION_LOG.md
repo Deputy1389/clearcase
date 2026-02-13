@@ -524,3 +524,52 @@ Do not rewrite history. Always add new entries at the bottom.
 - Start API + worker + Expo first, then verify upload-to-verdict path on physical device.
 - Continue UI polish against latest figma assets while preserving current functional behavior.
 - Prioritize full E2E smoke (auth -> upload -> process -> category override -> context reprocess).
+
+---
+
+**Date:** 2026-02-12  
+**Tool:** codex CLI  
+**Context Loaded:** CLEARCASE_HANDOFF.txt, improvements.txt, NEXT_STEPS.md, SESSION_LOG.md, qa.txt  
+**Goal:** Validate and QA the implemented product-direction improvements
+
+### What was done
+- Ran Tier 0 smoke checks:
+  - `docker compose up -d`
+  - `docker ps`
+  - `npx prisma validate --schema=packages/db/prisma/schema.prisma`
+  - `npx prisma migrate status --schema=packages/db/prisma/schema.prisma`
+  - `npx prisma generate --schema=packages/db/prisma/schema.prisma`
+  - live API health probe (`GET /health`)
+- Ran live API contract checks for:
+  - default/overridden auth identity via headers
+  - `/me` validation and profile completion behavior
+  - `/cases` create/read behavior and ownership enforcement
+- Ran DB-backed integration checks for:
+  - get-or-create user idempotency
+  - case jurisdiction snapshot immutability after profile change
+- Ran regression/build checks:
+  - `npx tsx --test apps/worker/src/lib/pipeline.regression.test.ts`
+  - `npx tsc --noEmit -p apps/mobile/tsconfig.json`
+  - `npx tsc --noEmit -p apps/worker/tsconfig.json`
+  - `npm run web:build`
+- Ran improvement copy compliance checks against `apps/mobile/App.tsx` and `apps/worker/src/lib/formatter.ts`:
+  - banned directive phrases absent
+  - required replacement phrases present
+- Wrote `QA_REPORT.md` with commands, outcomes, gaps, and follow-up priorities.
+
+### Decisions made
+- Use `improvements.txt` as the authoritative source for tone and UX copy validation.
+- Validate API contracts with real requests first, then follow with regression/build gates for rapid confidence.
+
+### Problems encountered
+- Background-process launch for API startup via one PowerShell method was blocked by policy in this environment.
+
+### Resolutions
+- Switched to a parallel startup + health-probe approach and confirmed runtime health successfully.
+
+### Open questions
+- Whether to add committed `app.inject()` API tests now, or keep live-script contract checks as the near-term gate.
+
+### Notes for next session
+- Add committed API contract tests (`app.inject`) and DB integration harness for CI-grade repeatability.
+- Execute mobile device E2E validation for upload/camera/reprocess/category override flow.

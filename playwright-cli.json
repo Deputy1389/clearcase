@@ -1,0 +1,17 @@
+{
+  "browser": {
+    "launchOptions": {
+      "headless": true,
+      "args": [
+        "--disable-web-security",
+        "--disable-features=IsolateOrigins,site-per-process"
+      ]
+    },
+    "contextOptions": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      }
+    }
+  }
+}

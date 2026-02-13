@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 type UploadConfig = {
@@ -31,7 +31,19 @@ export type CreateUploadPlanResult = {
   expiresInSeconds: number;
 };
 
+export type CreateDownloadPlanInput = {
+  s3Key: string;
+  fileName?: string | null;
+  disposition?: "inline" | "attachment";
+};
+
+export type CreateDownloadPlanResult = {
+  downloadUrl: string;
+  expiresInSeconds: number;
+};
+
 const PRESIGNED_URL_TTL_SECONDS = 15 * 60;
+const PRESIGNED_DOWNLOAD_TTL_SECONDS = 10 * 60;
 let cachedS3Client: S3Client | null = null;
 let cachedS3ClientKey = "";
 
@@ -142,5 +154,31 @@ export async function createUploadPlan(input: CreateUploadPlanInput): Promise<Cr
     s3Key,
     uploadUrl,
     expiresInSeconds: PRESIGNED_URL_TTL_SECONDS
+  };
+}
+
+export async function createDownloadPlan(
+  input: CreateDownloadPlanInput
+): Promise<CreateDownloadPlanResult> {
+  const configStatus = getUploadConfigStatus();
+  if (!configStatus.configured) {
+    throw new Error(`Missing upload config: ${configStatus.missing.join(", ")}`);
+  }
+
+  const command = new GetObjectCommand({
+    Bucket: configStatus.config.bucket,
+    Key: input.s3Key,
+    ResponseContentDisposition: input.fileName
+      ? `${input.disposition === "attachment" ? "attachment" : "inline"}; filename="${sanitizeFileName(input.fileName)}"`
+      : undefined
+  });
+
+  const downloadUrl = await getSignedUrl(getS3Client(configStatus.config), command, {
+    expiresIn: PRESIGNED_DOWNLOAD_TTL_SECONDS
+  });
+
+  return {
+    downloadUrl,
+    expiresInSeconds: PRESIGNED_DOWNLOAD_TTL_SECONDS
   };
 }

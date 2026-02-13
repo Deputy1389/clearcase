@@ -1,0 +1,149 @@
+
+> clearcase-mobile@1.0.0 web
+> expo start --web --port 19007
+
+env: load .env
+env: export EXPO_PUBLIC_API_BASE
+Starting project at C:\Clearcase\Clearcase\apps\mobile
+Starting Metro Bundler
+Waiting on http://localhost:19007
+Logs for your project will appear below.
+Web Bundled 498ms index.ts (385 modules)
+ LOG  [web] Logs will appear in the browser console
+Web .\index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 35ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web .\index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 32ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web .\index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 37ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web .\index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 33ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web .\index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 32ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+ ERROR  SyntaxError: C:\Clearcase\Clearcase\apps\mobile\App.tsx: Expected corresponding JSX closing tag for <View>. (5085:18)
+
+  5083 |                       {me?.pushDevices?.activeCount ?? 0}
+  5084 |                     </Text>
+> 5085 |                   </Pressable>
+       |                   ^
+  5086 |                   <Pressable style={styles.settingRow} onPress={() => setPlanSheetOpen(true)}>
+  5087 |                     <Feather name="credit-card" size={16} color={palette.subtle} />
+  5088 |                     <Text style={styles.settingText}>{language === "es" ? "Facturacion y planes" : "Billing and plans"}</Text>
+    at constructor (C:\ClearCase\clearcase\apps\mobile\node_modules\@babel\parser\lib\index.js:365:19)
+    at TypeScriptParserMixin.raise (C:\ClearCase\clearcase\apps\mobile\node_modules\@babel\parser\lib\index.js:6599:19)
+    at TypeScriptParserMixin.jsxParseElementAt (C:\ClearCase\clearcase\apps\mobile\node_modules\@babel\parser\lib\index.js:4727:16)
+    at TypeScriptParserMixin.jsxParseElementAt (C:\ClearCase\clearcase\apps\mobile\node_modules\@babel\parser\lib\index.js:4698:32)
+    at TypeScriptParserMixin.jsxParseElementAt (C:\ClearCase\clearcase\apps\mobile\node_modules\@babel\parser\lib\index.js:4698:32)
+    at TypeScriptParserMixin.jsxParseElementAt (C:\ClearCase\clearcase\apps\mobile\node_modules\@babel\parser\lib\index.js:4698:32)
+    at TypeScriptParserMixin.jsxParseElement (C:\ClearCase\clearcase\apps\mobile\node_modules\@babel\parser\lib\index.js:4749:17)
+    at TypeScriptParserMixin.parseExprAtom (C:\ClearCase\clearcase\apps\mobile\node_modules\@babel\parser\lib\index.js:4759:19)
+    at TypeScriptParserMixin.parseExprSubscripts (C:\ClearCase\clearcase\apps\mobile\node_modules\@babel\parser\lib\index.js:11081:23)
+    at TypeScriptParserMixin.parseUpdate (C:\ClearCase\clearcase\apps\mobile\node_modules\@babel\parser\lib\index.js:11066:21)
+    at TypeScriptParserMixin.parseMaybeUnary (C:\ClearCase\clearcase\apps\mobile\node_modules\@babel\parser\lib\index.js:11046:23)
+    at TypeScriptParserMixin.parseMaybeUnary (C:\ClearCase\clearcase\apps\mobile\node_modules\@babel\parser\lib\index.js:9837:18)
+    at TypeScriptParserMixin.parseMaybeUnaryOrPrivate (C:\ClearCase\clearcase\apps\mobile\node_modules\@babel\parser\lib\index.js:10899:61)
+    at TypeScriptParserMixin.parseExprOps (C:\ClearCase\clearcase\apps\mobile\node_modules\@babel\parser\lib\index.js:10904:23)
+    at TypeScriptParserMixin.parseMaybeConditional (C:\ClearCase\clearcase\apps\mobile\node_modules\@babel\parser\lib\index.js:10881:23)
+    at TypeScriptParserMixin.parseMaybeAssign (C:\ClearCase\clearcase\apps\mobile\node_modules\@babel\parser\lib\index.js:10831:21)
+    at C:\ClearCase\clearcase\apps\mobile\node_modules\@babel\parser\lib\index.js:9775:39
+    at TypeScriptParserMixin.tryParse (C:\ClearCase\clearcase\apps\mobile\node_modules\@babel\parser\lib\index.js:6907:20)
+    at TypeScriptParserMixin.parseMaybeAssign (C:\ClearCase\clearcase\apps\mobile\node_modules\@babel\parser\lib\index.js:9775:18)
+    at C:\ClearCase\clearcase\apps\mobile\node_modules\@babel\parser\lib\index.js:10800:39
+    at TypeScriptParserMixin.allowInAnd (C:\ClearCase\clearcase\apps\mobile\node_modules\@babel\parser\lib\index.js:12426:12)
+    at TypeScriptParserMixin.parseMaybeAssignAllowIn (C:\ClearCase\clearcase\apps\mobile\node_modules\@babel\parser\lib\index.js:10800:17)
+    at TypeScriptParserMixin.parseMaybeAssignAllowInOrVoidPattern (C:\ClearCase\clearcase\apps\mobile\node_modules\@babel\parser\lib\index.js:12493:17)
+    at TypeScriptParserMixin.parseParenAndDistinguishExpression (C:\ClearCase\clearcase\apps\mobile\node_modules\@babel\parser\lib\index.js:11675:28)
+    at TypeScriptParserMixin.parseExprAtom (C:\ClearCase\clearcase\apps\mobile\node_modules\@babel\parser\lib\index.js:11331:23)
+    at TypeScriptParserMixin.parseExprAtom (C:\ClearCase\clearcase\apps\mobile\node_modules\@babel\parser\lib\index.js:4764:20)
+    at TypeScriptParserMixin.parseExprSubscripts (C:\ClearCase\clearcase\apps\mobile\node_modules\@babel\parser\lib\index.js:11081:23)
+    at TypeScriptParserMixin.parseUpdate (C:\ClearCase\clearcase\apps\mobile\node_modules\@babel\parser\lib\index.js:11066:21)
+    at TypeScriptParserMixin.parseMaybeUnary (C:\ClearCase\clearcase\apps\mobile\node_modules\@babel\parser\lib\index.js:11046:23)
+    at TypeScriptParserMixin.parseMaybeUnary (C:\ClearCase\clearcase\apps\mobile\node_modules\@babel\parser\lib\index.js:9837:18)
+    at TypeScriptParserMixin.parseMaybeUnaryOrPrivate (C:\ClearCase\clearcase\apps\mobile\node_modules\@babel\parser\lib\index.js:10899:61)
+    at TypeScriptParserMixin.parseExprOps (C:\ClearCase\clearcase\apps\mobile\node_modules\@babel\parser\lib\index.js:10904:23)
+    at TypeScriptParserMixin.parseMaybeConditional (C:\ClearCase\clearcase\apps\mobile\node_modules\@babel\parser\lib\index.js:10881:23)
+    at TypeScriptParserMixin.parseMaybeAssign (C:\ClearCase\clearcase\apps\mobile\node_modules\@babel\parser\lib\index.js:10831:21)
+    at TypeScriptParserMixin.parseMaybeAssign (C:\ClearCase\clearcase\apps\mobile\node_modules\@babel\parser\lib\index.js:9786:20)
+    at C:\ClearCase\clearcase\apps\mobile\node_modules\@babel\parser\lib\index.js:10800:39
+    at TypeScriptParserMixin.allowInAnd (C:\ClearCase\clearcase\apps\mobile\node_modules\@babel\parser\lib\index.js:12426:12)
+    at TypeScriptParserMixin.parseMaybeAssignAllowIn (C:\ClearCase\clearcase\apps\mobile\node_modules\@babel\parser\lib\index.js:10800:17)
+    at TypeScriptParserMixin.parseConditional (C:\ClearCase\clearcase\apps\mobile\node_modules\@babel\parser\lib\index.js:10891:30)
+    at TypeScriptParserMixin.parseConditional (C:\ClearCase\clearcase\apps\mobile\node_modules\@babel\parser\lib\index.js:9603:18)
+    at TypeScriptParserMixin.parseMaybeConditional (C:\ClearCase\clearcase\apps\mobile\node_modules\@babel\parser\lib\index.js:10885:17)
+    at TypeScriptParserMixin.parseMaybeAssign (C:\ClearCase\clearcase\apps\mobile\node_modules\@babel\parser\lib\index.js:10831:21)
+    at TypeScriptParserMixin.parseMaybeAssign (C:\ClearCase\clearcase\apps\mobile\node_modules\@babel\parser\lib\index.js:9786:20)
+    at TypeScriptParserMixin.parseExpressionBase (C:\ClearCase\clearcase\apps\mobile\node_modules\@babel\parser\lib\index.js:10784:23)
+    at C:\ClearCase\clearcase\apps\mobile\node_modules\@babel\parser\lib\index.js:10780:39
+    at TypeScriptParserMixin.allowInAnd (C:\ClearCase\clearcase\apps\mobile\node_modules\@babel\parser\lib\index.js:12426:12)
+    at TypeScriptParserMixin.parseExpression (C:\ClearCase\clearcase\apps\mobile\node_modules\@babel\parser\lib\index.js:10780:17)
+    at TypeScriptParserMixin.jsxParseExpressionContainer (C:\ClearCase\clearcase\apps\mobile\node_modules\@babel\parser\lib\index.js:4632:31)
+    at TypeScriptParserMixin.jsxParseElementAt (C:\ClearCase\clearcase\apps\mobile\node_modules\@babel\parser\lib\index.js:4711:36)
+    at TypeScriptParserMixin.jsxParseElementAt (C:\ClearCase\clearcase\apps\mobile\node_modules\@babel\parser\lib\index.js:4698:32)
+Web .\index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 43ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web Bundled 34ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web .\index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 36ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web Bundled 33ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web .\index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 33ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web Bundled 36ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web .\index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 37ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web .\index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 35ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web Bundled 34ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web .\index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 41ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web Bundled 33ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web .\index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 33ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web Bundled 34ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web .\index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 53ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web .\index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 35ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web Bundled 34ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web .\index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 34ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web Bundled 33ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web .\index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 36ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web Bundled 44ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web .\index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 34ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web Bundled 32ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web Bundled 35ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web .\index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 34ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web Bundled 31ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console

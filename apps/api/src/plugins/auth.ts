@@ -13,6 +13,20 @@ declare module "fastify" {
 }
 
 const DEFAULT_SUBJECT = "dev-subject-0001";
+const DEFAULT_PROD_SUBJECT = "server-auth-subject";
+
+function parseBooleanEnv(name: string, fallback: boolean): boolean {
+  const raw = process.env[name]?.trim().toLowerCase();
+  if (!raw) return fallback;
+  if (raw === "1" || raw === "true" || raw === "yes" || raw === "on") return true;
+  if (raw === "0" || raw === "false" || raw === "no" || raw === "off") return false;
+  return fallback;
+}
+
+function isDevHeaderAuthEnabled(): boolean {
+  const defaultEnabled = process.env.NODE_ENV !== "production";
+  return parseBooleanEnv("CLEARCASE_DEV_HEADER_AUTH_ENABLED", defaultEnabled);
+}
 
 function getHeaderValue(request: FastifyRequest, name: string): string | undefined {
   const value = request.headers[name];
@@ -36,11 +50,22 @@ function buildFallbackEmail(subject: string): string {
 
 export async function authPlugin(app: FastifyInstance): Promise<void> {
   app.addHook("onRequest", async (request) => {
-    const subject = getHeaderValue(request, "x-auth-subject") ?? DEFAULT_SUBJECT;
-    const email = getHeaderValue(request, "x-user-email") ?? buildFallbackEmail(subject);
+    if (isDevHeaderAuthEnabled()) {
+      const subject = getHeaderValue(request, "x-auth-subject") ?? DEFAULT_SUBJECT;
+      const email = getHeaderValue(request, "x-user-email") ?? buildFallbackEmail(subject);
 
+      request.auth = {
+        provider: "dev-header-stub",
+        subject,
+        email
+      };
+      return;
+    }
+
+    const subject = process.env.CLEARCASE_AUTH_SUBJECT?.trim() || DEFAULT_PROD_SUBJECT;
+    const email = process.env.CLEARCASE_AUTH_EMAIL?.trim() || buildFallbackEmail(subject);
     request.auth = {
-      provider: "dev-header-stub",
+      provider: "server-stub",
       subject,
       email
     };

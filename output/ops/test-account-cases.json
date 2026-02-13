@@ -1,0 +1,205 @@
+{
+  "identity": {
+    "subject": "clearcase-test-account",
+    "email": "clearcase.test.account@example.com"
+  },
+  "generatedAt": "2026-02-13T02:26:54.206Z",
+  "summary": [
+    {
+      "caseTitle": "[20260213022647] Protective Order Notice",
+      "documentType": "protective_order_notice",
+      "caseId": "cmlk9o7fg00at44wo2zs5peau",
+      "assetId": "cmlk9o7ft00au44wodadviccj",
+      "filePath": "C:\\Clearcase\\Clearcase\\testdocs\\mock-legal-cases\\protective-order-notice.pdf"
+    },
+    {
+      "caseTitle": "[20260213022647] Family Court Notice",
+      "documentType": "family_court_notice",
+      "caseId": "cmlk9o7ut00ay44woqrioeqn3",
+      "assetId": "cmlk9o7v600az44wokhnhipta",
+      "filePath": "C:\\Clearcase\\Clearcase\\testdocs\\mock-legal-cases\\family-court-notice.pdf"
+    },
+    {
+      "caseTitle": "[20260213022647] Small Claims Complaint",
+      "documentType": "small_claims_complaint",
+      "caseId": "cmlk9o81600b344wo2xin8psy",
+      "assetId": "cmlk9o81m00b444wo2tvucgy5",
+      "filePath": "C:\\Clearcase\\Clearcase\\testdocs\\mock-legal-cases\\small-claims-complaint.pdf"
+    },
+    {
+      "caseTitle": "[20260213022647] Summons and Complaint",
+      "documentType": "summons_complaint",
+      "caseId": "cmlk9o87a00b844wod2707bs6",
+      "assetId": "cmlk9o87o00b944wovhv6ojmj",
+      "filePath": "C:\\Clearcase\\Clearcase\\testdocs\\mock-legal-cases\\summons-complaint.pdf"
+    },
+    {
+      "caseTitle": "[20260213022647] Subpoena Notice",
+      "documentType": "subpoena_notice",
+      "caseId": "cmlk9o8cd00bd44wofz2lph0j",
+      "assetId": "cmlk9o8cs00be44woj8ud7jhx",
+      "filePath": "C:\\Clearcase\\Clearcase\\testdocs\\mock-legal-cases\\subpoena-notice.pdf"
+    },
+    {
+      "caseTitle": "[20260213022647] Judgment Notice",
+      "documentType": "judgment_notice",
+      "caseId": "cmlk9o8hb00bi44woo2nkb2pf",
+      "assetId": "cmlk9o8hn00bj44wopcjdyvyn",
+      "filePath": "C:\\Clearcase\\Clearcase\\testdocs\\mock-legal-cases\\judgment-notice.pdf"
+    },
+    {
+      "caseTitle": "[20260213022647] Court Hearing Notice",
+      "documentType": "court_hearing_notice",
+      "caseId": "cmlk9o8mo00bn44wopgazp18z",
+      "assetId": "cmlk9o8n100bo44wodwjae7di",
+      "filePath": "C:\\Clearcase\\Clearcase\\testdocs\\mock-legal-cases\\court-hearing-notice.pdf"
+    },
+    {
+      "caseTitle": "[20260213022647] Demand Letter",
+      "documentType": "demand_letter",
+      "caseId": "cmlk9o8rp00bs44wol9s1edg4",
+      "assetId": "cmlk9o8s100bt44wok6llh385",
+      "filePath": "C:\\Clearcase\\Clearcase\\testdocs\\mock-legal-cases\\demand-letter.pdf"
+    },
+    {
+      "caseTitle": "[20260213022647] Eviction Notice",
+      "documentType": "eviction_notice",
+      "caseId": "cmlk9o8wk00bx44wocpwk9a0z",
+      "assetId": "cmlk9o8wz00by44wory4aw7f4",
+      "filePath": "C:\\Clearcase\\Clearcase\\testdocs\\mock-legal-cases\\eviction-notice.pdf"
+    },
+    {
+      "caseTitle": "[20260213022647] Foreclosure Default Notice",
+      "documentType": "foreclosure_default_notice",
+      "caseId": "cmlk9o92a00c244wosm2m2g9q",
+      "assetId": "cmlk9o92m00c344woh7zj81kn",
+      "filePath": "C:\\Clearcase\\Clearcase\\testdocs\\mock-legal-cases\\foreclosure-default-notice.pdf"
+    },
+    {
+      "caseTitle": "[20260213022647] Repossession Notice",
+      "documentType": "repossession_notice",
+      "caseId": "cmlk9o97k00c744wo8e3b02zt",
+      "assetId": "cmlk9o97x00c844wo143osuss",
+      "filePath": "C:\\Clearcase\\Clearcase\\testdocs\\mock-legal-cases\\repossession-notice.pdf"
+    },
+    {
+      "caseTitle": "[20260213022647] Security Deposit Deductions",
+      "documentType": "landlord_security_deposit_notice",
+      "caseId": "cmlk9o9dg00cc44wo8n7xl2ks",
+      "assetId": "cmlk9o9dr00cd44wozi40v1cq",
+      "filePath": "C:\\Clearcase\\Clearcase\\testdocs\\mock-legal-cases\\security-deposit-deductions.pdf"
+    },
+    {
+      "caseTitle": "[20260213022647] Lease Violation Notice",
+      "documentType": "lease_violation_notice",
+      "caseId": "cmlk9o9i900ch44wo2q0opzdz",
+      "assetId": "cmlk9o9ij00ci44wohebto2cx",
+      "filePath": "C:\\Clearcase\\Clearcase\\testdocs\\mock-legal-cases\\lease-violation-notice.pdf"
+    },
+    {
+      "caseTitle": "[20260213022647] Debt Collection Notice",
+      "documentType": "debt_collection_notice",
+      "caseId": "cmlk9o9n300cm44wo9gd247ux",
+      "assetId": "cmlk9o9ng00cn44wo53pbcepz",
+      "filePath": "C:\\Clearcase\\Clearcase\\testdocs\\mock-legal-cases\\debt-collection-notice.pdf"
+    },
+    {
+      "caseTitle": "[20260213022647] Wage Garnishment Notice",
+      "documentType": "wage_garnishment_notice",
+      "caseId": "cmlk9o9s200cr44wolt31e7pg",
+      "assetId": "cmlk9o9sd00cs44wocp8i9zft",
+      "filePath": "C:\\Clearcase\\Clearcase\\testdocs\\mock-legal-cases\\wage-garnishment-notice.pdf"
+    },
+    {
+      "caseTitle": "[20260213022647] Tax Notice",
+      "documentType": "tax_notice",
+      "caseId": "cmlk9o9xb00cw44won8gllopm",
+      "assetId": "cmlk9o9xm00cx44woiyudgc17",
+      "filePath": "C:\\Clearcase\\Clearcase\\testdocs\\mock-legal-cases\\tax-notice.pdf"
+    },
+    {
+      "caseTitle": "[20260213022647] Unemployment Benefits Denial",
+      "documentType": "unemployment_benefits_denial",
+      "caseId": "cmlk9oa2s00d144wobgqpwbco",
+      "assetId": "cmlk9oa3300d244wo96bpuxkk",
+      "filePath": "C:\\Clearcase\\Clearcase\\testdocs\\mock-legal-cases\\unemployment-benefits-denial.pdf"
+    },
+    {
+      "caseTitle": "[20260213022647] Workers Compensation Denial",
+      "documentType": "workers_comp_denial_notice",
+      "caseId": "cmlk9oa7o00d644wokht3q7t7",
+      "assetId": "cmlk9oa8000d744wou0emgkek",
+      "filePath": "C:\\Clearcase\\Clearcase\\testdocs\\mock-legal-cases\\workers-comp-denial-notice.pdf"
+    },
+    {
+      "caseTitle": "[20260213022647] Benefits Overpayment Notice",
+      "documentType": "benefits_overpayment_notice",
+      "caseId": "cmlk9oach00db44woxkqyc875",
+      "assetId": "cmlk9oact00dc44wojwzxamgp",
+      "filePath": "C:\\Clearcase\\Clearcase\\testdocs\\mock-legal-cases\\benefits-overpayment-notice.pdf"
+    },
+    {
+      "caseTitle": "[20260213022647] Insurance Denial Letter",
+      "documentType": "insurance_denial_letter",
+      "caseId": "cmlk9oahh00dg44wokiuxko3v",
+      "assetId": "cmlk9oahs00dh44wo4ir25lpa",
+      "filePath": "C:\\Clearcase\\Clearcase\\testdocs\\mock-legal-cases\\insurance-denial-letter.pdf"
+    },
+    {
+      "caseTitle": "[20260213022647] Insurance Subrogation Notice",
+      "documentType": "insurance_subrogation_notice",
+      "caseId": "cmlk9oamh00dl44wo6jedp0e7",
+      "assetId": "cmlk9oamu00dm44wolbd4fti0",
+      "filePath": "C:\\Clearcase\\Clearcase\\testdocs\\mock-legal-cases\\insurance-subrogation-notice.pdf"
+    },
+    {
+      "caseTitle": "[20260213022647] Incident Evidence Photo Packet",
+      "documentType": "incident_evidence_photo",
+      "caseId": "cmlk9oar500dq44wowvitxhvl",
+      "assetId": "cmlk9oarf00dr44woccmw1hp7",
+      "filePath": "C:\\Clearcase\\Clearcase\\testdocs\\mock-legal-cases\\incident-evidence-photo-packet.pdf"
+    },
+    {
+      "caseTitle": "[20260213022647] Utility Shutoff Notice",
+      "documentType": "utility_shutoff_notice",
+      "caseId": "cmlk9oaww00dv44wokggch344",
+      "assetId": "cmlk9oax800dw44wode7rb1tc",
+      "filePath": "C:\\Clearcase\\Clearcase\\testdocs\\mock-legal-cases\\utility-shutoff-notice.pdf"
+    },
+    {
+      "caseTitle": "[20260213022647] License Suspension Notice",
+      "documentType": "license_suspension_notice",
+      "caseId": "cmlk9ob1m00e044woouikpnn8",
+      "assetId": "cmlk9ob1y00e144wojir8ec4a",
+      "filePath": "C:\\Clearcase\\Clearcase\\testdocs\\mock-legal-cases\\license-suspension-notice.pdf"
+    },
+    {
+      "caseTitle": "[20260213022647] Citation Ticket",
+      "documentType": "citation_ticket",
+      "caseId": "cmlk9ob6k00e544woggnrt0k6",
+      "assetId": "cmlk9ob6v00e644woc3e4a8i4",
+      "filePath": "C:\\Clearcase\\Clearcase\\testdocs\\mock-legal-cases\\citation-ticket.pdf"
+    },
+    {
+      "caseTitle": "[20260213022647] General Legal Notice",
+      "documentType": "general_legal_notice",
+      "caseId": "cmlk9obcf00ea44wogodpr9pf",
+      "assetId": "cmlk9obcr00eb44woognyniae",
+      "filePath": "C:\\Clearcase\\Clearcase\\testdocs\\mock-legal-cases\\general-legal-notice.pdf"
+    },
+    {
+      "caseTitle": "[20260213022647] Non-Legal Receipt Image",
+      "documentType": "non_legal_or_unclear_image",
+      "caseId": "cmlk9obhc00ef44wopw6dw652",
+      "assetId": "cmlk9obho00eg44wo4gzpyixp",
+      "filePath": "C:\\Clearcase\\Clearcase\\testdocs\\mock-legal-cases\\non-legal-receipt.pdf"
+    },
+    {
+      "caseTitle": "[20260213022647] Unknown Legal Document",
+      "documentType": "unknown_legal_document",
+      "caseId": "cmlk9obm100ek44wo3xk7pwvk",
+      "assetId": "cmlk9obmc00el44woku8dmi40",
+      "filePath": "C:\\Clearcase\\Clearcase\\testdocs\\mock-legal-cases\\unknown-legal-document.pdf"
+    }
+  ]
+}

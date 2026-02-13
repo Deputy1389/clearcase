@@ -1,0 +1,14 @@
+
+> clearcase-mobile@1.0.0 start
+> expo start --host lan --port 8099 --clear
+
+env: load .env
+env: export EXPO_PUBLIC_API_BASE
+Starting project at C:\Clearcase\Clearcase\apps\mobile
+Starting Metro Bundler
+warning: Bundler cache is empty, rebuilding (this may take a minute)
+The following packages should be updated for best compatibility with the installed expo version:
+  react-native-webview@13.16.0 - expected version: 13.15.0
+Your project may not work correctly until you install the expected versions of the packages.
+Waiting on http://localhost:8099
+Logs for your project will appear below.

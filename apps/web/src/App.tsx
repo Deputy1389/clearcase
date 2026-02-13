@@ -312,11 +312,13 @@ function App() {
       <header className="hero panel">
         <div className="hero-headline">
           <p className="eyebrow">ClearCase</p>
-          <h1>Legal clarity workflow</h1>
+          <h1>Reduce missed steps and preparation stress</h1>
           <p className="subtle">
-            Upload a legal document, track extraction and deadline signals, and get a plain-language summary with
-            receipts.
+            Upload legal documents, track dates with receipts and uncertainty, and prepare consultation packets with
+            continuity over time.
           </p>
+          <p className="subtle">Informational clarity only. Not legal advice.</p>
+          <p className="subtle">Free + Plus ($7/month or $20 per active case-month): small cost now, fewer expensive misses later.</p>
         </div>
         <form className="auth-form" onSubmit={(event) => event.preventDefault()}>
           <label>

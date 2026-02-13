@@ -1,0 +1,53 @@
+Keep this file as the single source for the next builder action.
+
+Current prompt: Prompt N - Pre-Revenue OCR Spend Lock
+
+Goal:
+Keep OCR provider spend at or near zero until first paying customers are active, without breaking core product validation and launch readiness.
+
+Scope:
+1) Pre-revenue OCR mode contract:
+- Introduce explicit pre-revenue mode configuration and docs.
+- Default behavior in pre-revenue environments:
+  - `OCR_PROVIDER=stub`
+  - `GLOBAL_FREE_OCR_ENABLED=false`
+- Keep deterministic receipts that clearly indicate processing path (`stub`, `pdf_text_direct`, `cache_reuse`, `google_vision`).
+
+2) Controlled paid OCR access:
+- Add a strict allowlist or feature-flag path so only internal/test identities can use paid OCR provider before revenue launch.
+- Ensure this path is server-authoritative and auditable.
+- Add audit subtype for denied paid-OCR attempts outside allowlist (`paid_ocr_blocked_pre_revenue` or equivalent).
+
+3) Cost visibility:
+- Extend operator reporting to show:
+  - count by OCR provider path
+  - estimated billable OCR units
+  - unexpected paid OCR usage warnings
+- Add threshold-based warning when paid OCR path is triggered in pre-revenue mode.
+
+4) Safety tests:
+- Add API/worker tests for:
+  - pre-revenue default blocks paid OCR for public users
+  - allowlisted identity can run paid OCR path
+  - processing still succeeds through stub/text/cache paths
+  - warning/audit signals emitted as expected
+
+5) Documentation and rollout:
+- Update `NEXT_STEPS.md` and `coordination/PAID_LAUNCH_READINESS.md` with pre-revenue OCR spend policy and operator toggle instructions.
+- Document exact switch-over steps for enabling paid OCR once first customers are live.
+
+Validation:
+- `npx tsc --noEmit -p apps/api/tsconfig.json`
+- `npx tsc --noEmit -p apps/mobile/tsconfig.json`
+- `npx tsc --noEmit -p apps/worker/tsconfig.json`
+- `node --test apps/api/tests/*.mjs`
+- `node --test apps/worker/src/lib/ocr.provider.test.ts apps/worker/src/lib/pipeline.regression.test.ts`
+
+Constraints:
+- Deterministic and auditable behavior only.
+- No architecture redesign.
+- Do not remove existing OCR capabilities; gate and control them.
+
+After completion:
+- Update `coordination/CURRENT_TASK.md`, `coordination/BUILD_STATUS.md`, `coordination/DECISIONS.md`, and `coordination/BLOCKERS.md` (if blocked).
+- Then proceed to push provider cutover task from `NEXT_STEPS.md`.

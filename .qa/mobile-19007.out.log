@@ -1,0 +1,138 @@
+
+> clearcase-mobile@1.0.0 web
+> expo start --web --port 19007
+
+env: load .env
+env: export EXPO_PUBLIC_API_BASE
+Starting project at C:\Clearcase\Clearcase\apps\mobile
+Starting Metro Bundler
+Waiting on http://localhost:19007
+Logs for your project will appear below.
+Web .\index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web .\index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 1405ms index.ts (478 modules)
+Web Bundled 1424ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+ LOG  [web] Logs will appear in the browser console
+Web Bundled 35ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web .\index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 37ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web Bundled 34ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web .\index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 40ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web Bundled 42ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web .\index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 35ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web Bundled 33ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web .\index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 33ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web Bundled 37ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web .\index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 35ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web Bundled 36ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web .\index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 37ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web Bundled 34ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web .\index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 33ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web Bundled 36ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web .\index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 33ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web Bundled 38ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web .\index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 36ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web Bundled 38ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web .\index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 43ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web Bundled 36ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web .\index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 35ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web Bundled 40ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web .\index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 31ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web Bundled 32ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web .\index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 36ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web Bundled 32ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web .\index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 42ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web Bundled 36ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web .\index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 33ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web Bundled 35ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web .\index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 32ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web Bundled 32ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web .\index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 33ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web Bundled 33ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web .\index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 34ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web Bundled 38ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web .\index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 35ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web Bundled 32ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web .\index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 33ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web Bundled 40ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web .\index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 35ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web Bundled 40ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web .\index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 33ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web Bundled 35ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web .\index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 38ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web Bundled 54ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web .\index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 34ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web Bundled 40ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console

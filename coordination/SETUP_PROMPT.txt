@@ -1,0 +1,32 @@
+Coordination setup (required before implementation):
+
+Create and use `coordination/` as the shared status contract between builder + advisor.
+
+Ensure these files exist and keep them updated:
+1) `coordination/CURRENT_TASK.md`
+2) `coordination/BUILD_STATUS.md` (append-only, newest on top)
+3) `coordination/DECISIONS.md`
+4) `coordination/BLOCKERS.md` (only when blocked)
+5) `coordination/NEXT_PROMPT.txt` (single source of next action)
+
+Read in order:
+1) `CLEARCASE_HANDOFF.txt`
+2) `improvements.txt`
+3) `advisor.txt`
+4) `NEXT_STEPS.md`
+5) `coordination/NEXT_PROMPT.txt`
+
+Required status format:
+## [UTC timestamp] Status
+- Completed:
+- In progress:
+- Files changed:
+- Tests run + result:
+- Risks:
+- Next step:
+
+Guardrails:
+- No legal advice phrasing.
+- Keep tone calm, non-directive, non-alarmist.
+- Spanish rules from `improvements.txt` are mandatory.
+- Localize user-facing copy only; keep facts/enums canonical.

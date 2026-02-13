@@ -5,3 +5,7 @@ logs/
 .api.log
 .worker.log
 .playwright-cli/
+secrets/
+**/secrets/
+*.key.json
+**/*.key.json

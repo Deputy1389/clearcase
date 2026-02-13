@@ -1,0 +1,5 @@
+Error: Unable to click target: /^Close$/i, /^Back$/i
+    at clickByRoleOrText (file:///C:/Clearcase/Clearcase/scripts/qa/prompt-m-capture.mjs:68:9)
+    at async closeSheet (file:///C:/Clearcase/Clearcase/scripts/qa/prompt-m-capture.mjs:104:3)
+    at async captureViewerShots (file:///C:/Clearcase/Clearcase/scripts/qa/prompt-m-capture.mjs:135:5)
+    at async run (file:///C:/Clearcase/Clearcase/scripts/qa/prompt-m-capture.mjs:195:3)

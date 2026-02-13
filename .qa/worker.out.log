@@ -1,0 +1,9 @@
+
+> clearcase@0.1.0 worker:start
+> tsx apps/worker/src/worker.ts
+
+{"level":"info","msg":"worker_started","queueUrl":"https://sqs.us-west-2.amazonaws.com/905418215132/clearcase-phase4-dev","waitTimeSeconds":20,"visibilityTimeoutSeconds":30}
+{"level":"info","msg":"worker_asset_processed","queueMessageId":"bf2a111b-f77c-4a90-955b-98cf53252fd4","caseId":"cmlk6ccbg000mvswoxpbybbsg","assetId":"cmlk6ccut000tvswob6fqk9ae","extractionId":"cmlk6cd2t0000sswoklb3eigd","truthLayer":{"documentType":"non_legal_or_unclear_image","classificationConfidence":0.2,"timeSensitive":false,"earliestDeadline":null},"verdictId":"cmlk6cd4t0003sswo12j78kuj","llmModel":"deterministic-formatter-v1","replayMode":"fresh"}
+{"level":"info","msg":"worker_message_acked","messageId":"bf2a111b-f77c-4a90-955b-98cf53252fd4"}
+{"level":"info","msg":"worker_asset_processed","queueMessageId":"8c2f75ec-88c9-45ea-b037-ee92c40c3a24","caseId":"cmlk6rd110002hwwojzxnk7gv","assetId":"8caa179f-6379-4abc-8440-e91e81c89b21","extractionId":"cmlk6rdmn0006sswowr5wg66y","truthLayer":{"documentType":"non_legal_or_unclear_image","classificationConfidence":0.2,"timeSensitive":false,"earliestDeadline":null},"verdictId":"cmlk6rdnu0009sswov16mfxnr","llmModel":"deterministic-formatter-v1","replayMode":"fresh"}
+{"level":"info","msg":"worker_message_acked","messageId":"8c2f75ec-88c9-45ea-b037-ee92c40c3a24"}

@@ -1,3 +1,7 @@
+param(
+  [switch]$IncludeRealOcr
+)
+
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
@@ -200,6 +204,9 @@ try {
   Invoke-SmokeScript -Results $results -CheckName "Phase 6 smoke" -ScriptPath (Join-Path $PSScriptRoot "phase6-smoke.ps1") -NamedArguments @{ StartApi = $true; StartWorker = $true }
   Invoke-SmokeScript -Results $results -CheckName "Phase 7 smoke" -ScriptPath (Join-Path $PSScriptRoot "phase7-smoke.ps1") -NamedArguments @{ StartApi = $true; StartWorker = $true }
   Invoke-SmokeScript -Results $results -CheckName "Taxonomy smoke" -ScriptPath (Join-Path $PSScriptRoot "taxonomy-smoke.ps1") -NamedArguments @{ StartApi = $true; StartWorker = $true }
+  if ($IncludeRealOcr) {
+    Invoke-SmokeScript -Results $results -CheckName "Phase 8 real OCR smoke" -ScriptPath (Join-Path $PSScriptRoot "phase8-real-ocr-smoke.ps1") -NamedArguments @{ StartApi = $true; StartWorker = $true }
+  }
 }
 catch {
   Write-Host ""

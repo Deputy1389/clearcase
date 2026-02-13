@@ -17,6 +17,25 @@ export type PublicUser = {
 export type MeResponse = {
   user: PublicUser;
   needsProfile: boolean;
+  entitlement: {
+    id: string;
+    plan: "free" | "plus";
+    status: "active" | "revoked" | "trial";
+    source: "manual" | "billing";
+    startAt: string | null;
+    endAt: string | null;
+    isPlus: boolean;
+    viaAllowlistFallback: boolean;
+  };
+  pushPreferences: {
+    enabled: boolean;
+    language: "en" | "es";
+    quietHoursStart: string | null;
+    quietHoursEnd: string | null;
+  };
+  pushDevices: {
+    activeCount: number;
+  };
 };
 
 export type CaseSummary = {
@@ -43,6 +62,71 @@ export type Asset = {
   mimeType: string;
   byteSize: number;
   createdAt: string;
+  source?: "camera" | "file";
+  processingStatus?: "pending" | "succeeded" | "failed";
+  assetType?: string;
+};
+
+export type CaseAsset = {
+  id: string;
+  fileName: string;
+  mimeType: string;
+  byteSize: number;
+  createdAt: string;
+  source: "camera" | "file";
+  processingStatus: "pending" | "succeeded" | "failed";
+  assetType: string;
+};
+
+export type CaseAssetsResponse = {
+  caseId: string;
+  assets: CaseAsset[];
+};
+
+export type AssetAccessResponse = {
+  caseId: string;
+  assetId: string;
+  action: "view" | "download";
+  accessUrl: string;
+  expiresInSeconds: number;
+};
+
+export type PlainMeaningRow = {
+  id: string;
+  originalText: string;
+  plainMeaning: string;
+  whyThisOftenMatters: string;
+  commonlyPreparedItems: string[];
+  receipts: Array<{
+    assetId: string;
+    fileName: string;
+    pageHint: string | null;
+    snippet: string;
+    confidence: "high" | "medium" | "low";
+  }>;
+  uncertainty: string;
+};
+
+export type PlainMeaningResponse = {
+  caseId: string;
+  language: "en" | "es";
+  rows: PlainMeaningRow[];
+  boundary: string;
+};
+
+export type PaywallConfigResponse = {
+  plusPriceMonthly: string;
+  paywallVariant: string;
+  showAlternatePlan: boolean;
+  billingEnabled: boolean;
+};
+
+export type BillingCheckoutResponse = {
+  provider: "internal_stub" | "stripe";
+  sessionId: string;
+  checkoutUrl: string;
+  plusPriceMonthly: string;
+  paywallVariant: string;
 };
 
 export type Extraction = {
@@ -94,12 +178,50 @@ export type UploadFinalizeResponse = {
   messageId: string | null;
   caseId: string;
   assetId: string;
+  contextReuse?: {
+    reused: boolean;
+    sourceCaseId: string | null;
+  };
 };
 
 export type SaveCaseContextResponse = {
   saved: boolean;
   caseId: string;
   description: string;
+};
+
+export type ConsultPacketLink = {
+  id: string;
+  tokenPreview: string;
+  createdAt: string;
+  expiresAt: string;
+  disabledAt: string | null;
+  status: "active" | "expired" | "disabled";
+  statusReason: "active" | "expired" | "disabled";
+};
+
+export type ConsultPacketLinksResponse = {
+  caseId: string;
+  links: ConsultPacketLink[];
+};
+
+export type CreateConsultPacketLinkResponse = {
+  caseId: string;
+  id: string;
+  tokenPreview: string;
+  shareUrl: string;
+  createdAt: string;
+  expiresAt: string;
+  status: "active";
+  statusReason: "active";
+};
+
+export type DisableConsultPacketLinkResponse = {
+  caseId: string;
+  id: string;
+  disabled: boolean;
+  status: "disabled";
+  statusReason: "disabled";
 };
 
 export const MANUAL_DOCUMENT_TYPES = [
@@ -138,6 +260,12 @@ export type ManualDocumentType = (typeof MANUAL_DOCUMENT_TYPES)[number];
 export type SetCaseClassificationResponse = {
   saved: boolean;
   case: CaseSummary;
+};
+
+export type SetCaseWatchModeResponse = {
+  saved: boolean;
+  caseId: string;
+  enabled: boolean;
 };
 
 export type ApiError = Error & {
@@ -289,6 +417,80 @@ export async function patchMe(
   );
 }
 
+export async function getNotificationPreferences(
+  apiBase: string,
+  authHeaders: AuthHeaders
+): Promise<{
+  pushPreferences: {
+    enabled: boolean;
+    language: "en" | "es";
+    quietHoursStart: string | null;
+    quietHoursEnd: string | null;
+  };
+}> {
+  return requestJson(apiBase, "/me/notification-preferences", { method: "GET" }, authHeaders);
+}
+
+export async function patchNotificationPreferences(
+  apiBase: string,
+  authHeaders: AuthHeaders,
+  input: {
+    enabled?: boolean;
+    language?: "en" | "es";
+    quietHoursStart?: string | null;
+    quietHoursEnd?: string | null;
+  }
+): Promise<{
+  pushPreferences: {
+    enabled: boolean;
+    language: "en" | "es";
+    quietHoursStart: string | null;
+    quietHoursEnd: string | null;
+  };
+}> {
+  return requestJson(
+    apiBase,
+    "/me/notification-preferences",
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(input)
+    },
+    authHeaders
+  );
+}
+
+export async function registerPushDevice(
+  apiBase: string,
+  authHeaders: AuthHeaders,
+  input: {
+    deviceId: string;
+    platform: "ios" | "android" | "web";
+    token: string;
+    language?: "en" | "es";
+  }
+): Promise<{
+  registered: boolean;
+  deviceId: string;
+  platform: "ios" | "android" | "web";
+  language: "en" | "es";
+}> {
+  return requestJson(
+    apiBase,
+    "/me/push-devices/register",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(input)
+    },
+    authHeaders
+  );
+}
+
 export async function getCases(apiBase: string, authHeaders: AuthHeaders): Promise<CasesResponse> {
   try {
     return await requestJson<CasesResponse>(apiBase, "/cases", { method: "GET" }, authHeaders);
@@ -410,6 +612,183 @@ export async function setCaseClassification(
         "Content-Type": "application/json"
       },
       body: JSON.stringify({ documentType })
+    },
+    authHeaders
+  );
+}
+
+export async function setCaseWatchMode(
+  apiBase: string,
+  authHeaders: AuthHeaders,
+  caseId: string,
+  enabled: boolean
+): Promise<SetCaseWatchModeResponse> {
+  return requestJson<SetCaseWatchModeResponse>(
+    apiBase,
+    `/cases/${caseId}/watch-mode`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ enabled })
+    },
+    authHeaders
+  );
+}
+
+export async function getConsultPacketLinks(
+  apiBase: string,
+  authHeaders: AuthHeaders,
+  caseId: string
+): Promise<ConsultPacketLinksResponse> {
+  return requestJson<ConsultPacketLinksResponse>(
+    apiBase,
+    `/cases/${caseId}/consult-packet-links`,
+    { method: "GET" },
+    authHeaders
+  );
+}
+
+export async function createConsultPacketLink(
+  apiBase: string,
+  authHeaders: AuthHeaders,
+  caseId: string,
+  input?: { expiresInDays?: number }
+): Promise<CreateConsultPacketLinkResponse> {
+  return requestJson<CreateConsultPacketLinkResponse>(
+    apiBase,
+    `/cases/${caseId}/consult-packet-links`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(input ?? {})
+    },
+    authHeaders
+  );
+}
+
+export async function disableConsultPacketLink(
+  apiBase: string,
+  authHeaders: AuthHeaders,
+  caseId: string,
+  token: string
+): Promise<DisableConsultPacketLinkResponse> {
+  return requestJson<DisableConsultPacketLinkResponse>(
+    apiBase,
+    `/cases/${caseId}/consult-packet-links/${token}/disable`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: "{}"
+    },
+    authHeaders
+  );
+}
+
+export async function getCaseAssets(
+  apiBase: string,
+  authHeaders: AuthHeaders,
+  caseId: string
+): Promise<CaseAssetsResponse> {
+  return requestJson<CaseAssetsResponse>(
+    apiBase,
+    `/cases/${caseId}/assets`,
+    { method: "GET" },
+    authHeaders
+  );
+}
+
+export async function getCaseAssetAccess(
+  apiBase: string,
+  authHeaders: AuthHeaders,
+  caseId: string,
+  assetId: string,
+  action: "view" | "download"
+): Promise<AssetAccessResponse> {
+  return requestJson<AssetAccessResponse>(
+    apiBase,
+    `/cases/${caseId}/assets/${assetId}/access?action=${encodeURIComponent(action)}`,
+    { method: "GET" },
+    authHeaders
+  );
+}
+
+export async function getPlainMeaning(
+  apiBase: string,
+  authHeaders: AuthHeaders,
+  caseId: string,
+  language: "en" | "es"
+): Promise<PlainMeaningResponse> {
+  return requestJson<PlainMeaningResponse>(
+    apiBase,
+    `/cases/${caseId}/plain-meaning?language=${encodeURIComponent(language)}`,
+    { method: "GET" },
+    authHeaders
+  );
+}
+
+export async function getPaywallConfig(
+  apiBase: string,
+  authHeaders: AuthHeaders
+): Promise<PaywallConfigResponse> {
+  return requestJson<PaywallConfigResponse>(
+    apiBase,
+    "/config/paywall",
+    { method: "GET" },
+    authHeaders
+  );
+}
+
+export async function trackEvent(
+  apiBase: string,
+  authHeaders: AuthHeaders,
+  input: {
+    event: string;
+    source?: string;
+    locale?: "en" | "es";
+    paywallVariant?: string;
+    properties?: Record<string, unknown>;
+  }
+): Promise<{ tracked: boolean }> {
+  return requestJson<{ tracked: boolean }>(
+    apiBase,
+    "/events/track",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(input)
+    },
+    authHeaders
+  );
+}
+
+export async function createBillingCheckout(
+  apiBase: string,
+  authHeaders: AuthHeaders,
+  input: {
+    plan?: "plus_monthly";
+    successUrl?: string;
+    cancelUrl?: string;
+    triggerSource?: string;
+    locale?: "en" | "es";
+  }
+): Promise<BillingCheckoutResponse> {
+  return requestJson<BillingCheckoutResponse>(
+    apiBase,
+    "/billing/checkout",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(input)
     },
     authHeaders
   );

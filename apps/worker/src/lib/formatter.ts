@@ -310,6 +310,48 @@ function receiptSignals(signals: DeadlineSignal[]): Array<Record<string, unknown
   }));
 }
 
+function confidenceBand(value: number): "high" | "medium" | "low" {
+  if (value >= 0.85) return "high";
+  if (value >= 0.6) return "medium";
+  return "low";
+}
+
+function buildDeadlineGuard(earliestDeadlineIso: string | null): Record<string, unknown> {
+  if (!earliestDeadlineIso) {
+    return {
+      hasTrackedDeadline: false,
+      reminders: [],
+      weeklyAssurance: "No new time-sensitive changes were detected this week."
+    };
+  }
+
+  const base = new Date(`${earliestDeadlineIso}T00:00:00.000Z`);
+  if (Number.isNaN(base.getTime())) {
+    return {
+      hasTrackedDeadline: false,
+      reminders: [],
+      weeklyAssurance: "No new time-sensitive changes were detected this week."
+    };
+  }
+
+  const offsets = [14, 7, 3, 1];
+  const reminders = offsets.map((offsetDays) => {
+    const date = new Date(base.getTime());
+    date.setUTCDate(date.getUTCDate() - offsetDays);
+    return {
+      label: `T-${offsetDays}`,
+      reminderDateIso: date.toISOString().slice(0, 10)
+    };
+  });
+
+  return {
+    hasTrackedDeadline: true,
+    deadlineIso: earliestDeadlineIso,
+    reminders,
+    weeklyAssurance: "No new time-sensitive changes were detected this week."
+  };
+}
+
 class DeterministicStructuredFormatter implements CaseFormatter {
   async format(input: FormatterInput): Promise<FormatterOutput> {
     const label = humanDocumentLabel(input.truth.documentType);
@@ -322,7 +364,7 @@ class DeterministicStructuredFormatter implements CaseFormatter {
         ? [
             `This upload appears to be ${label}.`,
             "We did not detect strong legal-document signals in the extracted content.",
-            "Add a short description with what happened (for example accident details or damage context) and upload any related notices or letters for better results.",
+            "Add anything not visible in the document (what happened, when, where) and upload related notices or letters for better continuity.",
             "This summary is informational and based only on extracted structured facts."
           ].join(" ")
         : [
@@ -338,7 +380,7 @@ class DeterministicStructuredFormatter implements CaseFormatter {
       tone: "calm_non_alarming",
       summary: plainEnglishExplanation,
       whatThisUsuallyMeans: [
-        `People receiving ${label} usually need to track dates and keep copies of all related records.`,
+        `People receiving ${label} often choose to track dates and keep copies of related records.`,
         "The next practical step is to organize documents and verify facts before responding."
       ],
       deadlines: {
@@ -350,7 +392,13 @@ class DeterministicStructuredFormatter implements CaseFormatter {
       escalationSignal: escalation,
       uncertainty: {
         classificationConfidence: input.truth.classificationConfidence,
+        classificationConfidenceBand: confidenceBand(input.truth.classificationConfidence),
         notes: uncertaintyNotes(input.truth)
+      },
+      deadlineGuard: buildDeadlineGuard(input.truth.earliestDeadlineIso),
+      consultPacket: {
+        sections: ["facts", "dates", "parties", "evidence", "openQuestions"],
+        accessControlHint: "Share links can be time-limited and disabled."
       },
       receipts: {
         caseId: input.caseId,

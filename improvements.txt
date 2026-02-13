@@ -1,0 +1,221 @@
+CLEARCASE — IMPROVEMENTS & PRODUCT DIRECTION
+(Authoritative guidance for CLI work)
+
+This file captures product insights, UX improvements, localization rules,
+and monetization direction. Treat this as intentional product direction,
+not brainstorming.
+
+==================================================
+1) LOCALIZATION: WHAT TO LOCALIZE VS NOT
+==================================================
+
+GOAL:
+Support Spanish (near-term) without increasing legal or technical risk.
+
+----------------------------------
+MUST LOCALIZE (user-facing)
+----------------------------------
+- UI copy (buttons, labels, headers)
+- Status text (Processing, Review Ready, No deadline detected)
+- Plain-language summaries
+- “What this usually means”
+- “Recommended next steps”
+- Error messages and edge states
+
+If it talks directly to the user, it must be localized.
+
+----------------------------------
+DO NOT LOCALIZE (canonical)
+----------------------------------
+- Extracted facts (dates, dollar amounts, names, addresses)
+- Internal enums (document types, risk levels, signal flags)
+- Audit logs and debugging output
+
+Translate labels, not underlying values.
+
+----------------------------------
+CONDITIONAL / LATER
+----------------------------------
+- OCR text display
+- Exported PDFs
+- Lawyer handoff summaries
+
+Do NOT block v1 on these.
+
+----------------------------------
+SPANISH LEGAL TONE RULES (CRITICAL)
+----------------------------------
+Avoid directive or authoritative phrasing.
+
+DO NOT USE:
+- “Debe…”
+- “Tiene que…”
+- “Es ilegal…”
+- “Debe actuar inmediatamente…”
+
+USE INSTEAD:
+- “Suele…”
+- “A menudo…”
+- “Muchas personas optan por…”
+- “En muchos casos se considera útil…”
+
+Preferred framing:
+“Pasos que algunas personas consideran útiles”
+
+Never mix languages inside a single case view.
+UI language = user preference.
+Facts remain neutral.
+
+==================================================
+2) CLEARCASE FREE VS CLEARCASE PLUS
+==================================================
+
+----------------------------------
+FREE (trust-building)
+----------------------------------
+- Document/photo uploads
+- Plain-language summary
+- Case categorization
+- Basic “what this usually is”
+- Manual case context
+- Unlimited viewing of past cases
+
+Answers:
+“Is this a legal thing or not?”
+
+----------------------------------
+CLEARCASE PLUS (subscription-worthy)
+----------------------------------
+
+A) Timeline & Memory (core value)
+- Detected dates on a timeline
+- User-added events
+- “Nothing has changed” reassurance
+- Case history that compounds over time
+
+B) Gentle Deadline Intelligence
+- Soft detection of response windows
+- Calm reminders
+- Explicit uncertainty language
+
+C) Evidence Completeness Tracking
+- “People usually keep these together” checklists
+- Status like “Likely incomplete” / “Commonly sufficient”
+
+D) Lawyer-Ready Summary
+- Neutral consultation prep
+- Facts, dates, parties, open questions
+- Exportable PDF or shareable link
+
+Subscription value = reducing regret over time,
+not more AI features.
+
+----------------------------------
+PRICING GUIDANCE
+----------------------------------
+- $6–8/month OR
+- Hybrid: free + $15 per active case month
+
+Lead with subscription, allow pay-per-case for crisis users.
+
+==================================================
+3) CRITICAL UI / UX IMPROVEMENTS (FROM REVIEW)
+==================================================
+
+----------------------------------
+LANGUAGE & LIABILITY
+----------------------------------
+Soften any directive phrasing.
+
+AVOID:
+“Call a lawyer immediately”
+“Review immediately”
+
+PREFER:
+“Many people choose to consult…”
+“This is often time-sensitive”
+
+----------------------------------
+URGENCY & ANXIETY
+----------------------------------
+High-priority visuals should inform, not alarm.
+
+Replace:
+“Time-sensitive or high-risk signals detected. Review immediately.”
+
+With:
+“This document contains signals that are often time-sensitive.”
+
+----------------------------------
+CASE NAMING (IMPORTANT)
+----------------------------------
+Do NOT surface raw user input as case titles.
+
+Issues:
+- Unprofessional
+- Risky if shared/exported
+- Can backfire socially or legally
+
+Recommendation:
+- Auto-generate neutral titles by default
+  (e.g. “Incident – Feb 12”, “Uploaded Document”)
+- Allow optional user rename
+- Never auto-title from freeform context text
+
+----------------------------------
+ANALYSIS PERCENTAGES
+----------------------------------
+Percentages like “68%” or “100%” are ambiguous.
+
+If kept, clarify explicitly:
+- “Extraction confidence”
+- “Document clarity”
+- “Signal strength”
+
+Otherwise, remove to avoid misinterpretation.
+
+----------------------------------
+STATUS LANGUAGE
+----------------------------------
+“Review Ready” is slightly internal.
+
+Consider:
+- “Ready to review”
+- “Initial review complete”
+
+----------------------------------
+CASE CONTEXT FRAMING
+----------------------------------
+Explain WHY context helps.
+
+Instead of:
+“Add context…”
+
+Use:
+“Add anything not visible in the document (what happened, when, where). This helps future uploads.”
+
+----------------------------------
+PRIVACY SIGNALING
+----------------------------------
+Privacy messaging is good; consider surfacing earlier:
+- Lock icon near upload
+- One-line reassurance at upload step
+
+==================================================
+4) NORTH STAR REMINDER
+==================================================
+
+ClearCase earns trust by:
+- Reducing confusion
+- Reducing anxiety
+- Preventing regret over time
+
+Do not optimize for:
+- More features
+- More AI
+- More urgency
+
+Optimize for:
+- Calm clarity
+- Memory
+- Continuity

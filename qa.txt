@@ -1,0 +1,176 @@
+CLEARCASE — QA MASTER PROMPT (for Codex CLI)
+Save as: qa.txt
+
+PURPOSE
+You are the QA + Reliability engineer for the ClearCase repository in the current directory.
+Your job is to run real tests, find real bugs, fix them with minimal changes, and produce a repeatable QA suite.
+Do not “describe” testing. Actually execute it.
+
+AUTHORITATIVE CONTEXT (load and follow)
+- CLEARCASE_HANDOFF.txt (architecture + constraints)
+- improvements.txt (product polish + language + monetization direction)
+- NEXT_STEPS.md (current priorities)
+- SESSION_LOG.md (append-only history)
+
+EXECUTION RULES
+- Proceed without asking for confirmation for routine actions (running commands, creating files, editing code, installing deps).
+- Only ask before truly destructive actions (dropping prod DB, deleting migrations, removing large files, deleting user data).
+- Prefer minimal, reviewable changes.
+- Show file paths and diffs for edits.
+- Show raw command outputs for failures.
+
+SCOPE
+QA should cover:
+1) API (Fastify) behavior and contracts
+2) Database integration (Postgres + Prisma v7)
+3) Security basics (ownership, auth boundaries, input validation)
+4) UI (if present) via optional end-to-end tests
+5) Regression prevention (scripts, CI-friendly commands)
+
+Do NOT redesign the product.
+Do NOT change the DB schema unless required to fix a bug. If schema changes are required, explain the reason and blast radius.
+
+==================================================
+TIER 0 — SMOKE TESTS (60 seconds)
+==================================================
+Goal: confirm the system is alive and not obviously broken.
+
+Run (PowerShell) and paste raw output:
+- docker compose up -d
+- docker ps
+- npx prisma validate --schema=packages/db/prisma/schema.prisma
+- npx prisma migrate status --schema=packages/db/prisma/schema.prisma
+- npx prisma generate --schema=packages/db/prisma/schema.prisma
+
+Start API (choose correct command from package.json scripts) and verify:
+- GET /health returns { ok: true }
+
+If any smoke step fails, fix immediately and re-run Tier 0 until it passes.
+
+==================================================
+TIER 1 — API CONTRACT TESTS (FASTIFY INJECT)
+==================================================
+Goal: deterministic tests without running a network server.
+
+Preferred test runner: Vitest (unless repo already uses Jest).
+Preferred approach: Fastify app.inject().
+
+Deliverables:
+- Test runner installed and configured for TypeScript.
+- Tests run locally and in CI without manual steps.
+- npm scripts:
+  - test
+  - test:watch (optional)
+  - test:integration
+  - test:e2e (optional)
+
+Required API behaviors to test (minimum):
+A) Health
+- GET /health -> 200 { ok: true }
+
+B) Auth stub / identity
+- Default identity exists when headers absent.
+- Header override works: x-auth-subject, x-user-email.
+
+C) /me behavior
+- GET /me creates user row if missing (idempotent behavior).
+- Response contains: user, needsProfile boolean.
+- PATCH /me validates zip: rejects non-5-digit zip with 400.
+- PATCH /me updates fullName and zipCode.
+- needsProfile becomes false when required fields are present.
+
+D) /cases behavior
+- POST /cases creates a case for the current user.
+- GET /cases/:id returns the case for same user.
+- Ownership enforcement: a different authSubject cannot read another user’s case (should return 404 or 403; pick one and make it consistent).
+- Response shape is stable and does not leak internal errors.
+
+E) Request limits / validation (basic)
+- Reject extremely large bodies where applicable (set Fastify bodyLimit).
+- Ensure JSON parse errors return 400.
+
+If any endpoint currently lacks clean 4xx errors, fix it and add tests.
+
+==================================================
+TIER 2 — DB INTEGRATION TESTS (REAL POSTGRES)
+==================================================
+Goal: tests run against a real Postgres test database, not mocks.
+
+Requirements:
+- A dedicated test DB (separate DB name and/or separate compose file).
+- Migrations applied automatically to the test DB before integration tests.
+- Clean DB per run:
+  - Prefer drop schema / recreate database or use a dedicated volume that is rebuilt each run.
+- Tests must be repeatable and not order-dependent.
+
+Required integration checks:
+1) getOrCreateUser idempotency:
+- Two calls with same authSubject return same user id.
+2) Case snapshot:
+- Create user with zip/state.
+- Create case.
+- Change user profile zip/state.
+- Confirm case retains original snapshot fields (zipCode/jurisdiction).
+3) Ownership invariant at DB query layer:
+- Ensure queries include userId scoping.
+
+==================================================
+TIER 3 — UI E2E (OPTIONAL BUT RECOMMENDED IF UI EXISTS)
+==================================================
+If there is a UI in the repo, add Playwright E2E tests.
+
+Test scenarios:
+- Happy path: open app -> create case -> upload (or simulated) -> see status -> view results.
+- Edge path: blurry/invalid upload -> user sees calm guidance and next action.
+- No dead ends: navigation never leads to blank states.
+
+Avoid flaky sleeps. Prefer waiting on visible UI states or network idleness.
+
+==================================================
+SECURITY QA (LIGHTWEIGHT, IMPORTANT)
+==================================================
+Add tests or checks for:
+- Ownership enforcement on every case read.
+- No routes accept userId from the client to select records.
+- Auth stub is clearly dev-only (flag/guard for production).
+- S3 assets (if implemented) are private and only presigned URLs are returned.
+
+Also scan for:
+- Secrets accidentally committed
+- Logging of document contents
+- Overly directive “legal advice” copy (use improvements.txt as source of tone rules)
+
+==================================================
+DELIVERABLES
+==================================================
+1) A working test suite with green runs.
+2) Scripts added to package.json.
+3) A short QA REPORT (in QA_REPORT.md) including:
+- Commands to run each tier
+- What you changed (file list + summary)
+- Known gaps + prioritized next items
+- Any “brittle” parts and how to stabilize them
+
+4) Append a session entry to SESSION_LOG.md summarizing QA work.
+
+==================================================
+RUN ORDER (AUTOMATED)
+==================================================
+Proceed in this order, running real commands:
+1) Tier 0 smoke tests
+2) Tier 1 API contract tests
+3) Tier 2 DB integration tests
+4) Tier 3 UI E2E tests (if UI exists)
+
+Fix failures as you go. Re-run the failing tier until green.
+
+STOP CONDITION
+Stop when:
+- Tier 0 passes
+- Tier 1 passes
+- Tier 2 passes
+- Tier 3 passes if applicable
+- QA_REPORT.md is written
+- SESSION_LOG.md updated
+
+Begin now.

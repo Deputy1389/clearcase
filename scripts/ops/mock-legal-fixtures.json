@@ -1,0 +1,170 @@
+[
+  {
+    "documentType": "protective_order_notice",
+    "caseTitle": "Protective Order Notice",
+    "fileName": "protective-order-notice.pdf",
+    "description": "Temporary restraining order and no contact order received. Order of protection hearing on 2026-03-09."
+  },
+  {
+    "documentType": "family_court_notice",
+    "caseTitle": "Family Court Notice",
+    "fileName": "family-court-notice.pdf",
+    "description": "Family court notice for child support, custody, and visitation review. Hearing date is 03/22/2026."
+  },
+  {
+    "documentType": "small_claims_complaint",
+    "caseTitle": "Small Claims Complaint",
+    "fileName": "small-claims-complaint.pdf",
+    "description": "Small claims court statement of claim with claim amount and response due within 20 days."
+  },
+  {
+    "documentType": "summons_complaint",
+    "caseTitle": "Summons and Complaint",
+    "fileName": "summons-complaint.pdf",
+    "description": "Civil summons and complaint naming plaintiff and defendant. Served on 2026-02-10 with response deadline."
+  },
+  {
+    "documentType": "subpoena_notice",
+    "caseTitle": "Subpoena Notice",
+    "fileName": "subpoena-notice.pdf",
+    "description": "Subpoena to testify and produce documents for deposition. Includes records request by 2026-03-01."
+  },
+  {
+    "documentType": "judgment_notice",
+    "caseTitle": "Judgment Notice",
+    "fileName": "judgment-notice.pdf",
+    "description": "Court judgment entered with default judgment language and judgment creditor contact information."
+  },
+  {
+    "documentType": "court_hearing_notice",
+    "caseTitle": "Court Hearing Notice",
+    "fileName": "court-hearing-notice.pdf",
+    "description": "Hearing notice with court date, appearance instructions, courtroom assignment, and docket number."
+  },
+  {
+    "documentType": "demand_letter",
+    "caseTitle": "Demand Letter",
+    "fileName": "demand-letter.pdf",
+    "description": "Formal demand letter and demand for payment. Includes cease and desist language and failure to comply terms."
+  },
+  {
+    "documentType": "eviction_notice",
+    "caseTitle": "Eviction Notice",
+    "fileName": "eviction-notice.pdf",
+    "description": "Eviction notice to vacate and pay or quit from landlord to tenant. Response required within 3 days."
+  },
+  {
+    "documentType": "foreclosure_default_notice",
+    "caseTitle": "Foreclosure Default Notice",
+    "fileName": "foreclosure-default-notice.pdf",
+    "description": "Foreclosure notice of default and notice of sale for mortgage default with trustee sale date."
+  },
+  {
+    "documentType": "repossession_notice",
+    "caseTitle": "Repossession Notice",
+    "fileName": "repossession-notice.pdf",
+    "description": "Intent to repossess vehicle collateral and right to cure terms before repossession date."
+  },
+  {
+    "documentType": "landlord_security_deposit_notice",
+    "caseTitle": "Security Deposit Deductions",
+    "fileName": "security-deposit-deductions.pdf",
+    "description": "Security deposit notice with itemized deductions, move-out checklist, and deposit return timeline."
+  },
+  {
+    "documentType": "lease_violation_notice",
+    "caseTitle": "Lease Violation Notice",
+    "fileName": "lease-violation-notice.pdf",
+    "description": "Lease violation and notice to cure, including cure or quit language and unauthorized occupant allegation."
+  },
+  {
+    "documentType": "debt_collection_notice",
+    "caseTitle": "Debt Collection Notice",
+    "fileName": "debt-collection-notice.pdf",
+    "description": "Debt collector collection notice listing creditor, amount due, and validation notice rights."
+  },
+  {
+    "documentType": "wage_garnishment_notice",
+    "caseTitle": "Wage Garnishment Notice",
+    "fileName": "wage-garnishment-notice.pdf",
+    "description": "Wage garnishment order with earnings withholding and employer withholding instructions."
+  },
+  {
+    "documentType": "tax_notice",
+    "caseTitle": "Tax Notice",
+    "fileName": "tax-notice.pdf",
+    "description": "IRS notice and state tax notice regarding tax due and deficiency notice, with potential levy and lien terms."
+  },
+  {
+    "documentType": "unemployment_benefits_denial",
+    "caseTitle": "Unemployment Benefits Denial",
+    "fileName": "unemployment-benefits-denial.pdf",
+    "description": "Agency determination that unemployment benefits are denied, with appeal deadline within 15 days."
+  },
+  {
+    "documentType": "workers_comp_denial_notice",
+    "caseTitle": "Workers Compensation Denial",
+    "fileName": "workers-comp-denial-notice.pdf",
+    "description": "Workers compensation claim denied by compensation board as injury claim denial."
+  },
+  {
+    "documentType": "benefits_overpayment_notice",
+    "caseTitle": "Benefits Overpayment Notice",
+    "fileName": "benefits-overpayment-notice.pdf",
+    "description": "Benefit overpayment notice, repayment demand, waiver request instructions, and recoupment warning."
+  },
+  {
+    "documentType": "insurance_denial_letter",
+    "caseTitle": "Insurance Denial Letter",
+    "fileName": "insurance-denial-letter.pdf",
+    "description": "Denial of claim with coverage denied and policy exclusion citations, including appeal rights."
+  },
+  {
+    "documentType": "insurance_subrogation_notice",
+    "caseTitle": "Insurance Subrogation Notice",
+    "fileName": "insurance-subrogation-notice.pdf",
+    "description": "Subrogation reimbursement claim asserting recovery rights, third-party recovery, and lien notice."
+  },
+  {
+    "documentType": "incident_evidence_photo",
+    "caseTitle": "Incident Evidence Photo Packet",
+    "fileName": "incident-evidence-photo-packet.pdf",
+    "description": "Accident scene photo set for car crash collision with property damage and injury photo references."
+  },
+  {
+    "documentType": "utility_shutoff_notice",
+    "caseTitle": "Utility Shutoff Notice",
+    "fileName": "utility-shutoff-notice.pdf",
+    "description": "Final utility notice for service disconnection with disconnect date due to utility account past due."
+  },
+  {
+    "documentType": "license_suspension_notice",
+    "caseTitle": "License Suspension Notice",
+    "fileName": "license-suspension-notice.pdf",
+    "description": "DMV notice stating license suspension and suspension effective date for driving privilege."
+  },
+  {
+    "documentType": "citation_ticket",
+    "caseTitle": "Citation Ticket",
+    "fileName": "citation-ticket.pdf",
+    "description": "Citation ticket for traffic violation with fine amount and infraction hearing option."
+  },
+  {
+    "documentType": "general_legal_notice",
+    "caseTitle": "General Legal Notice",
+    "fileName": "general-legal-notice.pdf",
+    "description": "General legal notice from agency file review. Respond by 2026-03-14 to preserve review rights."
+  },
+  {
+    "documentType": "non_legal_or_unclear_image",
+    "caseTitle": "Non-Legal Receipt Image",
+    "fileName": "non-legal-receipt.pdf",
+    "description": "Grocery receipt image with no legal language. Not a legal notice."
+  },
+  {
+    "documentType": "unknown_legal_document",
+    "caseTitle": "Unknown Legal Document",
+    "fileName": "unknown-legal-document.pdf",
+    "description": "Ambiguous legal memo with incomplete context. Manual review requested."
+  }
+]

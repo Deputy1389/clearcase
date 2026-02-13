@@ -1,0 +1,60 @@
+{
+    "generatedAt":  "2026-02-13T00:50:36.7528312Z",
+    "apiBase":  "http://127.0.0.1:3001",
+    "identity":  {
+                     "subject":  "prompt-m-billing-20260212165035-3830",
+                     "caseId":  "cmlk68ha60002vswo3fxy1hb6",
+                     "email":  "prompt.m.billing.20260212165035-3830@example.com"
+                 },
+    "flow":  {
+                 "freeUserPlusRouteBlocked":  {
+                                                  "expected":  403,
+                                                  "status":  403
+                                              },
+                 "paywallViewedTracked":  {
+                                              "expected":  202,
+                                              "status":  202
+                                          },
+                 "checkoutStarted":  {
+                                         "status":  200,
+                                         "provider":  "internal_stub",
+                                         "sessionId":  "chk_9161d7234c854d1b8f3b4da8"
+                                     },
+                 "webhookCreate":  {
+                                       "status":  200,
+                                       "transition":  "plus_active"
+                                   },
+                 "entitlementAfterCreate":  {
+                                                "isPlus":  true,
+                                                "plan":  "plus",
+                                                "status":  "active"
+                                            },
+                 "plusRouteAfterCreate":  {
+                                              "expected":  200,
+                                              "status":  200
+                                          },
+                 "webhookPastDue":  {
+                                        "status":  200,
+                                        "transition":  "grace_period"
+                                    },
+                 "entitlementAfterPastDue":  {
+                                                 "isPlus":  true,
+                                                 "plan":  "plus",
+                                                 "status":  "trial"
+                                             },
+                 "webhookPaymentFailed":  {
+                                              "status":  200,
+                                              "transition":  "revoked_immediate_cancel"
+                                          },
+                 "entitlementAfterPaymentFailed":  {
+                                                       "isPlus":  false,
+                                                       "plan":  "free",
+                                                       "status":  "active"
+                                                   },
+                 "plusRouteAfterPaymentFailed":  {
+                                                     "expected":  403,
+                                                     "status":  403
+                                                 }
+             },
+    "pass":  true
+}

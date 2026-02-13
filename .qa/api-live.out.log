@@ -1,0 +1,7 @@
+
+> clearcase@0.1.0 api:start
+> tsx apps/api/src/server.ts
+
+{"level":30,"time":1770946650701,"pid":182884,"hostname":"DESKTOP-SN7QNTS","msg":"Server listening at http://127.0.0.1:3001"}
+{"level":30,"time":1770946650701,"pid":182884,"hostname":"DESKTOP-SN7QNTS","msg":"Server listening at http://172.23.208.1:3001"}
+{"level":30,"time":1770946650701,"pid":182884,"hostname":"DESKTOP-SN7QNTS","msg":"Server listening at http://192.168.0.149:3001"}
