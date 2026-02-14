@@ -5914,19 +5914,45 @@ function App() {
                           : "No schedule"}
                     </Text>
                   </Pressable>
-                  <View style={styles.settingRow}>
+                  <Pressable
+                    style={styles.settingRow}
+                    onPress={() => {
+                      Alert.alert(
+                        language === "es" ? "Dispositivos push" : "Push Devices",
+                        language === "es"
+                          ? `Tienes ${me?.pushDevices?.activeCount ?? 0} dispositivo(s) registrado(s). Para eliminar un dispositivo, desactiva las notificaciones y vuelve a activarlas.`
+                          : `You have ${me?.pushDevices?.activeCount ?? 0} registered device(s). To remove a device, disable notifications and re-enable them.`,
+                        [{ text: "OK" }]
+                      );
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel={language === "es" ? "Dispositivos push" : "Push devices"}
+                  >
                     <Feather name="smartphone" size={16} color={palette.subtle} />
                     <Text style={styles.settingText}>{language === "es" ? "Dispositivos push" : "Push devices"}</Text>
                     <Text style={styles.optionDesc}>
                       {me?.pushDevices?.activeCount ?? 0}
                     </Text>
-                  </View>
-                  <Pressable style={styles.settingRow} onPress={() => openPaywall("account_settings_billing")}>
+                  </Pressable>
+                  <Pressable style={styles.settingRow} onPress={() => openPaywall("account_settings_billing")} accessibilityRole="button" accessibilityLabel={language === "es" ? "Facturacion y planes" : "Billing and plans"}>
                     <Feather name="credit-card" size={16} color={palette.subtle} />
                     <Text style={styles.settingText}>{language === "es" ? "Facturacion y planes" : "Billing and plans"}</Text>
                     <Feather name="chevron-right" size={14} color={palette.subtle} />
                   </Pressable>
-                  <Pressable style={styles.settingRow} accessibilityRole="button" accessibilityLabel={language === "es" ? "Seguridad" : "Security"}>
+                  <Pressable
+                    style={styles.settingRow}
+                    accessibilityRole="button"
+                    accessibilityLabel={language === "es" ? "Seguridad" : "Security"}
+                    onPress={() => {
+                      Alert.alert(
+                        language === "es" ? "Seguridad" : "Security",
+                        language === "es"
+                          ? "Bloqueo biometrico: Usa Face ID o huella dactilar para proteger la app.\n\nEsta funcion estara disponible en una proxima actualizacion."
+                          : "Biometric Lock: Use Face ID or fingerprint to protect the app.\n\nThis feature will be available in an upcoming update.",
+                        [{ text: "OK" }]
+                      );
+                    }}
+                  >
                     <Feather name="shield" size={16} color={palette.subtle} />
                     <Text style={styles.settingText}>{language === "es" ? "Seguridad" : "Security"}</Text>
                     <Feather name="chevron-right" size={14} color={palette.subtle} />
@@ -5945,6 +5971,61 @@ function App() {
 
                 <Pressable onPress={() => void signOut()} style={[styles.outlineSoftBtn, styles.accountSignOutBtn]} accessibilityRole="button" accessibilityLabel={language === "es" ? "Cerrar sesion" : "Sign out"}>
                   <Text style={styles.outlineSoftText}>{language === "es" ? "Cerrar sesion" : "Sign out"}</Text>
+                </Pressable>
+
+                <Pressable
+                  onPress={() => {
+                    Alert.alert(
+                      language === "es" ? "Eliminar cuenta" : "Delete Account",
+                      language === "es"
+                        ? "Esta accion eliminara permanentemente tu cuenta, todos tus casos y documentos. Esta accion no se puede deshacer."
+                        : "This will permanently delete your account, all your cases, and documents. This action cannot be undone.",
+                      [
+                        { text: language === "es" ? "Cancelar" : "Cancel", style: "cancel" },
+                        {
+                          text: language === "es" ? "Eliminar cuenta" : "Delete Account",
+                          style: "destructive",
+                          onPress: () => {
+                            Alert.alert(
+                              language === "es" ? "Confirmar eliminacion" : "Confirm Deletion",
+                              language === "es"
+                                ? "Escribe ELIMINAR para confirmar."
+                                : "Are you absolutely sure? This is irreversible.",
+                              [
+                                { text: language === "es" ? "Cancelar" : "Cancel", style: "cancel" },
+                                {
+                                  text: language === "es" ? "Si, eliminar todo" : "Yes, delete everything",
+                                  style: "destructive",
+                                  onPress: async () => {
+                                    try {
+                                      if (!offlineMode) {
+                                        await fetch(`${apiBase}/me`, { method: "DELETE", headers: { ...headers, "Content-Type": "application/json" } });
+                                      }
+                                    } catch { /* best effort */ }
+                                    await AsyncStorage.clear();
+                                    setMe(null);
+                                    setCases([]);
+                                    setSelectedCaseId(null);
+                                    setSelectedCase(null);
+                                    setEmail("");
+                                    setSubject("");
+                                    setPlanTier("free");
+                                    setScreen("onboarding");
+                                    showBanner("info", language === "es" ? "Cuenta eliminada." : "Account deleted.");
+                                  }
+                                }
+                              ]
+                            );
+                          }
+                        }
+                      ]
+                    );
+                  }}
+                  style={[styles.outlineSoftBtn, { borderColor: "#FCA5A5", marginBottom: 32 }]}
+                  accessibilityRole="button"
+                  accessibilityLabel={language === "es" ? "Eliminar cuenta" : "Delete account"}
+                >
+                  <Text style={[styles.outlineSoftText, { color: "#DC2626" }]}>{language === "es" ? "Eliminar cuenta" : "Delete Account"}</Text>
                 </Pressable>
               </ScrollView>
             </View>
@@ -7142,12 +7223,12 @@ const styles = StyleSheet.create({
   rowTopLeft: { alignItems: "flex-start", marginTop: 4 },
   skip: { color: palette.subtle, fontFamily: font.semibold, fontSize: 13 },
   centerWrap: { flex: 1, alignItems: "center", justifyContent: "center" },
-  onboardingCard: { width: "100%", borderRadius: 28, borderWidth: 1, borderColor: palette.line, paddingVertical: 30, paddingHorizontal: 20 },
+  onboardingCard: { width: "100%", borderRadius: 32, borderWidth: 1, borderColor: palette.line, paddingVertical: 32, paddingHorizontal: 24, shadowColor: "#0F172A", shadowOpacity: 0.06, shadowRadius: 16, shadowOffset: { width: 0, height: 4 }, elevation: 2 },
   slideStepper: { color: palette.subtle, fontFamily: font.bold, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 6 },
   centerWrapSmall: { alignItems: "center", marginBottom: 8 },
-  brandPill: { width: 90, height: 90, borderRadius: 28, backgroundColor: "#F1F5F9", alignItems: "center", justifyContent: "center", marginBottom: 20 },
-  heroTitle: { color: palette.text, fontFamily: font.bold, fontSize: 28, textAlign: "center", lineHeight: 34, marginBottom: 8 },
-  heroCopy: { color: palette.muted, fontFamily: font.regular, fontSize: 15, lineHeight: 22, textAlign: "center", paddingHorizontal: 20 },
+  brandPill: { width: 96, height: 96, borderRadius: 32, backgroundColor: "#F1F5F9", alignItems: "center", justifyContent: "center", marginBottom: 20 },
+  heroTitle: { color: palette.text, fontFamily: font.bold, fontSize: 28, textAlign: "center", lineHeight: 34, marginBottom: 8, letterSpacing: -0.5 },
+  heroCopy: { color: palette.muted, fontFamily: font.regular, fontSize: 16, lineHeight: 24, textAlign: "center", paddingHorizontal: 16 },
   bottomNav: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingBottom: 18 },
   circle: { width: 46, height: 46, borderRadius: 23, borderWidth: 1, borderColor: palette.line, alignItems: "center", justifyContent: "center" },
   invisible: { opacity: 0 },
@@ -7160,7 +7241,7 @@ const styles = StyleSheet.create({
   brandText: { color: palette.text, fontFamily: font.bold, fontSize: 38 },
   welcomeMuted: { color: palette.subtle, fontFamily: font.medium, fontSize: 20, marginBottom: 8 },
   authSelectionBody: { flex: 1, justifyContent: "center", alignItems: "center", width: "100%" },
-  authSelectionHero: { width: "100%", borderRadius: 28, borderWidth: 1, borderColor: palette.line, paddingVertical: 28, paddingHorizontal: 20, marginBottom: 16, alignItems: "center" },
+  authSelectionHero: { width: "100%", borderRadius: 32, borderWidth: 1, borderColor: palette.line, paddingVertical: 32, paddingHorizontal: 24, marginBottom: 16, alignItems: "center", shadowColor: "#0F172A", shadowOpacity: 0.06, shadowRadius: 16, shadowOffset: { width: 0, height: 4 }, elevation: 2 },
   authSelectionActions: { width: "100%", maxWidth: 320 },
   authFooter: {
     paddingTop: 14,
@@ -7212,21 +7293,21 @@ const styles = StyleSheet.create({
   radioActiveInner: { width: 8, height: 8, borderRadius: 4, backgroundColor: palette.primary },
   radioInactiveOuter: { width: 18, height: 18, borderRadius: 10, borderWidth: 2, borderColor: "#CBD5E1" },
   fieldLabel: { color: palette.subtle, fontFamily: font.bold, fontSize: 10, letterSpacing: 1.1, textTransform: "uppercase", marginBottom: 4 },
-  input: { borderWidth: 1, borderColor: palette.line, borderRadius: 14, backgroundColor: palette.surfaceSoft, paddingHorizontal: 12, paddingVertical: 12, color: palette.text, fontFamily: font.regular, fontSize: 14, marginBottom: 8 },
-  primaryBtn: { borderRadius: 16, backgroundColor: palette.primary, paddingVertical: 14, alignItems: "center", justifyContent: "center", marginTop: 4 },
-  primaryBtnText: { color: "#FFFFFF", fontFamily: font.semibold, fontSize: 14 },
-  outlineBtn: { borderRadius: 16, borderWidth: 2, borderColor: palette.primary, paddingVertical: 14, alignItems: "center", justifyContent: "center", marginTop: 8, width: "100%" },
-  outlineBtnText: { color: palette.primary, fontFamily: font.semibold, fontSize: 14 },
+  input: { borderWidth: 1, borderColor: palette.line, borderRadius: 20, backgroundColor: palette.surfaceSoft, paddingHorizontal: 16, paddingVertical: 14, color: palette.text, fontFamily: font.regular, fontSize: 14, marginBottom: 8 },
+  primaryBtn: { borderRadius: 24, backgroundColor: palette.primary, paddingVertical: 16, alignItems: "center", justifyContent: "center", marginTop: 4, shadowColor: "#0F172A", shadowOpacity: 0.15, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 3 },
+  primaryBtnText: { color: "#FFFFFF", fontFamily: font.bold, fontSize: 15 },
+  outlineBtn: { borderRadius: 24, borderWidth: 2, borderColor: palette.primary, paddingVertical: 16, alignItems: "center", justifyContent: "center", marginTop: 8, width: "100%" },
+  outlineBtnText: { color: palette.primary, fontFamily: font.bold, fontSize: 15 },
   disclaimerScreen: { flex: 1, backgroundColor: palette.bg },
   disclaimerHeaderRow: { flexDirection: "row", alignItems: "center", marginBottom: 12, marginTop: 8 },
   disclaimerShield: { width: 36, height: 36, borderRadius: 12, backgroundColor: "#E2E8F0", alignItems: "center", justifyContent: "center", marginRight: 10 },
   disclaimerTitle: { color: palette.text, fontFamily: font.bold, fontSize: 30, marginBottom: 0, flex: 1, lineHeight: 34 },
   disclaimerP: { color: palette.muted, fontFamily: font.regular, fontSize: 14, lineHeight: 20, marginBottom: 8 },
-  disclaimerCard: { backgroundColor: palette.surface, borderRadius: 24, borderWidth: 1, borderColor: palette.line, padding: 16, marginTop: 8 },
+  disclaimerCard: { backgroundColor: palette.surface, borderRadius: 24, borderWidth: 1, borderColor: palette.line, padding: 20, marginTop: 10 },
   disclaimerBulletRow: { flexDirection: "row", alignItems: "flex-start", marginBottom: 6 },
   disclaimerBulletDot: { width: 6, height: 6, borderRadius: 4, backgroundColor: "#94A3B8", marginTop: 7, marginRight: 8 },
   disclaimerBackText: { color: "#CBD5E1", fontFamily: font.medium, fontSize: 13 },
-  card: { backgroundColor: palette.surface, borderRadius: 20, borderWidth: 1, borderColor: "#F1F5F9", padding: 14, marginBottom: 10 },
+  card: { backgroundColor: palette.surface, borderRadius: 24, borderWidth: 1, borderColor: "#F1F5F9", padding: 18, marginBottom: 12, shadowColor: "#0F172A", shadowOpacity: 0.04, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 1 },
   cardTitle: { color: palette.text, fontFamily: font.bold, fontSize: 16, marginBottom: 6 },
   cardTitleBig: { color: palette.text, fontFamily: font.bold, fontSize: 26, textAlign: "center", lineHeight: 31 },
   cardBody: { color: palette.muted, fontFamily: font.regular, fontSize: 13, lineHeight: 19, marginBottom: 4 },
@@ -7252,7 +7333,7 @@ const styles = StyleSheet.create({
   },
   info: { width: 34, height: 34, borderRadius: 17, backgroundColor: "#F1F5F9", alignItems: "center", justifyContent: "center" },
   homeBody: { paddingBottom: 20, flexGrow: 1 },
-  homeHeroCard: { borderRadius: 24, padding: 18, marginBottom: 10 },
+  homeHeroCard: { borderRadius: 32, padding: 24, marginBottom: 12, shadowColor: "#0F172A", shadowOpacity: 0.15, shadowRadius: 16, shadowOffset: { width: 0, height: 6 }, elevation: 4 },
   miniLabelLight: { color: "#CBD5E1", fontFamily: font.bold, fontSize: 10, textTransform: "uppercase", letterSpacing: 1.1, marginBottom: 6 },
   homeHeroTitle: { color: "#FFFFFF", fontFamily: font.bold, fontSize: 31, lineHeight: 36, marginBottom: 8 },
   homeHeroCopy: { color: "#E2E8F0", fontFamily: font.regular, fontSize: 14, lineHeight: 20 },
@@ -7266,8 +7347,8 @@ const styles = StyleSheet.create({
   imageWrap: { width: "100%", aspectRatio: 16 / 9, borderRadius: 22, overflow: "hidden", marginBottom: 12, borderWidth: 1, borderColor: palette.line },
   image: { width: "100%", height: "100%" },
   ctaInline: { flexDirection: "row", alignItems: "center", gap: 8 },
-  outlineSoftBtn: { borderRadius: 16, borderWidth: 1, borderColor: palette.line, backgroundColor: palette.surface, paddingVertical: 14, alignItems: "center", justifyContent: "center", marginTop: 8 },
-  outlineSoftText: { color: palette.muted, fontFamily: font.semibold, fontSize: 14 },
+  outlineSoftBtn: { borderRadius: 24, borderWidth: 1, borderColor: palette.line, backgroundColor: palette.surface, paddingVertical: 14, alignItems: "center", justifyContent: "center", marginTop: 8 },
+  outlineSoftText: { color: palette.muted, fontFamily: font.bold, fontSize: 14 },
   legal: { color: palette.subtle, fontFamily: font.regular, fontSize: 11, lineHeight: 16, textAlign: "center", marginTop: 10 },
   legalInline: { color: palette.subtle, fontFamily: font.regular, fontSize: 11, lineHeight: 16, marginTop: 4 },
   uploadStateRow: { flexDirection: "row", alignItems: "center", marginTop: 4, marginBottom: 6 },
@@ -7278,21 +7359,21 @@ const styles = StyleSheet.create({
   intakeFooter: { paddingVertical: 16, alignItems: "center" },
   intakeFooterText: { color: palette.subtle, fontFamily: font.regular, fontSize: 12, fontStyle: "italic" },
   option: {
-    borderRadius: 18,
+    borderRadius: 24,
     borderWidth: 1,
     borderColor: "#F1F5F9",
     backgroundColor: palette.surface,
-    padding: 14,
+    padding: 18,
     flexDirection: "row",
     alignItems: "flex-start",
     marginBottom: 10,
     shadowColor: "#0F172A",
     shadowOpacity: 0.05,
-    shadowRadius: 8,
+    shadowRadius: 10,
     shadowOffset: { width: 0, height: 3 },
     elevation: 2
   },
-  optionIcon: { width: 36, height: 36, borderRadius: 10, backgroundColor: palette.surfaceSoft, alignItems: "center", justifyContent: "center", marginRight: 10 },
+  optionIcon: { width: 48, height: 48, borderRadius: 16, backgroundColor: palette.surfaceSoft, alignItems: "center", justifyContent: "center", marginRight: 12 },
   optionText: { flex: 1 },
   optionTitle: { color: palette.text, fontFamily: font.semibold, fontSize: 15, marginBottom: 2 },
   optionDesc: { color: palette.muted, fontFamily: font.regular, fontSize: 12, lineHeight: 17 },
@@ -7341,15 +7422,20 @@ const styles = StyleSheet.create({
   bottomTabLabel: { color: palette.subtle, fontFamily: font.bold, fontSize: 10 },
   bottomTabLabelActive: { color: palette.text },
   bottomUploadFab: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 54,
+    height: 54,
+    borderRadius: 27,
     backgroundColor: palette.primary,
     alignItems: "center",
     justifyContent: "center",
-    marginTop: -18,
-    borderWidth: 3,
-    borderColor: palette.surface
+    marginTop: -20,
+    borderWidth: 4,
+    borderColor: palette.surface,
+    shadowColor: "#0F172A",
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4
   },
   sheetOverlay: {
     flex: 1,
@@ -7357,21 +7443,24 @@ const styles = StyleSheet.create({
   },
   sheetBackdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(15,23,42,0.45)"
+    backgroundColor: "rgba(15,23,42,0.55)"
   },
   sheetCard: {
     backgroundColor: "#FFFFFF",
-    borderTopLeftRadius: 22,
-    borderTopRightRadius: 22,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    padding: 16,
-    gap: 8
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    padding: 24,
+    gap: 10,
+    shadowColor: "#0F172A",
+    shadowOpacity: 0.2,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: -8 },
+    elevation: 8
   },
   sheetTitle: {
     color: palette.text,
-    fontFamily: font.semibold,
-    fontSize: 18
+    fontFamily: font.bold,
+    fontSize: 20
   },
   sheetSub: {
     color: palette.muted,
@@ -7627,11 +7716,14 @@ const styles = StyleSheet.create({
     height: "100%",
     backgroundColor: palette.surface,
     paddingTop: 20,
-    paddingHorizontal: 14,
-    borderTopRightRadius: 20,
-    borderBottomRightRadius: 20,
-    borderRightWidth: 1,
-    borderColor: palette.line
+    paddingHorizontal: 16,
+    borderTopRightRadius: 28,
+    borderBottomRightRadius: 28,
+    shadowColor: "#0F172A",
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    shadowOffset: { width: 4, height: 0 },
+    elevation: 8
   },
   drawerHeader: {
     flexDirection: "row",
@@ -7640,13 +7732,13 @@ const styles = StyleSheet.create({
     marginBottom: 14
   },
   drawerItem: {
-    borderRadius: 12,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: "#F1F5F9",
     backgroundColor: "#FFFFFF",
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    marginBottom: 8
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    marginBottom: 6
   },
   drawerItemText: {
     color: palette.text,
@@ -7825,13 +7917,13 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     borderWidth: 1,
     borderColor: "#E2E8F0",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    backgroundColor: "#F8FAFC",
+    borderRadius: 24,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     flexDirection: "row",
     alignItems: "center",
-    gap: 8
+    gap: 10
   },
   searchInput: {
     flex: 1,
@@ -7891,9 +7983,14 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     borderWidth: 1,
     borderColor: "#E2E8F0",
-    borderRadius: 22,
-    padding: 14,
-    marginBottom: 8
+    borderRadius: 24,
+    padding: 18,
+    marginBottom: 10,
+    shadowColor: "#0F172A",
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1
   },
   dashboardCaseTop: {
     flexDirection: "row",
@@ -7952,16 +8049,21 @@ const styles = StyleSheet.create({
   },
   tipCard: {
     flex: 1,
-    borderRadius: 22,
+    borderRadius: 24,
     borderWidth: 1,
     borderColor: "#E2E8F0",
     backgroundColor: "#FFFFFF",
-    padding: 14
+    padding: 16,
+    shadowColor: "#0F172A",
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1
   },
   tipIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
+    width: 36,
+    height: 36,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 8
@@ -8054,13 +8156,13 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: "#93C5FD",
     backgroundColor: "#EFF6FF",
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 8
+    marginBottom: 10
   },
   workspaceAccordionTitle: {
     color: palette.text,
@@ -8358,18 +8460,18 @@ const styles = StyleSheet.create({
     alignItems: "center"
   },
   accountAvatar: {
-    width: 74,
-    height: 74,
-    borderRadius: 24,
+    width: 80,
+    height: 80,
+    borderRadius: 28,
     backgroundColor: palette.primary,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 12
+    marginRight: 14
   },
   accountAvatarText: {
     color: "#FFFFFF",
     fontFamily: font.bold,
-    fontSize: 22
+    fontSize: 24
   },
   accountIdentity: {
     flex: 1
@@ -8479,12 +8581,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderWidth: 1,
     borderColor: "#F1F5F9",
-    borderRadius: 12,
+    borderRadius: 16,
     backgroundColor: "#FFFFFF",
-    paddingHorizontal: 10,
-    paddingVertical: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
     marginBottom: 6,
-    gap: 8
+    gap: 10
   },
   languageToggleRow: {
     flexDirection: "row",
