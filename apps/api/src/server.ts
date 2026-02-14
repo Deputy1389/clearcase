@@ -1,4 +1,15 @@
 import "dotenv/config";
+import * as Sentry from "@sentry/node";
+
+const SENTRY_DSN = process.env.SENTRY_DSN?.trim() ?? "";
+if (SENTRY_DSN) {
+  Sentry.init({
+    dsn: SENTRY_DSN,
+    tracesSampleRate: 0.2,
+    environment: process.env.NODE_ENV ?? "development"
+  });
+}
+
 import Fastify, { type FastifyReply } from "fastify";
 import cors from "@fastify/cors";
 import helmet from "@fastify/helmet";
@@ -3561,6 +3572,12 @@ app.setErrorHandler((error, request, reply) => {
     },
     "Unhandled API error"
   );
+
+  if (SENTRY_DSN) {
+    Sentry.captureException(error, {
+      extra: { requestId: request.id, method: request.method, url: request.url }
+    });
+  }
 
   if (reply.sent) {
     return;

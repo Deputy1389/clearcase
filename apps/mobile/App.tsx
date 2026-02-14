@@ -1,4 +1,5 @@
 
+import * as Sentry from "@sentry/react-native";
 import { StatusBar } from "expo-status-bar";
 import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
@@ -75,6 +76,17 @@ import {
   setCaseClassification,
   saveCaseContext
 } from "./src/api";
+
+// --- Sentry error tracking ---
+const SENTRY_DSN = process.env.EXPO_PUBLIC_SENTRY_DSN?.trim() ?? "";
+if (SENTRY_DSN) {
+  Sentry.init({
+    dsn: SENTRY_DSN,
+    tracesSampleRate: 0.2,
+    enableAutoSessionTracking: true,
+    environment: __DEV__ ? "development" : "production"
+  });
+}
 
 // Configure notification handler for foreground notifications
 Notifications.setNotificationHandler({
@@ -1403,7 +1415,7 @@ function hapticSuccess() {
   Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
 }
 
-export default function App() {
+function App() {
   const [fontsLoaded] = useFonts({
     Newsreader_600SemiBold,
     Newsreader_700Bold,
@@ -8050,3 +8062,5 @@ const styles = StyleSheet.create({
     marginTop: 2
   }
 });
+
+export default SENTRY_DSN ? Sentry.wrap(App) : App;

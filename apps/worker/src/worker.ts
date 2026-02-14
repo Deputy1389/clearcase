@@ -1,4 +1,15 @@
 import "dotenv/config";
+import * as Sentry from "@sentry/node";
+
+const SENTRY_DSN = process.env.SENTRY_DSN?.trim() ?? "";
+if (SENTRY_DSN) {
+  Sentry.init({
+    dsn: SENTRY_DSN,
+    tracesSampleRate: 0.1,
+    environment: process.env.NODE_ENV ?? "development"
+  });
+}
+
 import {
   DeleteMessageCommand,
   ReceiveMessageCommand,
@@ -2235,7 +2246,7 @@ async function main(): Promise<void> {
       visibilityTimeoutSeconds: config.visibilityTimeoutSeconds,
       maxMessageRetries: config.maxMessageRetries,
       ocrProvider: process.env.OCR_PROVIDER?.trim() ?? "stub",
-      llmProvider: process.env.LLM_PROVIDER?.trim() ?? "stub",
+      pushProvider: process.env.PUSH_PROVIDER?.trim() ?? "stub",
       pid: process.pid
     })
   );
@@ -2258,6 +2269,7 @@ async function main(): Promise<void> {
 }
 
 main().catch((error) => {
+  if (SENTRY_DSN) Sentry.captureException(error);
   console.error(
     JSON.stringify({
       level: "error",
