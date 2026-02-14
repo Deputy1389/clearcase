@@ -148,6 +148,7 @@ import {
   hapticTap,
   hapticSuccess
 } from "./src/utils/haptics";
+import { palette, font } from "./src/theme";
 import { onboardingSlidesByLanguage } from "./src/data/onboarding-slides";
 import { LEGAL_AID_RESOURCES } from "./src/data/legal-aid-resources";
 import type { LegalAidResource } from "./src/data/legal-aid-resources";
@@ -232,30 +233,6 @@ const IMAGE_UPLOAD_MAX_DIMENSION = 1600;
 const IMAGE_UPLOAD_QUALITY = 0.45;
 const MOBILE_BUILD_STAMP = "mobile-ui-2026-02-13b";
 
-const palette = {
-  bg: "#FFFFFF",
-  surface: "#FFFFFF",
-  surfaceSoft: "#F8FAFC",
-  line: "#E2E8F0",
-  text: "#0F172A",
-  muted: "#64748B",
-  subtle: "#94A3B8",
-  primary: "#0F172A",
-  green: "#166534",
-  greenSoft: "#DCFCE7",
-  amber: "#A16207",
-  amberSoft: "#FEF3C7",
-  redSoft: "#FEE2E2"
-};
-
-const font = {
-  regular: "PlusJakartaSans_400Regular",
-  medium: "PlusJakartaSans_500Medium",
-  semibold: "PlusJakartaSans_600SemiBold",
-  bold: "PlusJakartaSans_700Bold",
-  display: "Newsreader_700Bold",
-  displaySemibold: "Newsreader_600SemiBold"
-} as const;
 
 function deriveSubject(email: string): string {
   const local = email.split("@")[0] ?? "";
