@@ -117,7 +117,7 @@ async function requestExpoPushToken(): Promise<string | null> {
   return tokenData.data;
 }
 
-type Screen = "language" | "onboarding" | "auth" | "home" | "workspace" | "cases" | "account" | "legal";
+type Screen = "language" | "onboarding" | "auth" | "home" | "workspace" | "cases" | "account" | "legal" | "legalAid" | "drafting";
 type ContentScreen = Exclude<Screen, "language">;
 type AuthMode = "selection" | "login" | "signup" | "disclaimer";
 type BannerTone = "info" | "good" | "bad";
@@ -499,6 +499,121 @@ const onboardingSlidesByLanguage: Record<AppLanguage, OnboardingSlide[]> = {
     }
   ]
 };
+
+// ── Legal Aid Resources ──────────────────────────────────────────────
+interface LegalAidResource {
+  name: string;
+  nameEs: string;
+  type: string;
+  typeEs: string;
+  phone: string;
+  website: string;
+  description: string;
+  descriptionEs: string;
+}
+
+const LEGAL_AID_RESOURCES: LegalAidResource[] = [
+  {
+    name: "National Tenant Network",
+    nameEs: "Red Nacional de Inquilinos",
+    type: "Housing Rights",
+    typeEs: "Derechos de Vivienda",
+    phone: "1-800-555-0123",
+    website: "https://www.tenantrights.org",
+    description: "Free legal advice for renters facing eviction or rent increases.",
+    descriptionEs: "Asesoria legal gratuita para inquilinos que enfrentan desalojo o aumento de renta."
+  },
+  {
+    name: "Justice For All",
+    nameEs: "Justicia Para Todos",
+    type: "Pro-Bono Legal Aid",
+    typeEs: "Ayuda Legal Pro-Bono",
+    phone: "1-888-222-9900",
+    website: "https://www.justiceforall.org",
+    description: "Connecting low-income individuals with volunteer lawyers for civil cases.",
+    descriptionEs: "Conecta personas de bajos ingresos con abogados voluntarios para casos civiles."
+  },
+  {
+    name: "Employment Law Center",
+    nameEs: "Centro de Derecho Laboral",
+    type: "Worker Rights",
+    typeEs: "Derechos del Trabajador",
+    phone: "1-877-333-1122",
+    website: "https://www.workrights.com",
+    description: "Help with workplace discrimination, wage theft, and wrongful termination.",
+    descriptionEs: "Ayuda con discriminacion laboral, robo de salario y despido injustificado."
+  },
+  {
+    name: "Legal Aid Society",
+    nameEs: "Sociedad de Ayuda Legal",
+    type: "General Legal Aid",
+    typeEs: "Ayuda Legal General",
+    phone: "1-800-649-9125",
+    website: "https://www.legalaid.org",
+    description: "Free civil legal services for low-income families and individuals.",
+    descriptionEs: "Servicios legales civiles gratuitos para familias e individuos de bajos ingresos."
+  }
+];
+
+// ── Drafting Assistant Templates ─────────────────────────────────────
+interface DraftTemplate {
+  id: string;
+  title: string;
+  titleEs: string;
+  description: string;
+  descriptionEs: string;
+  subject: string;
+  subjectEs: string;
+  body: string;
+  bodyEs: string;
+}
+
+const DRAFT_TEMPLATES: DraftTemplate[] = [
+  {
+    id: "repair-request",
+    title: "Request Repairs",
+    titleEs: "Solicitar Reparaciones",
+    description: "A formal but polite request for maintenance or repairs.",
+    descriptionEs: "Una solicitud formal pero amable para mantenimiento o reparaciones.",
+    subject: "Request for Maintenance - [Property Address]",
+    subjectEs: "Solicitud de Mantenimiento - [Direccion de Propiedad]",
+    body: "Dear [Landlord Name],\n\nI am writing to formally request repairs at my residence. Specifically, the [Issue] needs attention. According to our lease agreement, maintenance of this item is the landlord's responsibility.\n\nPlease let me know when a contractor can be scheduled to look at this. Thank you for your prompt attention.\n\nBest regards,\n[Your Name]",
+    bodyEs: "Estimado/a [Nombre del Arrendador],\n\nLe escribo para solicitar formalmente reparaciones en mi residencia. Especificamente, el [Problema] necesita atencion. Segun nuestro contrato de arrendamiento, el mantenimiento de este elemento es responsabilidad del arrendador.\n\nPor favor hagame saber cuando se puede programar a un contratista para revisar esto. Gracias por su pronta atencion.\n\nAtentamente,\n[Su Nombre]"
+  },
+  {
+    id: "extension-request",
+    title: "Extension Request",
+    titleEs: "Solicitud de Prorroga",
+    description: "Ask for more time to respond or move out.",
+    descriptionEs: "Solicitar mas tiempo para responder o mudarse.",
+    subject: "Request for Extension - Notice dated [Date]",
+    subjectEs: "Solicitud de Prorroga - Aviso con fecha [Fecha]",
+    body: "Dear [Name],\n\nI am writing regarding the notice I received on [Date]. Due to [Reason], I would like to request an extension of [Number] days to [Action Required].\n\nI appreciate your understanding and look forward to your confirmation.\n\nSincerely,\n[Your Name]",
+    bodyEs: "Estimado/a [Nombre],\n\nLe escribo respecto al aviso que recibi el [Fecha]. Debido a [Razon], me gustaria solicitar una prorroga de [Numero] dias para [Accion Requerida].\n\nAgradezco su comprension y espero su confirmacion.\n\nAtentamente,\n[Su Nombre]"
+  },
+  {
+    id: "clarification",
+    title: "Clarification Request",
+    titleEs: "Solicitud de Aclaracion",
+    description: "Ask for more details about a notice you received.",
+    descriptionEs: "Solicitar mas detalles sobre un aviso que recibio.",
+    subject: "Question regarding [Document Name]",
+    subjectEs: "Pregunta sobre [Nombre del Documento]",
+    body: "Hello,\n\nI received your notice regarding [Topic] but I am unclear on [Specific Point]. Could you please provide more detail or a copy of [Reference Document] so I can better understand my obligations?\n\nThank you,\n[Your Name]",
+    bodyEs: "Hola,\n\nRecibi su aviso sobre [Tema] pero no me queda claro [Punto Especifico]. Podria proporcionarme mas detalles o una copia de [Documento de Referencia] para poder entender mejor mis obligaciones?\n\nGracias,\n[Su Nombre]"
+  },
+  {
+    id: "dispute-response",
+    title: "Dispute a Charge",
+    titleEs: "Disputar un Cargo",
+    description: "Formally dispute an incorrect charge or fee.",
+    descriptionEs: "Disputar formalmente un cargo o tarifa incorrecta.",
+    subject: "Dispute of [Charge/Fee] - [Date]",
+    subjectEs: "Disputa de [Cargo/Tarifa] - [Fecha]",
+    body: "Dear [Name],\n\nI am writing to formally dispute the [Charge/Fee] of [Amount] dated [Date]. I believe this charge is incorrect because [Reason].\n\nPlease review and provide a written response within [Number] days. I have attached supporting documentation for your reference.\n\nThank you,\n[Your Name]",
+    bodyEs: "Estimado/a [Nombre],\n\nLe escribo para disputar formalmente el [Cargo/Tarifa] de [Monto] con fecha [Fecha]. Creo que este cargo es incorrecto porque [Razon].\n\nPor favor revise y proporcione una respuesta por escrito dentro de [Numero] dias. He adjuntado documentacion de respaldo para su referencia.\n\nGracias,\n[Su Nombre]"
+  }
+];
 
 // ── Demo / preview data for offline UX review ──────────────────────────
 const DEMO_NOW = "2026-02-13T10:00:00.000Z";
@@ -1474,6 +1589,8 @@ function App() {
   const [classificationSheetOpen, setClassificationSheetOpen] = useState(false);
   const [classificationDraft, setClassificationDraft] = useState<ManualDocumentType>("unknown_legal_document");
   const [legalReturnScreen, setLegalReturnScreen] = useState<Screen>("home");
+  const [legalAidSearch, setLegalAidSearch] = useState("");
+  const [selectedTemplate, setSelectedTemplate] = useState<DraftTemplate | null>(null);
 
   const [authName, setAuthName] = useState("");
   const [authZip, setAuthZip] = useState("");
@@ -4828,6 +4945,31 @@ function App() {
                 )}
 
                 <View style={styles.tipsGrid}>
+                  <Pressable style={styles.tipCard} onPress={() => { hapticTap(); setScreen("legalAid"); }} accessibilityRole="button" accessibilityLabel={language === "es" ? "Buscar ayuda legal" : "Find legal aid"}>
+                    <View style={[styles.tipIcon, styles.tipIconAmber]}>
+                      <Feather name="heart" size={14} color="#D97706" />
+                    </View>
+                    <Text style={styles.tipTitle}>{language === "es" ? "Ayuda legal" : "Legal Aid"}</Text>
+                    <Text style={styles.tipCopy}>
+                      {language === "es"
+                        ? "Encuentra recursos y organizaciones de ayuda legal cerca de ti."
+                        : "Find legal resources and aid organizations near you."}
+                    </Text>
+                  </Pressable>
+                  <Pressable style={styles.tipCard} onPress={() => { hapticTap(); setScreen("drafting"); }} accessibilityRole="button" accessibilityLabel={language === "es" ? "Asistente de redaccion" : "Drafting assistant"}>
+                    <View style={[styles.tipIcon, styles.tipIconBlue]}>
+                      <Feather name="edit-3" size={14} color="#2563EB" />
+                    </View>
+                    <Text style={styles.tipTitle}>{language === "es" ? "Redaccion" : "Drafting"}</Text>
+                    <Text style={styles.tipCopy}>
+                      {language === "es"
+                        ? "Plantillas para responder a avisos de forma profesional."
+                        : "Templates to respond to notices professionally."}
+                    </Text>
+                  </Pressable>
+                </View>
+
+                <View style={styles.tipsGrid}>
                   <View style={styles.tipCard}>
                     <View style={[styles.tipIcon, styles.tipIconGreen]}>
                       <Feather name="zap" size={14} color="#059669" />
@@ -5239,6 +5381,9 @@ function App() {
 	                    </Pressable>
 	                    <Pressable style={styles.outlineSoftBtn} onPress={() => setLawyerSummaryOpen(true)}>
 	                      <Text style={styles.outlineSoftText}>{language === "es" ? "Abrir paquete para abogado" : "Open lawyer prep packet"}</Text>
+	                    </Pressable>
+	                    <Pressable style={styles.outlineSoftBtn} onPress={() => { hapticTap(); setScreen("drafting"); }} accessibilityRole="button" accessibilityLabel={language === "es" ? "Asistente de redaccion" : "Drafting assistant"}>
+	                      <Text style={styles.outlineSoftText}>{language === "es" ? "Asistente de redaccion" : "Drafting assistant"}</Text>
 	                    </Pressable>
 	                  </View>
 	                ) : null}
@@ -5920,6 +6065,233 @@ function App() {
                 <Pressable onPress={() => setScreen(legalReturnScreen)} style={styles.primaryBtn} accessibilityRole="button" accessibilityLabel={language === "es" ? "Regresar a la app" : "Back to app"}>
                   <Text style={styles.primaryBtnText}>{language === "es" ? "Regresar a la app" : "Back to app"}</Text>
                 </Pressable>
+              </ScrollView>
+            </View>
+          ) : null}
+
+          {screen === "legalAid" ? (
+            <View style={styles.screenSoft}>
+              <View style={styles.verdictHead}>
+                <Pressable onPress={() => setScreen("home")} style={styles.back} accessibilityRole="button" accessibilityLabel="Go back">
+                  <Feather name="chevron-left" size={24} color={palette.muted} />
+                </Pressable>
+                <View>
+                  <Text style={styles.formTitleSmall}>{language === "es" ? "Recursos Legales" : "Legal Resources"}</Text>
+                  <Text style={{ fontFamily: font.regular, fontSize: 11, color: palette.muted }}>{language === "es" ? "Encuentra ayuda cerca" : "Find help near you"}</Text>
+                </View>
+                <View style={styles.spacer} />
+              </View>
+              <ScrollView contentContainerStyle={styles.scrollBody}>
+                <View style={styles.searchBar}>
+                  <Feather name="search" size={16} color={palette.subtle} />
+                  <TextInput
+                    style={styles.searchInput}
+                    placeholder={language === "es" ? "Buscar por tema..." : "Search by topic..."}
+                    placeholderTextColor={palette.subtle}
+                    value={legalAidSearch}
+                    onChangeText={setLegalAidSearch}
+                    accessibilityLabel={language === "es" ? "Buscar recursos legales" : "Search legal resources"}
+                  />
+                </View>
+
+                <Text style={[styles.sectionLabel, { marginTop: 16, marginBottom: 8 }]}>
+                  {language === "es" ? "Recomendados para ti" : "Recommended for you"}
+                </Text>
+
+                {LEGAL_AID_RESOURCES
+                  .filter((r) => {
+                    if (!legalAidSearch.trim()) return true;
+                    const q = legalAidSearch.toLowerCase();
+                    const searchable = language === "es"
+                      ? `${r.nameEs} ${r.typeEs} ${r.descriptionEs}`
+                      : `${r.name} ${r.type} ${r.description}`;
+                    return searchable.toLowerCase().includes(q);
+                  })
+                  .map((res, i) => (
+                    <View key={i} style={[styles.card, { marginBottom: 12 }]}>
+                      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
+                        <View style={{ flex: 1 }}>
+                          <View style={{ backgroundColor: "#EFF6FF", paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10, alignSelf: "flex-start", marginBottom: 6 }}>
+                            <Text style={{ fontFamily: font.semibold, fontSize: 9, color: "#2563EB", textTransform: "uppercase", letterSpacing: 1 }}>
+                              {language === "es" ? res.typeEs : res.type}
+                            </Text>
+                          </View>
+                          <Text style={{ fontFamily: font.bold, fontSize: 16, color: palette.text }}>
+                            {language === "es" ? res.nameEs : res.name}
+                          </Text>
+                        </View>
+                      </View>
+                      <Text style={[styles.cardBody, { marginBottom: 12 }]}>
+                        {language === "es" ? res.descriptionEs : res.description}
+                      </Text>
+                      <View style={{ flexDirection: "row", gap: 10 }}>
+                        <Pressable
+                          onPress={() => Linking.openURL(`tel:${res.phone.replace(/[^0-9+]/g, "")}`)}
+                          style={[styles.outlineSoftBtn, { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 10 }]}
+                          accessibilityRole="button"
+                          accessibilityLabel={`${language === "es" ? "Llamar" : "Call"} ${language === "es" ? res.nameEs : res.name}`}
+                        >
+                          <Feather name="phone" size={14} color={palette.muted} />
+                          <Text style={styles.outlineSoftText}>{language === "es" ? "Llamar" : "Call"}</Text>
+                        </Pressable>
+                        <Pressable
+                          onPress={() => Linking.openURL(res.website)}
+                          style={[styles.outlineSoftBtn, { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 10 }]}
+                          accessibilityRole="link"
+                          accessibilityLabel={`${language === "es" ? "Sitio web de" : "Website for"} ${language === "es" ? res.nameEs : res.name}`}
+                        >
+                          <Feather name="globe" size={14} color={palette.muted} />
+                          <Text style={styles.outlineSoftText}>{language === "es" ? "Sitio web" : "Website"}</Text>
+                        </Pressable>
+                      </View>
+                    </View>
+                  ))}
+
+                <View style={[styles.card, { backgroundColor: palette.primary, marginTop: 8 }]}>
+                  <Text style={{ fontFamily: font.bold, fontSize: 18, color: "#FFFFFF", marginBottom: 4 }}>
+                    {language === "es" ? "Necesita un abogado?" : "Need a lawyer?"}
+                  </Text>
+                  <Text style={{ fontFamily: font.regular, fontSize: 13, color: "rgba(255,255,255,0.6)", lineHeight: 19, marginBottom: 16 }}>
+                    {language === "es"
+                      ? "Podemos ayudarle a compartir su expediente directamente con un profesional."
+                      : "We can help you share your case file and summaries directly with a professional."}
+                  </Text>
+                  {selectedCaseId ? (
+                    <Pressable
+                      onPress={() => { setLawyerSummaryOpen(true); setScreen("workspace"); }}
+                      style={{ backgroundColor: "#FFFFFF", paddingVertical: 10, paddingHorizontal: 16, borderRadius: 10, alignSelf: "flex-start" }}
+                      accessibilityRole="button"
+                      accessibilityLabel={language === "es" ? "Compartir expediente" : "Share case file"}
+                    >
+                      <Text style={{ fontFamily: font.bold, fontSize: 12, color: palette.primary }}>
+                        {language === "es" ? "Compartir expediente" : "Share Case File"}
+                      </Text>
+                    </Pressable>
+                  ) : (
+                    <Text style={{ fontFamily: font.regular, fontSize: 12, color: "rgba(255,255,255,0.4)" }}>
+                      {language === "es" ? "Crea un caso primero para compartir." : "Create a case first to share."}
+                    </Text>
+                  )}
+                </View>
+              </ScrollView>
+            </View>
+          ) : null}
+
+          {screen === "drafting" ? (
+            <View style={styles.screenSoft}>
+              <View style={styles.verdictHead}>
+                <Pressable onPress={() => { setSelectedTemplate(null); setScreen("workspace"); }} style={styles.back} accessibilityRole="button" accessibilityLabel="Go back">
+                  <Feather name="chevron-left" size={24} color={palette.muted} />
+                </Pressable>
+                <View>
+                  <Text style={styles.formTitleSmall}>{language === "es" ? "Asistente de Redaccion" : "Drafting Assistant"}</Text>
+                  <Text style={{ fontFamily: font.regular, fontSize: 11, color: palette.muted }}>
+                    {language === "es" ? "Plantillas de respuesta" : "Response templates"}
+                  </Text>
+                </View>
+                <View style={styles.spacer} />
+              </View>
+              <ScrollView contentContainerStyle={styles.scrollBody}>
+                {!selectedTemplate ? (
+                  <>
+                    <View style={{ backgroundColor: "#EFF6FF", padding: 16, borderRadius: 14, borderWidth: 1, borderColor: "#DBEAFE", marginBottom: 16 }}>
+                      <Text style={{ fontFamily: font.bold, fontSize: 14, color: "#1E3A5F", marginBottom: 4 }}>
+                        {language === "es" ? "Elija un punto de partida" : "Pick a starting point"}
+                      </Text>
+                      <Text style={{ fontFamily: font.regular, fontSize: 13, color: "rgba(30,58,95,0.7)", lineHeight: 19 }}>
+                        {language === "es"
+                          ? "Elija una plantilla. Estan escritas en lenguaje sencillo para mantener las cosas profesionales y claras."
+                          : "Choose a template below. We've written these in plain English to keep things professional and clear."}
+                      </Text>
+                    </View>
+
+                    {DRAFT_TEMPLATES.map((t) => (
+                      <Pressable
+                        key={t.id}
+                        onPress={() => { hapticTap(); setSelectedTemplate(t); }}
+                        style={[styles.card, { marginBottom: 10, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }]}
+                        accessibilityRole="button"
+                        accessibilityLabel={language === "es" ? t.titleEs : t.title}
+                      >
+                        <View style={{ flex: 1 }}>
+                          <Text style={{ fontFamily: font.bold, fontSize: 15, color: palette.text, marginBottom: 2 }}>
+                            {language === "es" ? t.titleEs : t.title}
+                          </Text>
+                          <Text style={{ fontFamily: font.regular, fontSize: 12, color: palette.muted }}>
+                            {language === "es" ? t.descriptionEs : t.description}
+                          </Text>
+                        </View>
+                        <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: palette.surfaceSoft, alignItems: "center", justifyContent: "center" }}>
+                          <Feather name="send" size={14} color={palette.subtle} />
+                        </View>
+                      </Pressable>
+                    ))}
+                  </>
+                ) : (
+                  <>
+                    <Pressable onPress={() => setSelectedTemplate(null)} style={{ marginBottom: 12 }} accessibilityRole="button" accessibilityLabel={language === "es" ? "Regresar a la lista" : "Back to list"}>
+                      <Text style={{ fontFamily: font.bold, fontSize: 12, color: "#2563EB", textTransform: "uppercase", letterSpacing: 1 }}>
+                        {language === "es" ? "← Regresar a la lista" : "← Back to list"}
+                      </Text>
+                    </Pressable>
+
+                    <View style={[styles.card, { padding: 0, overflow: "hidden" }]}>
+                      <View style={{ backgroundColor: palette.surfaceSoft, paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: palette.line }}>
+                        <Text style={{ fontFamily: font.bold, fontSize: 9, color: palette.subtle, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>
+                          {language === "es" ? "Asunto" : "Subject"}
+                        </Text>
+                        <Text style={{ fontFamily: font.medium, fontSize: 14, color: palette.text }}>
+                          {language === "es" ? selectedTemplate.subjectEs : selectedTemplate.subject}
+                        </Text>
+                      </View>
+                      <View style={{ padding: 16 }}>
+                        <Text style={{ fontFamily: font.bold, fontSize: 9, color: palette.subtle, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>
+                          {language === "es" ? "Cuerpo del mensaje" : "Message Body"}
+                        </Text>
+                        <View style={{ backgroundColor: "rgba(248,250,252,0.5)", padding: 12, borderRadius: 10, borderWidth: 1, borderColor: palette.surfaceSoft }}>
+                          <Text style={{ fontFamily: font.regular, fontSize: 13, color: "#334155", lineHeight: 20 }}>
+                            {language === "es" ? selectedTemplate.bodyEs : selectedTemplate.body}
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+
+                    <Pressable
+                      onPress={() => {
+                        const text = language === "es" ? selectedTemplate.bodyEs : selectedTemplate.body;
+                        Share.share({ message: text });
+                      }}
+                      style={[styles.primaryBtn, { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 12 }]}
+                      accessibilityRole="button"
+                      accessibilityLabel={language === "es" ? "Copiar y compartir" : "Copy and share"}
+                    >
+                      <Feather name="copy" size={16} color="#FFFFFF" />
+                      <Text style={styles.primaryBtnText}>{language === "es" ? "Copiar y compartir" : "Copy & Share"}</Text>
+                    </Pressable>
+
+                    <View style={{ backgroundColor: "#FEF3C7", padding: 12, borderRadius: 12, borderWidth: 1, borderColor: "#FDE68A", flexDirection: "row", gap: 10, marginTop: 12, alignItems: "flex-start" }}>
+                      <Feather name="alert-circle" size={16} color="#A16207" style={{ marginTop: 2 }} />
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ fontFamily: font.bold, fontSize: 12, color: "#78350F", marginBottom: 2 }}>
+                          {language === "es" ? "Tip: Edite el texto entre corchetes" : "Tip: Edit bracketed text"}
+                        </Text>
+                        <Text style={{ fontFamily: font.regular, fontSize: 11, color: "rgba(120,53,15,0.7)", lineHeight: 16 }}>
+                          {language === "es"
+                            ? "Asegurese de reemplazar cosas como [Nombre del Arrendador] con los datos reales antes de enviar."
+                            : "Make sure to replace things like [Landlord Name] with the actual details before sending."}
+                        </Text>
+                      </View>
+                    </View>
+                  </>
+                )}
+
+                <View style={{ marginTop: 16, paddingVertical: 12 }}>
+                  <Text style={{ fontFamily: font.regular, fontSize: 10, color: palette.subtle, textAlign: "center", lineHeight: 15 }}>
+                    {language === "es"
+                      ? "Estas plantillas son solo orientativas y no constituyen asesoria legal."
+                      : "These templates are for guidance only and do not constitute legal advice."}
+                  </Text>
+                </View>
               </ScrollView>
             </View>
           ) : null}
@@ -6706,6 +7078,9 @@ function App() {
                 <Pressable onPress={() => { setScreen("home"); setDrawerOpen(false); }} style={styles.drawerItem}><Text style={styles.drawerItemText}>{language === "es" ? "Panel" : "Dashboard"}</Text></Pressable>
                 <Pressable onPress={() => { setScreen("cases"); setDrawerOpen(false); }} style={styles.drawerItem}><Text style={styles.drawerItemText}>{language === "es" ? "Casos activos" : "Active Cases"}</Text></Pressable>
                 <Pressable onPress={() => { setScreen("workspace"); setDrawerOpen(false); }} style={styles.drawerItem}><Text style={styles.drawerItemText}>{language === "es" ? "Espacio de trabajo" : "Workspace"}</Text></Pressable>
+                <Text style={styles.drawerSectionTitle}>{language === "es" ? "Herramientas" : "Tools"}</Text>
+                <Pressable onPress={() => { setScreen("legalAid"); setDrawerOpen(false); }} style={styles.drawerItem}><Text style={styles.drawerItemText}>{language === "es" ? "Buscar ayuda legal" : "Find Legal Aid"}</Text></Pressable>
+                <Pressable onPress={() => { setSelectedTemplate(null); setScreen("drafting"); setDrawerOpen(false); }} style={styles.drawerItem}><Text style={styles.drawerItemText}>{language === "es" ? "Asistente de redaccion" : "Drafting Assistant"}</Text></Pressable>
                 <Text style={styles.drawerSectionTitle}>{language === "es" ? "Cuenta" : "Account"}</Text>
                 <Pressable onPress={() => { setScreen("account"); setDrawerOpen(false); }} style={styles.drawerItem}><Text style={styles.drawerItemText}>{language === "es" ? "Configuracion" : "Settings"}</Text></Pressable>
                 <Pressable
@@ -7602,6 +7977,9 @@ const styles = StyleSheet.create({
   },
   tipIconBlue: {
     backgroundColor: "#EFF6FF"
+  },
+  tipIconAmber: {
+    backgroundColor: "#FEF3C7"
   },
   tipTitle: {
     color: palette.text,
