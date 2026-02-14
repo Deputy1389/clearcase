@@ -4,6 +4,8 @@ import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
 import * as ImageManipulator from "expo-image-manipulator";
 import * as Haptics from "expo-haptics";
+import * as Notifications from "expo-notifications";
+import * as Device from "expo-device";
 import { useFonts } from "expo-font";
 import { LinearGradient } from "expo-linear-gradient";
 import { Newsreader_600SemiBold, Newsreader_700Bold } from "@expo-google-fonts/newsreader";
@@ -73,6 +75,35 @@ import {
   setCaseClassification,
   saveCaseContext
 } from "./src/api";
+
+// Configure notification handler for foreground notifications
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false
+  })
+});
+
+async function requestExpoPushToken(): Promise<string | null> {
+  if (!Device.isDevice) return null;
+  const { status: existing } = await Notifications.getPermissionsAsync();
+  let finalStatus = existing;
+  if (existing !== "granted") {
+    const { status } = await Notifications.requestPermissionsAsync();
+    finalStatus = status;
+  }
+  if (finalStatus !== "granted") return null;
+  if (Platform.OS === "android") {
+    await Notifications.setNotificationChannelAsync("deadline-reminders", {
+      name: "Deadline Reminders",
+      importance: Notifications.AndroidImportance.HIGH,
+      sound: "default"
+    });
+  }
+  const tokenData = await Notifications.getExpoPushTokenAsync();
+  return tokenData.data;
+}
 
 type Screen = "language" | "onboarding" | "auth" | "home" | "workspace" | "cases" | "account" | "legal";
 type ContentScreen = Exclude<Screen, "language">;
@@ -3397,7 +3428,9 @@ export default function App() {
     if (offlineMode) return;
     try {
       const deviceId = await getOrCreatePushDeviceId();
-      const token = `clearcase-${deviceId}`;
+      // Try to get a real Expo push token; fall back to synthetic token for dev
+      const expoPushToken = await requestExpoPushToken().catch(() => null);
+      const token = expoPushToken ?? `clearcase-dev-${deviceId}`;
       await registerPushDevice(base, auth, {
         deviceId,
         platform: currentPushPlatform(),

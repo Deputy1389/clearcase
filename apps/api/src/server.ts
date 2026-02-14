@@ -1818,14 +1818,43 @@ function formatBillingSignature(payload: string, secret: string): string {
 
 function verifyBillingSignature(signatureHeader: string | null, payload: string, secret: string): boolean {
   if (!signatureHeader) return false;
-  const raw = signatureHeader.trim().toLowerCase();
-  const providedHex = raw.startsWith("sha256=") ? raw.slice("sha256=".length) : raw;
+  const raw = signatureHeader.trim();
+
+  // Stripe signature format: t=timestamp,v1=signature
+  if (raw.includes("t=") && raw.includes("v1=")) {
+    return verifyStripeSignature(raw, payload, secret);
+  }
+
+  // ClearCase internal format: sha256=hex or raw hex
+  const lowered = raw.toLowerCase();
+  const providedHex = lowered.startsWith("sha256=") ? lowered.slice("sha256=".length) : lowered;
   if (!/^[a-f0-9]+$/.test(providedHex)) return false;
   const expectedHex = formatBillingSignature(payload, secret);
   const providedBuffer = Buffer.from(providedHex, "hex");
   const expectedBuffer = Buffer.from(expectedHex, "hex");
   if (providedBuffer.length !== expectedBuffer.length) return false;
   return timingSafeEqual(providedBuffer, expectedBuffer);
+}
+
+function verifyStripeSignature(header: string, payload: string, secret: string): boolean {
+  const STRIPE_TOLERANCE_SECONDS = 300;
+  const parts = header.split(",");
+  const timestamp = parts.find((p) => p.startsWith("t="))?.slice(2);
+  const signature = parts.find((p) => p.startsWith("v1="))?.slice(3);
+  if (!timestamp || !signature) return false;
+
+  const ts = Number(timestamp);
+  if (!Number.isFinite(ts)) return false;
+  const age = Math.abs(Date.now() / 1000 - ts);
+  if (age > STRIPE_TOLERANCE_SECONDS) return false;
+
+  const expectedSig = createHmac("sha256", secret)
+    .update(`${timestamp}.${payload}`)
+    .digest("hex");
+  const expectedBuffer = Buffer.from(expectedSig, "hex");
+  const actualBuffer = Buffer.from(signature, "hex");
+  if (expectedBuffer.length !== actualBuffer.length) return false;
+  return timingSafeEqual(expectedBuffer, actualBuffer);
 }
 
 function addDays(reference: Date, days: number): Date {
@@ -3713,9 +3742,14 @@ app.post("/billing/webhooks/subscription", async (request, reply) => {
 
   const secret = billingWebhookSecret();
   if (secret) {
-    const signatureHeader = getHeaderStringValue(
+    // Check both Stripe's native header and our custom header
+    const stripeSignature = getHeaderStringValue(
+      (request.headers["stripe-signature"] as string | string[] | undefined) ?? undefined
+    );
+    const customSignature = getHeaderStringValue(
       (request.headers["x-billing-signature"] as string | string[] | undefined) ?? undefined
     );
+    const signatureHeader = stripeSignature ?? customSignature;
     if (!verifyBillingSignature(signatureHeader, payloadString, secret)) {
       reply.status(401).send({
         error: "INVALID_WEBHOOK_SIGNATURE",

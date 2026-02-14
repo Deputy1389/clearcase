@@ -935,15 +935,104 @@ async function sendPushToDevice(input: { token: string; title: string; body: str
   if (parseBooleanEnv("PUSH_NOTIFICATIONS_FORCE_FAIL", false)) {
     throw new Error("Forced push delivery failure.");
   }
-  console.log(
-    JSON.stringify({
-      level: "info",
-      msg: "push_delivery_stub",
-      tokenPreview: `${input.token.slice(0, 6)}...`,
-      title: input.title,
-      body: input.body
-    })
-  );
+
+  const provider = process.env.PUSH_PROVIDER?.trim().toLowerCase() ?? "stub";
+
+  if (provider === "stub") {
+    console.log(
+      JSON.stringify({
+        level: "info",
+        msg: "push_delivery_stub",
+        tokenPreview: `${input.token.slice(0, 6)}...`,
+        title: input.title,
+        body: input.body
+      })
+    );
+    return;
+  }
+
+  if (provider === "expo") {
+    const response = await fetch("https://exp.host/--/api/v2/push/send", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        ...(process.env.EXPO_ACCESS_TOKEN?.trim()
+          ? { Authorization: `Bearer ${process.env.EXPO_ACCESS_TOKEN.trim()}` }
+          : {})
+      },
+      body: JSON.stringify({
+        to: input.token,
+        title: input.title,
+        body: input.body,
+        sound: "default",
+        channelId: "deadline-reminders"
+      })
+    });
+
+    if (!response.ok) {
+      const detail = await response.text().catch(() => "unknown");
+      throw new Error(`Expo Push API ${response.status}: ${detail}`);
+    }
+
+    const result = (await response.json()) as { data?: { status?: string; message?: string } };
+    if (result.data?.status === "error") {
+      throw new Error(`Expo push error: ${result.data.message ?? "unknown"}`);
+    }
+
+    console.log(
+      JSON.stringify({
+        level: "info",
+        msg: "push_delivered_expo",
+        tokenPreview: `${input.token.slice(0, 6)}...`,
+        status: result.data?.status ?? "ok"
+      })
+    );
+    return;
+  }
+
+  if (provider === "fcm") {
+    const fcmKey = process.env.FCM_SERVER_KEY?.trim();
+    if (!fcmKey) throw new Error("FCM_SERVER_KEY not configured.");
+
+    const response = await fetch("https://fcm.googleapis.com/fcm/send", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `key=${fcmKey}`
+      },
+      body: JSON.stringify({
+        to: input.token,
+        notification: {
+          title: input.title,
+          body: input.body,
+          sound: "default"
+        },
+        data: { type: "deadline_reminder" }
+      })
+    });
+
+    if (!response.ok) {
+      const detail = await response.text().catch(() => "unknown");
+      throw new Error(`FCM API ${response.status}: ${detail}`);
+    }
+
+    const result = (await response.json()) as { success?: number; failure?: number };
+    if (result.failure && result.failure > 0) {
+      throw new Error("FCM delivery reported failure.");
+    }
+
+    console.log(
+      JSON.stringify({
+        level: "info",
+        msg: "push_delivered_fcm",
+        tokenPreview: `${input.token.slice(0, 6)}...`
+      })
+    );
+    return;
+  }
+
+  throw new Error(`Unsupported PUSH_PROVIDER='${provider}'. Supported: stub, expo, fcm.`);
 }
 
 async function processSingleDuePushReminder(reminder: PushReminder): Promise<void> {
