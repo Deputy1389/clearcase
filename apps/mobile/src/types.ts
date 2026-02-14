@@ -1,4 +1,4 @@
-export type Screen = "language" | "onboarding" | "auth" | "home" | "workspace" | "cases" | "account" | "legal";
+export type Screen = "language" | "onboarding" | "auth" | "home" | "workspace" | "cases" | "account" | "legal" | "legalAid" | "drafting";
 export type ContentScreen = Exclude<Screen, "language">;
 export type AuthMode = "selection" | "login" | "signup" | "disclaimer";
 export type BannerTone = "info" | "good" | "bad";
@@ -73,9 +73,7 @@ export type ManualCategoryOption = {
 };
 
 export type PacketHistoryEntry = {
-  token: string;
+  version: number;
+  reason: string;
   createdAt: string;
-  expiresAt: string;
-  disabled: boolean;
-  url: string;
 };

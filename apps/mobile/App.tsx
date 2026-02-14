@@ -154,7 +154,27 @@ import type { LegalAidResource } from "./src/data/legal-aid-resources";
 import { DRAFT_TEMPLATES } from "./src/data/draft-templates";
 import type { DraftTemplate } from "./src/data/draft-templates";
 import { DEMO_CASES, buildDemoCaseDetail, DEMO_CASE_DETAIL_MAP } from "./src/data/demo-cases";
-import type { OnboardingSlide, PaywallConfigState } from "./src/types";
+import type {
+  Screen,
+  ContentScreen,
+  AuthMode,
+  BannerTone,
+  ConnStatus,
+  UploadStage,
+  CaseSeverity,
+  PlanTier,
+  AppLanguage,
+  PlusFeatureGate,
+  StepProgress,
+  PremiumStepGroup,
+  PremiumActionStep,
+  UploadAssetInput,
+  WorkspaceAccordionKey,
+  IntakeDraft,
+  PaywallConfigState,
+  OnboardingSlide,
+  PacketHistoryEntry,
+} from "./src/types";
 
 // --- Sentry error tracking ---
 const SENTRY_DSN = process.env.EXPO_PUBLIC_SENTRY_DSN?.trim() ?? "";
@@ -196,58 +216,6 @@ async function requestExpoPushToken(): Promise<string | null> {
   return tokenData.data;
 }
 
-type Screen = "language" | "onboarding" | "auth" | "home" | "workspace" | "cases" | "account" | "legal" | "legalAid" | "drafting";
-type ContentScreen = Exclude<Screen, "language">;
-type AuthMode = "selection" | "login" | "signup" | "disclaimer";
-type BannerTone = "info" | "good" | "bad";
-type ConnStatus = "unknown" | "ok" | "error";
-type UploadStage = "idle" | "picking" | "preparing" | "sending" | "processing";
-type CaseSeverity = "high" | "medium" | "low";
-type PlanTier = "free" | "plus";
-type AppLanguage = "en" | "es";
-type PlusFeatureGate = "watch_mode" | "consult_links";
-type StepProgress = "not_started" | "in_progress" | "done" | "deferred";
-type PremiumStepGroup = "now" | "this_week" | "before_consult" | "after_upload";
-
-type PremiumActionStep = {
-  id: string;
-  group: PremiumStepGroup;
-  title: string;
-  detail: string;
-  consequenceIfIgnored: string;
-  effort: string;
-  confidence: "high" | "medium" | "low";
-  receipts: string[];
-};
-
-type UploadAssetInput = {
-  uri: string;
-  name: string;
-  mimeType?: string | null;
-  size?: number | null;
-};
-
-type WorkspaceAccordionKey =
-  | "steps"
-  | "watch"
-  | "packet"
-  | "context"
-  | "category"
-  | "summary"
-  | "plain_meaning"
-  | "timeline";
-
-type IntakeDraft = {
-  matterSummary: string;
-  clientGoals: string;
-  constraints: string;
-  timelineNarrative: string;
-  partiesAndRoles: string;
-  communicationsLog: string;
-  financialImpact: string;
-  questionsForCounsel: string;
-  desiredOutcome: string;
-};
 
 const STORAGE_API_BASE = "clearcase.mobile.apiBase";
 const STORAGE_SUBJECT = "clearcase.mobile.subject";
@@ -402,11 +370,6 @@ function extractCaseWatchModeFromAuditLogs(auditLogs: Array<{ payload: unknown }
   return false;
 }
 
-type PacketHistoryEntry = {
-  version: number;
-  reason: string;
-  createdAt: string;
-};
 
 function buildPacketHistoryEntries(
   auditLogs: Array<{ eventType: string; createdAt: string; payload: unknown }> | undefined,
