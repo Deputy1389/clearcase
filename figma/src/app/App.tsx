@@ -7,23 +7,34 @@ import { Workspace } from './components/Workspace';
 import { Account, ProfileEdit } from './components/Account';
 import { Onboarding } from './components/Onboarding';
 import { Auth } from './components/Auth';
+import { Paywall } from './components/Paywall';
 import { BottomTabs } from './components/BottomTabs';
+import { LimitModal, LockModal } from './components/Modals';
 import { Storyboard } from './components/Storyboard';
 import { AnimatePresence } from 'motion/react';
-import { Layers } from 'lucide-react';
+import { Layers, Lock as LockIcon } from 'lucide-react';
+import { LockScreen } from './components/LockScreen';
 
 type MainTab = 'home' | 'cases' | 'upload' | 'workspace' | 'account';
-type FlowState = 'onboarding' | 'auth' | 'app' | 'profile-edit' | 'storyboard';
+type FlowState = 'onboarding' | 'auth' | 'app' | 'profile-edit' | 'storyboard' | 'paywall';
 
 export default function App() {
   const [flow, setFlow] = useState<FlowState>('onboarding');
   const [activeTab, setActiveTab] = useState<MainTab>('home');
   const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null);
   const [lastFlow, setLastFlow] = useState<FlowState>('onboarding');
+  const [isAppLocked, setIsAppLocked] = useState(false);
+  const [privacyEnabled, setPrivacyEnabled] = useState(false);
+  
+  // Modals state
+  const [isLimitModalOpen, setIsLimitModalOpen] = useState(false);
+  const [isLockModalOpen, setIsLockModalOpen] = useState(false);
+  const [lockFeature, setLockFeature] = useState<'reminders' | 'history'>('reminders');
 
   const handleOnboardingComplete = () => setFlow('auth');
   const handleAuthSuccess = () => setFlow('app');
   const handleLogout = () => setFlow('auth');
+  const handleStartPlus = () => setFlow('paywall');
   
   const handleStartUpload = () => setActiveTab('upload');
   const handleUploadComplete = () => {
@@ -47,14 +58,27 @@ export default function App() {
 
   return (
     <div className="relative">
+      {isAppLocked && <LockScreen onUnlock={() => setIsAppLocked(false)} />}
+
       {/* Dev Navigator Toggle */}
-      <button 
-        onClick={toggleStoryboard}
-        className="fixed bottom-6 right-6 z-[100] w-12 h-12 bg-white text-slate-900 rounded-full shadow-2xl flex items-center justify-center hover:bg-slate-50 transition-all active:scale-90 border border-slate-100"
-        title="View Storyboard"
-      >
-        <Layers size={20} />
-      </button>
+      <div className="fixed bottom-6 right-6 z-[100] flex flex-col gap-3">
+        {privacyEnabled && (
+          <button 
+            onClick={() => setIsAppLocked(true)}
+            className="w-12 h-12 bg-slate-900 text-white rounded-full shadow-2xl flex items-center justify-center hover:bg-slate-800 transition-all active:scale-90"
+            title="Lock App"
+          >
+            <LockIcon size={20} />
+          </button>
+        )}
+        <button 
+          onClick={toggleStoryboard}
+          className="w-12 h-12 bg-white text-slate-900 rounded-full shadow-2xl flex items-center justify-center hover:bg-slate-50 transition-all active:scale-90 border border-slate-100"
+          title="View Storyboard"
+        >
+          <Layers size={20} />
+        </button>
+      </div>
 
       {flow === 'storyboard' ? (
         <Storyboard 
@@ -65,6 +89,7 @@ export default function App() {
             else if (s === 'intake' || s === 'upload') { setFlow('app'); setActiveTab('upload'); }
             else if (s === 'verdict' || s === 'workspace') { setFlow('app'); setActiveTab('workspace'); }
             else if (s === 'onboarding') setFlow('onboarding');
+            else if (s === 'paywall') setFlow('paywall');
             else if (s.includes('auth')) setFlow('auth');
           }} 
         />
@@ -72,7 +97,22 @@ export default function App() {
         <Layout>
           <AnimatePresence mode="wait">
             {flow === 'onboarding' && (
-              <Onboarding key="onboarding" onComplete={handleOnboardingComplete} />
+              <Onboarding 
+                key="onboarding" 
+                onComplete={handleOnboardingComplete} 
+                onSubscribe={handleStartPlus}
+              />
+            )}
+
+            {flow === 'paywall' && (
+              <Paywall 
+                key="paywall" 
+                onClose={() => setFlow('app')} 
+                onSubscribe={() => {
+                  // Simulate subscription
+                  setFlow('app');
+                }} 
+              />
             )}
             
             {flow === 'auth' && (
@@ -100,7 +140,13 @@ export default function App() {
                       <Workspace key="workspace" onBack={() => setActiveTab('cases')} />
                     )}
                     {activeTab === 'account' && (
-                      <Account key="account" onEditProfile={() => setFlow('profile-edit')} onLogout={handleLogout} />
+                      <Account 
+                        key="account" 
+                        onEditProfile={() => setFlow('profile-edit')} 
+                        onLogout={handleLogout} 
+                        privacyEnabled={privacyEnabled}
+                        onTogglePrivacy={() => setPrivacyEnabled(!privacyEnabled)}
+                      />
                     )}
                   </AnimatePresence>
                 </div>
@@ -110,6 +156,25 @@ export default function App() {
               </div>
             )}
           </AnimatePresence>
+
+          {/* Global Modals */}
+          <LimitModal 
+            isOpen={isLimitModalOpen} 
+            onClose={() => setIsLimitModalOpen(false)} 
+            onUpgrade={() => {
+              setIsLimitModalOpen(false);
+              setFlow('paywall');
+            }}
+          />
+          <LockModal 
+            isOpen={isLockModalOpen} 
+            feature={lockFeature}
+            onClose={() => setIsLockModalOpen(false)} 
+            onUpgrade={() => {
+              setIsLockModalOpen(false);
+              setFlow('paywall');
+            }}
+          />
         </Layout>
       )}
     </div>

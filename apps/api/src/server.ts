@@ -1,5 +1,8 @@
 import "dotenv/config";
 import Fastify, { type FastifyReply } from "fastify";
+import cors from "@fastify/cors";
+import helmet from "@fastify/helmet";
+import rateLimit from "@fastify/rate-limit";
 import { SendMessageCommand, SQSClient } from "@aws-sdk/client-sqs";
 import { createHash, createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 import { AssetType, AuditEventType, Prisma, type User } from "@prisma/client";
@@ -3481,7 +3484,40 @@ async function getOrCreateUser(auth: AuthContext): Promise<User> {
 }
 
 const app = Fastify({
-  logger: true
+  logger: true,
+  genReqId: () => randomUUID()
+});
+
+// --- Production middleware ---
+
+await app.register(cors, {
+  origin: process.env.CORS_ORIGIN?.split(",").map((s) => s.trim()) ?? true,
+  credentials: true
+});
+
+await app.register(helmet as any, {
+  contentSecurityPolicy: false
+});
+
+await app.register(rateLimit, {
+  max: Number(process.env.RATE_LIMIT_MAX ?? 100),
+  timeWindow: Number(process.env.RATE_LIMIT_WINDOW_MS ?? 60_000),
+  keyGenerator: (request: any) => request.auth?.subject ?? request.ip
+});
+
+// --- Request logging ---
+
+app.addHook("onResponse", (request, reply, done) => {
+  request.log.info(
+    {
+      method: request.method,
+      url: request.url,
+      statusCode: reply.statusCode,
+      responseTime: reply.elapsedTime
+    },
+    "request_completed"
+  );
+  done();
 });
 
 await authPlugin(app);
@@ -3515,7 +3551,15 @@ app.setNotFoundHandler((request, reply) => {
 });
 
 app.get("/health", async () => {
-  return { ok: true };
+  const checks: Record<string, "ok" | "error"> = {};
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    checks.database = "ok";
+  } catch {
+    checks.database = "error";
+  }
+  const healthy = Object.values(checks).every((v) => v === "ok");
+  return { ok: healthy, checks };
 });
 
 app.get("/ops/metrics/summary", async (request, reply) => {
@@ -5660,6 +5704,24 @@ app.post("/cases/:id/assets/:assetId/finalize", async (request, reply) => {
 
 const apiPort = Number(process.env.API_PORT ?? 3001);
 const apiHost = process.env.API_HOST ?? "0.0.0.0";
+
+// --- Graceful shutdown ---
+
+const shutdown = async (signal: string) => {
+  app.log.info({ signal }, "Received shutdown signal, draining...");
+  try {
+    await app.close();
+    await prisma.$disconnect();
+    app.log.info("Shutdown complete.");
+    process.exit(0);
+  } catch (error) {
+    app.log.error(error, "Error during shutdown");
+    process.exit(1);
+  }
+};
+
+process.on("SIGINT", () => shutdown("SIGINT"));
+process.on("SIGTERM", () => shutdown("SIGTERM"));
 
 try {
   await app.listen({ host: apiHost, port: apiPort });

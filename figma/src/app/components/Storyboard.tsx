@@ -7,6 +7,7 @@ import { Workspace } from './Workspace';
 import { Account } from './Account';
 import { Onboarding } from './Onboarding';
 import { Auth } from './Auth';
+import { Paywall } from './Paywall';
 
 interface StoryboardProps {
   onClose: () => void;
@@ -15,7 +16,8 @@ interface StoryboardProps {
 
 export const Storyboard: React.FC<StoryboardProps> = ({ onClose, onSelect }) => {
   const screens = [
-    { id: 'onboarding', name: 'Onboarding', component: <Onboarding onComplete={() => {}} /> },
+    { id: 'onboarding', name: 'Onboarding', component: <Onboarding onComplete={() => {}} onSubscribe={() => {}} /> },
+    { id: 'paywall', name: 'Paywall', component: <Paywall onClose={() => {}} onSubscribe={() => {}} /> },
     { id: 'auth-selection', name: 'Auth Selection', component: <Auth onSuccess={() => {}} /> },
     { id: 'home', name: 'Home Screen', component: <Home onStartUpload={() => {}} onViewCase={() => {}} /> },
     { id: 'cases', name: 'Cases List', component: <Cases onSelectCase={() => {}} onNewCase={() => {}} /> },

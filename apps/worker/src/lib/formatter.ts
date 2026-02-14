@@ -426,6 +426,110 @@ class DeterministicStructuredFormatter implements CaseFormatter {
   }
 }
 
+class LlmApiFormatter implements CaseFormatter {
+  private readonly provider: "openai" | "anthropic";
+  private readonly apiKey: string;
+  private readonly model: string;
+  private readonly fallback = new DeterministicStructuredFormatter();
+  private failures = 0;
+  private circuitOpenUntil = 0;
+  private readonly maxFailures = Number(process.env.LLM_CIRCUIT_MAX_FAILURES ?? 3);
+  private readonly cooldownMs = Number(process.env.LLM_CIRCUIT_COOLDOWN_MS ?? 60_000);
+
+  constructor(provider: "openai" | "anthropic") {
+    this.provider = provider;
+    this.apiKey = process.env.LLM_API_KEY?.trim() ?? "";
+    if (!this.apiKey) {
+      throw new Error(`LLM_API_KEY is required when LLM_PROVIDER=${provider}`);
+    }
+    const defaultModel = provider === "openai" ? "gpt-4o" : "claude-sonnet-4-5-20250929";
+    this.model = process.env.LLM_MODEL?.trim() || defaultModel;
+  }
+
+  async format(input: FormatterInput): Promise<FormatterOutput> {
+    if (Date.now() < this.circuitOpenUntil) {
+      console.log(JSON.stringify({ level: "warn", msg: "llm_circuit_open_fallback", provider: this.provider }));
+      return this.fallback.format(input);
+    }
+
+    try {
+      const result = await this.callLlm(input);
+      this.failures = 0;
+      return result;
+    } catch (error) {
+      this.failures++;
+      if (this.failures >= this.maxFailures) {
+        this.circuitOpenUntil = Date.now() + this.cooldownMs;
+        console.log(JSON.stringify({ level: "warn", msg: "llm_circuit_opened", provider: this.provider, cooldownMs: this.cooldownMs }));
+      }
+      console.error(JSON.stringify({ level: "error", msg: "llm_call_failed_fallback", provider: this.provider, error: error instanceof Error ? error.message : String(error) }));
+      return this.fallback.format(input);
+    }
+  }
+
+  private async callLlm(input: FormatterInput): Promise<FormatterOutput> {
+    const systemPrompt = [
+      "You are ClearCase, a legal document assistant. Analyze the extracted facts and produce a calm, plain-English summary.",
+      "Output valid JSON with keys: summary, whatThisUsuallyMeans (array of strings), deadlines (object with timeSensitive boolean and signals array), evidenceToGather (array of strings), escalationSignal (object with recommended boolean and reason string), disclaimer (string).",
+      "Tone: calm, non-alarming, accessible to someone with no legal background. Always include the disclaimer that this is legal information, not legal advice."
+    ].join(" ");
+
+    const userPrompt = JSON.stringify({
+      caseId: input.caseId,
+      extractionId: input.extractionId,
+      documentType: input.truth.documentType,
+      facts: input.truth.facts,
+      deadlineSignals: input.truth.deadlineSignals,
+      timeSensitive: input.truth.timeSensitive
+    });
+
+    const inputHash = sha256Hex(stableJson({ caseId: input.caseId, extractionId: input.extractionId, truth: input.truth.facts }));
+
+    if (this.provider === "openai") {
+      return this.callOpenAi(systemPrompt, userPrompt, inputHash);
+    }
+    return this.callAnthropic(systemPrompt, userPrompt, inputHash);
+  }
+
+  private async callOpenAi(systemPrompt: string, userPrompt: string, inputHash: string): Promise<FormatterOutput> {
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${this.apiKey}` },
+      body: JSON.stringify({ model: this.model, response_format: { type: "json_object" }, messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }], temperature: 0.3 })
+    });
+    if (!response.ok) throw new Error(`OpenAI API ${response.status}: ${await response.text()}`);
+    const data = await response.json() as { choices: Array<{ message: { content: string } }> };
+    const outputJson = JSON.parse(data.choices[0].message.content);
+    return {
+      llmModel: this.model,
+      inputHash,
+      plainEnglishExplanation: outputJson.summary ?? "",
+      nonLegalAdviceDisclaimer: outputJson.disclaimer ?? "ClearCase provides legal information, not legal advice.",
+      outputJson
+    };
+  }
+
+  private async callAnthropic(systemPrompt: string, userPrompt: string, inputHash: string): Promise<FormatterOutput> {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-api-key": this.apiKey, "anthropic-version": "2023-06-01" },
+      body: JSON.stringify({ model: this.model, max_tokens: 2048, system: systemPrompt, messages: [{ role: "user", content: userPrompt }] })
+    });
+    if (!response.ok) throw new Error(`Anthropic API ${response.status}: ${await response.text()}`);
+    const data = await response.json() as { content: Array<{ text: string }> };
+    const raw = data.content[0].text;
+    const jsonMatch = raw.match(/\{[\s\S]*\}/);
+    const outputJson = jsonMatch ? JSON.parse(jsonMatch[0]) : { summary: raw };
+    return {
+      llmModel: this.model,
+      inputHash,
+      plainEnglishExplanation: outputJson.summary ?? raw,
+      nonLegalAdviceDisclaimer: outputJson.disclaimer ?? "ClearCase provides legal information, not legal advice.",
+      outputJson
+    };
+  }
+}
+
 export function createCaseFormatter(): CaseFormatter {
   const provider = process.env.LLM_PROVIDER?.trim() ?? "stub";
 
@@ -433,7 +537,11 @@ export function createCaseFormatter(): CaseFormatter {
     return new DeterministicStructuredFormatter();
   }
 
+  if (provider === "openai" || provider === "anthropic") {
+    return new LlmApiFormatter(provider);
+  }
+
   throw new Error(
-    `Unsupported LLM_PROVIDER='${provider}'. Only LLM_PROVIDER=stub is currently implemented.`
+    `Unsupported LLM_PROVIDER='${provider}'. Supported: stub, openai, anthropic.`
   );
 }

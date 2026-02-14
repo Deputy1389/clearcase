@@ -2117,12 +2117,25 @@ async function main(): Promise<void> {
   const client = new SQSClient({ region: config.region });
 
   let keepRunning = true;
-  const stop = () => {
+  let currentJob: Promise<void> | null = null;
+
+  const stop = (signal: string) => {
+    console.log(JSON.stringify({ level: "info", msg: "worker_shutdown_requested", signal }));
     keepRunning = false;
   };
 
-  process.on("SIGINT", stop);
-  process.on("SIGTERM", stop);
+  process.on("SIGINT", () => stop("SIGINT"));
+  process.on("SIGTERM", () => stop("SIGTERM"));
+
+  process.on("unhandledRejection", (reason) => {
+    console.error(
+      JSON.stringify({
+        level: "error",
+        msg: "unhandled_rejection",
+        error: reason instanceof Error ? reason.message : String(reason)
+      })
+    );
+  });
 
   console.log(
     JSON.stringify({
@@ -2131,14 +2144,21 @@ async function main(): Promise<void> {
       queueUrl: config.queueUrl,
       waitTimeSeconds: config.waitTimeSeconds,
       visibilityTimeoutSeconds: config.visibilityTimeoutSeconds,
-      maxMessageRetries: config.maxMessageRetries
+      maxMessageRetries: config.maxMessageRetries,
+      ocrProvider: process.env.OCR_PROVIDER?.trim() ?? "stub",
+      llmProvider: process.env.LLM_PROVIDER?.trim() ?? "stub",
+      pid: process.pid
     })
   );
 
   while (keepRunning) {
     await processDuePushRemindersBatch();
-    await pollOnce(client, config);
+    currentJob = pollOnce(client, config);
+    await currentJob;
+    currentJob = null;
   }
+
+  await prisma.$disconnect();
 
   console.log(
     JSON.stringify({
@@ -2153,7 +2173,8 @@ main().catch((error) => {
     JSON.stringify({
       level: "error",
       msg: "worker_crash",
-      error: error instanceof Error ? error.message : String(error)
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
     })
   );
   process.exit(1);

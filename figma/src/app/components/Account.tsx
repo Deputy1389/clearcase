@@ -26,9 +26,16 @@ import { motion, AnimatePresence } from 'motion/react';
 interface AccountProps {
   onEditProfile: () => void;
   onLogout: () => void;
+  privacyEnabled: boolean;
+  onTogglePrivacy: () => void;
 }
 
-export const Account: React.FC<AccountProps> = ({ onEditProfile, onLogout }) => {
+export const Account: React.FC<AccountProps> = ({ 
+  onEditProfile, 
+  onLogout,
+  privacyEnabled,
+  onTogglePrivacy
+}) => {
   const [user] = useState({
     name: "Alex Thompson",
     email: "alex.t@example.com",
@@ -170,6 +177,30 @@ export const Account: React.FC<AccountProps> = ({ onEditProfile, onLogout }) => 
           <div className="bg-white rounded-3xl border border-slate-100 overflow-hidden shadow-sm">
             <ListItem title="Preferred Language" subtitle="English (US)" icon={<FileText size={18} />} />
             <ListItem title="Jurisdiction" subtitle="California, USA" icon={<MapPin size={18} />} />
+          </div>
+        </div>
+
+        {/* Privacy Lock Section */}
+        <div className="space-y-3">
+          <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2">Privacy & Protection</h3>
+          <div className="bg-white rounded-3xl border border-slate-100 p-6 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div className="flex gap-4">
+                <div className="p-3 bg-slate-50 rounded-2xl text-slate-900 border border-slate-100">
+                  <ShieldCheck size={20} />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-slate-900 mb-0.5">Biometric Lock</h4>
+                  <p className="text-[12px] text-slate-500">Require Fingerprint/FaceID to open app</p>
+                </div>
+              </div>
+              <button 
+                onClick={onTogglePrivacy}
+                className={`w-12 h-7 rounded-full transition-colors relative flex items-center px-1 ${privacyEnabled ? 'bg-blue-600' : 'bg-slate-200'}`}
+              >
+                <div className={`w-5 h-5 bg-white rounded-full shadow-sm transition-transform ${privacyEnabled ? 'translate-x-5' : 'translate-x-0'}`} />
+              </button>
+            </div>
           </div>
         </div>
 
