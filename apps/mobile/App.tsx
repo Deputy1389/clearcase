@@ -7213,7 +7213,7 @@ const styles = StyleSheet.create({
   fill: { flex: 1 },
   loading: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: palette.bg },
   loadingText: { marginTop: 8, color: palette.muted, fontFamily: font.medium },
-  banner: { marginHorizontal: 16, marginTop: 10, marginBottom: 2, borderWidth: 1, borderColor: palette.line, borderRadius: 12, backgroundColor: palette.surfaceSoft, padding: 10 },
+  banner: { marginHorizontal: 16, marginTop: 10, marginBottom: 2, borderWidth: 1, borderColor: palette.line, borderRadius: 16, backgroundColor: palette.surfaceSoft, padding: 12 },
   bannerGood: { backgroundColor: palette.greenSoft, borderColor: "#BBF7D0" },
   bannerBad: { backgroundColor: palette.redSoft, borderColor: "#FECACA" },
   bannerText: { color: palette.text, fontFamily: font.medium, fontSize: 12 },
@@ -7259,7 +7259,7 @@ const styles = StyleSheet.create({
   formTitle: { color: palette.text, fontFamily: font.bold, fontSize: 34, marginBottom: 8 },
   formSubtitle: { color: palette.muted, fontFamily: font.regular, fontSize: 15, lineHeight: 21, marginBottom: 14 },
   subtleCenterText: { color: palette.subtle, fontFamily: font.regular, fontSize: 12, lineHeight: 17, textAlign: "center", marginTop: 8, marginBottom: 2 },
-  formTitleSmall: { color: palette.text, fontFamily: font.semibold, fontSize: 18 },
+  formTitleSmall: { color: palette.text, fontFamily: font.bold, fontSize: 20 },
   workspaceTitleWrap: { flexDirection: "row", alignItems: "center", gap: 8 },
   buildStamp: {
     color: palette.subtle,
@@ -7307,7 +7307,7 @@ const styles = StyleSheet.create({
   disclaimerBulletRow: { flexDirection: "row", alignItems: "flex-start", marginBottom: 6 },
   disclaimerBulletDot: { width: 6, height: 6, borderRadius: 4, backgroundColor: "#94A3B8", marginTop: 7, marginRight: 8 },
   disclaimerBackText: { color: "#CBD5E1", fontFamily: font.medium, fontSize: 13 },
-  card: { backgroundColor: palette.surface, borderRadius: 24, borderWidth: 1, borderColor: "#F1F5F9", padding: 18, marginBottom: 12, shadowColor: "#0F172A", shadowOpacity: 0.04, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 1 },
+  card: { backgroundColor: palette.surface, borderRadius: 24, borderWidth: 1, borderColor: "#F1F5F9", padding: 18, marginBottom: 12, shadowColor: "#0F172A", shadowOpacity: 0.07, shadowRadius: 12, shadowOffset: { width: 0, height: 3 }, elevation: 2 },
   cardTitle: { color: palette.text, fontFamily: font.bold, fontSize: 16, marginBottom: 6 },
   cardTitleBig: { color: palette.text, fontFamily: font.bold, fontSize: 26, textAlign: "center", lineHeight: 31 },
   cardBody: { color: palette.muted, fontFamily: font.regular, fontSize: 13, lineHeight: 19, marginBottom: 4 },
@@ -7318,7 +7318,7 @@ const styles = StyleSheet.create({
   homeHeadCenter: { flex: 1, marginHorizontal: 8 },
   brandTinyRow: { flexDirection: "row", alignItems: "center" },
   brandTiny: { width: 28, height: 28, borderRadius: 9, backgroundColor: palette.primary, alignItems: "center", justifyContent: "center", marginRight: 8 },
-  homeBrand: { color: palette.text, fontFamily: font.semibold, fontSize: 21 },
+  homeBrand: { color: palette.text, fontFamily: font.bold, fontSize: 22 },
   homeTagline: { color: palette.muted, fontFamily: font.regular, fontSize: 12, marginTop: 2 },
   offlineBadge: {
     marginTop: 5,
@@ -7344,7 +7344,7 @@ const styles = StyleSheet.create({
   heroPrimaryBtn: { marginTop: 2, backgroundColor: "#111827" },
   homeTitle: { color: "#334155", fontFamily: font.regular, fontSize: 34, lineHeight: 40, marginBottom: 14 },
   homeStrong: { color: palette.text, fontFamily: font.semibold },
-  imageWrap: { width: "100%", aspectRatio: 16 / 9, borderRadius: 22, overflow: "hidden", marginBottom: 12, borderWidth: 1, borderColor: palette.line },
+  imageWrap: { width: "100%", aspectRatio: 16 / 9, borderRadius: 24, overflow: "hidden", marginBottom: 12, borderWidth: 1, borderColor: palette.line },
   image: { width: "100%", height: "100%" },
   ctaInline: { flexDirection: "row", alignItems: "center", gap: 8 },
   outlineSoftBtn: { borderRadius: 24, borderWidth: 1, borderColor: palette.line, backgroundColor: palette.surface, paddingVertical: 14, alignItems: "center", justifyContent: "center", marginTop: 8 },
@@ -7368,8 +7368,8 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     marginBottom: 10,
     shadowColor: "#0F172A",
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
+    shadowOpacity: 0.07,
+    shadowRadius: 12,
     shadowOffset: { width: 0, height: 3 },
     elevation: 2
   },
@@ -7385,18 +7385,18 @@ const styles = StyleSheet.create({
   resultWarn: { backgroundColor: palette.amberSoft },
   resultGood: { backgroundColor: palette.greenSoft },
   metricRow: { flexDirection: "row", gap: 8, marginTop: 6 },
-  metricCard: { flex: 1, borderWidth: 1, borderRadius: 14, padding: 10 },
+  metricCard: { flex: 1, borderWidth: 1, borderRadius: 20, padding: 12 },
   metricRiskHigh: { backgroundColor: "#FEE2E2", borderColor: "#FECACA" },
   metricRiskMedium: { backgroundColor: "#FEF3C7", borderColor: "#FDE68A" },
   metricRiskLow: { backgroundColor: "#DCFCE7", borderColor: "#BBF7D0" },
-  metricCardNeutral: { flex: 1, borderWidth: 1, borderColor: palette.line, borderRadius: 14, padding: 10, backgroundColor: palette.surfaceSoft },
+  metricCardNeutral: { flex: 1, borderWidth: 1, borderColor: palette.line, borderRadius: 20, padding: 12, backgroundColor: palette.surfaceSoft },
   metricLabel: { color: palette.subtle, fontFamily: font.bold, fontSize: 9, textTransform: "uppercase", letterSpacing: 1.05, marginBottom: 4 },
   metricValue: { color: palette.text, fontFamily: font.semibold, fontSize: 18 },
   metricTimeRow: { flexDirection: "row", alignItems: "center" },
   metricTimeText: { color: palette.muted, fontFamily: font.semibold, fontSize: 11, marginLeft: 5, flex: 1 },
   stepRow: { flexDirection: "row", alignItems: "flex-start", marginBottom: 8 },
-  stepDot: { width: 18, height: 18, borderRadius: 9, backgroundColor: "#F1F5F9", alignItems: "center", justifyContent: "center", marginRight: 8, marginTop: 2 },
-  stepDotText: { color: palette.muted, fontFamily: font.bold, fontSize: 9 },
+  stepDot: { width: 22, height: 22, borderRadius: 11, backgroundColor: "#F1F5F9", alignItems: "center", justifyContent: "center", marginRight: 10, marginTop: 2 },
+  stepDotText: { color: palette.muted, fontFamily: font.bold, fontSize: 10 },
   stepText: { color: palette.muted, fontFamily: font.regular, fontSize: 13, lineHeight: 19, flex: 1 },
   verdictFooter: { flexDirection: "row", alignItems: "center", justifyContent: "center", marginTop: 6 },
   verdictFooterText: { color: palette.subtle, fontFamily: font.medium, fontSize: 10, marginRight: 5 },
@@ -7405,7 +7405,7 @@ const styles = StyleSheet.create({
   dotStatus: { width: 9, height: 9, borderRadius: 99, backgroundColor: "#CBD5E1", marginRight: 6 },
   dotGood: { backgroundColor: palette.green },
   dotBad: { backgroundColor: "#B91C1C" },
-  caseRow: { borderRadius: 14, borderWidth: 1, borderColor: palette.line, backgroundColor: palette.surface, padding: 10, marginTop: 8 },
+  caseRow: { borderRadius: 20, borderWidth: 1, borderColor: palette.line, backgroundColor: palette.surface, padding: 14, marginTop: 8 },
   caseRowActive: { borderColor: "#64748B", backgroundColor: "#F1F5F9" },
   bottomTabs: {
     flexDirection: "row",
@@ -7488,39 +7488,39 @@ const styles = StyleSheet.create({
     lineHeight: 16
   },
   sheetCaseNameInput: {
-    borderRadius: 12,
+    borderRadius: 20,
     borderWidth: 1,
     borderColor: "#E2E8F0",
     backgroundColor: "#FFFFFF",
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     color: palette.text,
     fontFamily: font.medium,
-    fontSize: 13
+    fontSize: 14
   },
   sheetInput: {
-    borderRadius: 12,
+    borderRadius: 20,
     borderWidth: 1,
     borderColor: "#E2E8F0",
     backgroundColor: "#FFFFFF",
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     minHeight: 76,
     color: palette.text,
     fontFamily: font.regular,
-    fontSize: 13,
+    fontSize: 14,
     textAlignVertical: "top"
   },
   sheetActionBtn: {
-    borderRadius: 14,
+    borderRadius: 20,
     borderWidth: 1,
     borderColor: "#E2E8F0",
     backgroundColor: "#FFFFFF",
-    paddingHorizontal: 12,
-    paddingVertical: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     flexDirection: "row",
     alignItems: "center",
-    gap: 8
+    gap: 10
   },
   sheetActionText: {
     color: palette.text,
@@ -7528,10 +7528,10 @@ const styles = StyleSheet.create({
     fontSize: 14
   },
   sheetCancelBtn: {
-    marginTop: 4,
-    borderRadius: 14,
+    marginTop: 6,
+    borderRadius: 20,
     backgroundColor: "#F1F5F9",
-    paddingVertical: 12,
+    paddingVertical: 14,
     alignItems: "center"
   },
   sheetCancelText: {
@@ -7678,12 +7678,12 @@ const styles = StyleSheet.create({
     paddingBottom: 8
   },
   categoryOption: {
-    borderRadius: 12,
+    borderRadius: 20,
     borderWidth: 1,
     borderColor: "#E2E8F0",
     backgroundColor: "#FFFFFF",
-    paddingHorizontal: 12,
-    paddingVertical: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     marginBottom: 8,
     flexDirection: "row",
     alignItems: "center",
@@ -7987,10 +7987,10 @@ const styles = StyleSheet.create({
     padding: 18,
     marginBottom: 10,
     shadowColor: "#0F172A",
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 1
+    shadowOpacity: 0.07,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 2
   },
   dashboardCaseTop: {
     flexDirection: "row",
@@ -8003,7 +8003,7 @@ const styles = StyleSheet.create({
     fontFamily: font.bold,
     fontSize: 10,
     textTransform: "uppercase",
-    letterSpacing: 1
+    letterSpacing: 1.2
   },
   priorityChip: {
     borderRadius: 999,
@@ -8055,10 +8055,10 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     padding: 16,
     shadowColor: "#0F172A",
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 1
+    shadowOpacity: 0.07,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 2
   },
   tipIcon: {
     width: 36,
@@ -8150,7 +8150,9 @@ const styles = StyleSheet.create({
     letterSpacing: 1
   },
   actionPlanCard: {
-    borderWidth: 1
+    borderWidth: 1,
+    borderRadius: 20,
+    padding: 14
   },
   workspaceAccordionBar: {
     borderWidth: 2,
@@ -8166,8 +8168,8 @@ const styles = StyleSheet.create({
   },
   workspaceAccordionTitle: {
     color: palette.text,
-    fontFamily: font.semibold,
-    fontSize: 14
+    fontFamily: font.bold,
+    fontSize: 15
   },
   workspaceAccordionMetaWrap: {
     flexDirection: "row",
@@ -8177,6 +8179,7 @@ const styles = StyleSheet.create({
     color: "#1E3A8A",
     fontFamily: font.medium,
     fontSize: 12,
+    letterSpacing: 0.3,
     marginRight: 6
   },
   actionPlanHigh: {
