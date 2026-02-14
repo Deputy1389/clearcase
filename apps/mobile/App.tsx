@@ -846,10 +846,7 @@ function withNetworkHint(error: unknown, apiBase: string): string {
     m.includes("failed to fetch") ||
     m.includes("network error contacting api") ||
     m.includes("timed out") ||
-    m.includes("health check failed (502)") ||
-    m.includes("health check failed (503)") ||
-    m.includes("health check failed (504)") ||
-    m.includes("health check failed (") ||
+    m.includes("health check failed") ||
     m.includes("api 502") ||
     m.includes("api 503") ||
     m.includes("api 504") ||
@@ -938,10 +935,7 @@ function isNetworkErrorLike(message: string): boolean {
     m.includes("failed to fetch") ||
     m.includes("timed out") ||
     m.includes("cannot reach api") ||
-    m.includes("health check failed (502)") ||
-    m.includes("health check failed (503)") ||
-    m.includes("health check failed (504)") ||
-    m.includes("health check failed (") ||
+    m.includes("health check failed") ||
     m.includes("api 502") ||
     m.includes("api 503") ||
     m.includes("api 504") ||
