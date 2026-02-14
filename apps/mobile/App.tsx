@@ -3,8 +3,6 @@ import * as Sentry from "@sentry/react-native";
 import { StatusBar } from "expo-status-bar";
 import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
-import * as ImageManipulator from "expo-image-manipulator";
-import * as Haptics from "expo-haptics";
 import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
 import { useFonts } from "expo-font";
@@ -27,7 +25,6 @@ import {
   LayoutAnimation,
   Linking,
   Modal,
-  NativeModules,
   PanResponder,
   Platform,
   Pressable,
@@ -76,6 +73,81 @@ import {
   setCaseClassification,
   saveCaseContext
 } from "./src/api";
+import {
+  ENV_API_BASE,
+  DEFAULT_API_BASE,
+  extractMetroHost,
+  isLoopbackHost,
+  isPrivateIpv4Host,
+  isLoopbackApiBase,
+  extractHostFromApiBase,
+  isLocalApiBase,
+  resolveDefaultApiBase,
+  buildHeaders
+} from "./src/utils/network";
+import {
+  intakeStorageKey,
+  stepStatusStorageKey,
+  emptyIntakeDraft,
+  parseStepProgress,
+  parseIntakeDraft,
+  parsePlanTier,
+  planTierLabel,
+  planTierShort,
+  parseLanguage,
+  languageLabel,
+  asRecord,
+  asStringArray
+} from "./src/utils/parsing";
+import {
+  clamp,
+  confidenceLabel,
+  localizedConfidenceLabel,
+  fmtIsoDate,
+  titleize,
+  daysUntil,
+  fmtDate,
+  fmtDateTime,
+  sleep
+} from "./src/utils/formatting";
+import {
+  manualCategoryOptions,
+  isManualDocumentType,
+  manualCategoryLabel,
+  fallbackSummaryForDocumentType,
+  buildRecommendedNextSteps,
+  deriveCaseSeverity,
+  severityLabel,
+  severitySummary,
+  casePriorityLevel,
+  casePriorityLabel
+} from "./src/utils/case-logic";
+import {
+  isImageFileUpload,
+  replaceFileExtension,
+  getImageDimensions,
+  compressUploadImage
+} from "./src/utils/upload-helpers";
+import {
+  type FreeLimitApiPayload,
+  summarizeError,
+  withNetworkHint,
+  isPlusRequiredApiError,
+  parseFreeLimitApiError,
+  isFreeOcrDisabledApiError,
+  formatLimitResetAt,
+  plusUpgradeExplainer,
+  isNetworkErrorLike
+} from "./src/utils/error-helpers";
+import {
+  isValidEmail,
+  isValidUsZip,
+  isStrongPassword
+} from "./src/utils/auth-helpers";
+import {
+  hapticTap,
+  hapticSuccess
+} from "./src/utils/haptics";
 
 // --- Sentry error tracking ---
 const SENTRY_DSN = process.env.EXPO_PUBLIC_SENTRY_DSN?.trim() ?? "";
@@ -185,63 +257,6 @@ type OnboardingSlide = {
   iconBg: string;
 };
 
-const DEFAULT_SUBJECT = "dev-subject-0001";
-const DEFAULT_EMAIL = "dev+dev-subject-0001@clearcase.local";
-const ENV_API_BASE = process.env.EXPO_PUBLIC_API_BASE?.trim() || null;
-
-function extractMetroHost(): string | null {
-  const scriptUrl = (NativeModules as { SourceCode?: { scriptURL?: string } }).SourceCode?.scriptURL;
-  if (!scriptUrl) return null;
-  const match = scriptUrl.match(/^https?:\/\/([^/:]+)(?::\d+)?\//i);
-  return match?.[1] ?? null;
-}
-
-function isLoopbackHost(host: string): boolean {
-  return host === "127.0.0.1" || host === "localhost" || host === "10.0.2.2";
-}
-
-function isPrivateIpv4Host(host: string): boolean {
-  if (!/^\d{1,3}(?:\.\d{1,3}){3}$/.test(host)) return false;
-  const parts = host.split(".").map((p) => Number(p));
-  if (parts.some((n) => Number.isNaN(n) || n < 0 || n > 255)) return false;
-  if (parts[0] === 10) return true;
-  if (parts[0] === 192 && parts[1] === 168) return true;
-  if (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) return true;
-  return false;
-}
-
-function isLoopbackApiBase(base: string): boolean {
-  return /:\/\/(127\.0\.0\.1|localhost|10\.0\.2\.2)(:\d+)?$/i.test(base.trim());
-}
-
-function extractHostFromApiBase(base: string): string | null {
-  const match = base.trim().match(/^https?:\/\/([^/:?#]+)(?::\d+)?/i);
-  return match?.[1] ?? null;
-}
-
-function isLocalApiBase(base: string): boolean {
-  const host = extractHostFromApiBase(base);
-  if (!host) return false;
-  return isLoopbackHost(host) || isPrivateIpv4Host(host);
-}
-
-function resolveDefaultApiBase(): string {
-  if (ENV_API_BASE) return ENV_API_BASE;
-  const metroHost = extractMetroHost();
-  if (metroHost && isPrivateIpv4Host(metroHost)) {
-    return `http://${metroHost}:3001`;
-  }
-  return (
-    Platform.select({
-      android: "http://10.0.2.2:3001",
-      ios: "http://127.0.0.1:3001",
-      default: "http://127.0.0.1:3001"
-    }) ?? "http://127.0.0.1:3001"
-  );
-}
-
-const DEFAULT_API_BASE = resolveDefaultApiBase();
-
 const STORAGE_API_BASE = "clearcase.mobile.apiBase";
 const STORAGE_SUBJECT = "clearcase.mobile.subject";
 const STORAGE_EMAIL = "clearcase.mobile.email";
@@ -256,119 +271,6 @@ const DEFAULT_PLUS_PRICE_MONTHLY = "$15/month";
 const IMAGE_UPLOAD_MAX_DIMENSION = 1600;
 const IMAGE_UPLOAD_QUALITY = 0.45;
 const MOBILE_BUILD_STAMP = "mobile-ui-2026-02-13b";
-
-function intakeStorageKey(caseId: string): string {
-  return `${STORAGE_INTAKE_PREFIX}.${caseId}`;
-}
-
-function stepStatusStorageKey(caseId: string): string {
-  return `${STORAGE_STEP_STATUS_PREFIX}.${caseId}`;
-}
-
-function emptyIntakeDraft(): IntakeDraft {
-  return {
-    matterSummary: "",
-    clientGoals: "",
-    constraints: "",
-    timelineNarrative: "",
-    partiesAndRoles: "",
-    communicationsLog: "",
-    financialImpact: "",
-    questionsForCounsel: "",
-    desiredOutcome: ""
-  };
-}
-
-function parseStepProgress(value: unknown): StepProgress | null {
-  if (value === "not_started" || value === "in_progress" || value === "done" || value === "deferred") {
-    return value;
-  }
-  return null;
-}
-
-function parseIntakeDraft(value: unknown): IntakeDraft | null {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
-  const row = value as Record<string, unknown>;
-  const read = (field: keyof IntakeDraft): string => {
-    const raw = row[field];
-    return typeof raw === "string" ? raw : "";
-  };
-  return {
-    matterSummary: read("matterSummary"),
-    clientGoals: read("clientGoals"),
-    constraints: read("constraints"),
-    timelineNarrative: read("timelineNarrative"),
-    partiesAndRoles: read("partiesAndRoles"),
-    communicationsLog: read("communicationsLog"),
-    financialImpact: read("financialImpact"),
-    questionsForCounsel: read("questionsForCounsel"),
-    desiredOutcome: read("desiredOutcome")
-  };
-}
-
-function parsePlanTier(value: string | null): PlanTier | null {
-  if (value === "free") return "free";
-  if (value === "plus" || value === "plus_subscription" || value === "plus_case_month") return "plus";
-  return null;
-}
-
-function planTierLabel(value: PlanTier): string {
-  if (value === "plus") return "ClearCase Plus";
-  return "ClearCase Free";
-}
-
-function planTierShort(value: PlanTier): string {
-  if (value === "plus") return "Plus";
-  return "Free";
-}
-
-function parseLanguage(value: string | null): AppLanguage | null {
-  if (value === "en" || value === "es") return value;
-  return null;
-}
-
-function languageLabel(value: AppLanguage): string {
-  return value === "es" ? "Espanol" : "English";
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
-}
-
-function asRecord(value: unknown): Record<string, unknown> | null {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
-  return value as Record<string, unknown>;
-}
-
-function asStringArray(value: unknown): string[] {
-  if (!Array.isArray(value)) return [];
-  return value
-    .filter((item): item is string => typeof item === "string")
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
-
-function confidenceLabel(value: number | null): string {
-  if (value === null) return "unknown";
-  if (value >= 0.85) return "high";
-  if (value >= 0.6) return "medium";
-  return "low";
-}
-
-function localizedConfidenceLabel(language: AppLanguage, value: number | null): string {
-  const label = confidenceLabel(value);
-  if (language === "en") return label;
-  if (label === "high") return "alta";
-  if (label === "medium") return "media";
-  if (label === "low") return "baja";
-  return "desconocida";
-}
-
-function fmtIsoDate(value: string | null | undefined): string {
-  if (!value) return "Unknown";
-  const parsed = new Date(`${value}T00:00:00.000Z`);
-  return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleDateString();
-}
 
 const palette = {
   bg: "#FFFFFF",
@@ -783,553 +685,10 @@ const DEMO_CASE_DETAIL_MAP: Record<string, CaseDetail> = Object.fromEntries(
 
 // ── End demo data ───────────────────────────────────────────────────────
 
-type ManualCategoryOption = {
-  value: ManualDocumentType;
-  label: string;
-};
+// ManualCategoryOption, manualCategoryOptions, buildHeaders, error helpers,
+// titleize moved to src/utils/
 
-const manualCategoryOptions: ManualCategoryOption[] = [
-  { value: "summons_complaint", label: "Summons / Complaint" },
-  { value: "court_hearing_notice", label: "Court Hearing Notice" },
-  { value: "subpoena_notice", label: "Subpoena Notice" },
-  { value: "judgment_notice", label: "Judgment Notice" },
-  { value: "small_claims_complaint", label: "Small Claims Complaint" },
-  { value: "family_court_notice", label: "Family Court Notice" },
-  { value: "protective_order_notice", label: "Protective Order Notice" },
-  { value: "eviction_notice", label: "Eviction Notice" },
-  { value: "foreclosure_default_notice", label: "Foreclosure / Default Notice" },
-  { value: "repossession_notice", label: "Repossession Notice" },
-  { value: "landlord_security_deposit_notice", label: "Security Deposit Notice" },
-  { value: "lease_violation_notice", label: "Lease Violation Notice" },
-  { value: "debt_collection_notice", label: "Debt Collection Notice" },
-  { value: "wage_garnishment_notice", label: "Wage Garnishment Notice" },
-  { value: "tax_notice", label: "Tax Notice" },
-  { value: "insurance_denial_letter", label: "Insurance Denial Letter" },
-  { value: "insurance_subrogation_notice", label: "Insurance Subrogation Notice" },
-  { value: "workers_comp_denial_notice", label: "Workers' Comp Denial Notice" },
-  { value: "unemployment_benefits_denial", label: "Unemployment Benefits Denial" },
-  { value: "benefits_overpayment_notice", label: "Benefits Overpayment Notice" },
-  { value: "utility_shutoff_notice", label: "Utility Shutoff Notice" },
-  { value: "license_suspension_notice", label: "License Suspension Notice" },
-  { value: "citation_ticket", label: "Citation / Ticket" },
-  { value: "demand_letter", label: "Demand Letter" },
-  { value: "incident_evidence_photo", label: "Incident Evidence Photo" },
-  { value: "general_legal_notice", label: "General Legal Notice" },
-  { value: "non_legal_or_unclear_image", label: "Not Legal / Unclear Image" },
-  { value: "unknown_legal_document", label: "Unknown Legal Document" }
-];
-
-function buildHeaders(subject: string, email: string): AuthHeaders {
-  return {
-    "x-auth-subject": subject.trim() || DEFAULT_SUBJECT,
-    "x-user-email": email.trim() || DEFAULT_EMAIL
-  };
-}
-
-function summarizeError(error: unknown): string {
-  if (error instanceof Error) {
-    const apiError = error as ApiError;
-    if (apiError.data && typeof apiError.data === "object") {
-      const code = (apiError.data as Record<string, unknown>).error;
-      if (typeof code === "string") return `${apiError.message} (${code})`;
-    }
-    return apiError.message;
-  }
-  return String(error);
-}
-
-function withNetworkHint(error: unknown, apiBase: string): string {
-  const message = summarizeError(error);
-  const m = message.toLowerCase();
-  const isNetworkFailure =
-    m.includes("network request failed") ||
-    m.includes("failed to fetch") ||
-    m.includes("network error contacting api") ||
-    m.includes("timed out") ||
-    m.includes("health check failed") ||
-    m.includes("api 502") ||
-    m.includes("api 503") ||
-    m.includes("api 504") ||
-    m.includes("api 5");
-  if (!isNetworkFailure) return message;
-  return `${message}. Cannot reach API at ${apiBase}. Use your computer LAN IP (example: http://192.168.x.x:3001).`;
-}
-
-function isPlusRequiredApiError(error: unknown): boolean {
-  if (!(error instanceof Error)) return false;
-  const apiError = error as ApiError;
-  if (apiError.status !== 403) return false;
-  if (!apiError.data || typeof apiError.data !== "object") return false;
-  const payload = apiError.data as Record<string, unknown>;
-  return payload.error === "PLUS_REQUIRED" && payload.code === "PLUS_REQUIRED";
-}
-
-type FreeLimitApiPayload = {
-  limit: number;
-  used: number;
-  remaining: number;
-  resetAt: string;
-};
-
-function parseFreeLimitApiError(error: unknown): FreeLimitApiPayload | null {
-  if (!(error instanceof Error)) return null;
-  const apiError = error as ApiError;
-  if (apiError.status !== 403) return null;
-  if (!apiError.data || typeof apiError.data !== "object") return null;
-  const payload = apiError.data as Record<string, unknown>;
-  if (payload.error !== "FREE_LIMIT_REACHED" || payload.code !== "FREE_LIMIT_REACHED") {
-    return null;
-  }
-
-  const limit = typeof payload.limit === "number" ? payload.limit : Number(payload.limit);
-  const used = typeof payload.used === "number" ? payload.used : Number(payload.used);
-  const remaining = typeof payload.remaining === "number" ? payload.remaining : Number(payload.remaining);
-  const resetAt = typeof payload.resetAt === "string" ? payload.resetAt : "";
-  if (!Number.isFinite(limit) || !Number.isFinite(used) || !Number.isFinite(remaining) || !resetAt) {
-    return null;
-  }
-
-  return {
-    limit: Math.max(0, Math.floor(limit)),
-    used: Math.max(0, Math.floor(used)),
-    remaining: Math.max(0, Math.floor(remaining)),
-    resetAt
-  };
-}
-
-function isFreeOcrDisabledApiError(error: unknown): boolean {
-  if (!(error instanceof Error)) return false;
-  const apiError = error as ApiError;
-  if (apiError.status !== 403) return false;
-  if (!apiError.data || typeof apiError.data !== "object") return false;
-  const payload = apiError.data as Record<string, unknown>;
-  return payload.error === "FREE_OCR_DISABLED" && payload.code === "FREE_OCR_DISABLED";
-}
-
-function formatLimitResetAt(resetAtIso: string, language: AppLanguage): string {
-  const parsed = new Date(resetAtIso);
-  if (Number.isNaN(parsed.getTime())) {
-    return language === "es" ? "fin del mes actual" : "the end of this month";
-  }
-  return parsed.toLocaleString();
-}
-
-function plusUpgradeExplainer(language: AppLanguage, feature: PlusFeatureGate): string {
-  if (language === "es") {
-    if (feature === "watch_mode") {
-      return "Esta funcion esta en Plus. Plus ayuda a muchas personas a reducir tiempo de explicaciones repetidas con una cronologia, recordatorios y paquete listo para consulta.";
-    }
-    return "Esta funcion esta en Plus. Plus ayuda a muchas personas a reducir tiempo de explicaciones repetidas con una cronologia, recordatorios y paquete listo para consulta.";
-  }
-  if (feature === "watch_mode") {
-    return "This feature is on Plus. Plus helps many people avoid repeat explanation time by keeping one timeline, reminders, and a consultation-ready packet.";
-  }
-  return "This feature is on Plus. Plus helps many people avoid repeat explanation time by keeping one timeline, reminders, and a consultation-ready packet.";
-}
-
-function isNetworkErrorLike(message: string): boolean {
-  const m = message.toLowerCase();
-  return (
-    m.includes("network error contacting api") ||
-    m.includes("network request failed") ||
-    m.includes("failed to fetch") ||
-    m.includes("timed out") ||
-    m.includes("cannot reach api") ||
-    m.includes("health check failed") ||
-    m.includes("api 502") ||
-    m.includes("api 503") ||
-    m.includes("api 504") ||
-    m.includes("api 5")
-  );
-}
-
-function titleize(value: string): string {
-  return value
-    .split(/[_\s]+/)
-    .filter(Boolean)
-    .map((part) => part[0].toUpperCase() + part.slice(1).toLowerCase())
-    .join(" ");
-}
-
-function isManualDocumentType(value: string | null | undefined): value is ManualDocumentType {
-  return Boolean(value && MANUAL_DOCUMENT_TYPES.includes(value as ManualDocumentType));
-}
-
-function manualCategoryLabel(value: string | null | undefined, language: AppLanguage = "en"): string {
-  if (!value) return language === "es" ? "Deteccion pendiente" : "Pending detection";
-  const found = manualCategoryOptions.find((row) => row.value === value);
-  if (!found) return titleize(value);
-
-  if (language === "en") return found.label;
-  const labelsEs: Record<ManualDocumentType, string> = {
-    summons_complaint: "Citacion / Demanda",
-    court_hearing_notice: "Aviso de audiencia judicial",
-    subpoena_notice: "Aviso de citatorio",
-    judgment_notice: "Aviso de sentencia",
-    demand_letter: "Carta de requerimiento",
-    small_claims_complaint: "Demanda de reclamos menores",
-    family_court_notice: "Aviso de tribunal familiar",
-    protective_order_notice: "Aviso de orden de proteccion",
-    eviction_notice: "Aviso de desalojo",
-    foreclosure_default_notice: "Aviso de ejecucion / incumplimiento",
-    repossession_notice: "Aviso de recuperacion",
-    landlord_security_deposit_notice: "Aviso de deposito de garantia",
-    lease_violation_notice: "Aviso de incumplimiento de contrato",
-    debt_collection_notice: "Aviso de cobro de deuda",
-    wage_garnishment_notice: "Aviso de embargo de salario",
-    tax_notice: "Aviso de impuestos",
-    insurance_denial_letter: "Carta de denegacion de seguro",
-    insurance_subrogation_notice: "Aviso de subrogacion de seguro",
-    workers_comp_denial_notice: "Denegacion de compensacion laboral",
-    unemployment_benefits_denial: "Denegacion de beneficios por desempleo",
-    benefits_overpayment_notice: "Aviso de sobrepago de beneficios",
-    incident_evidence_photo: "Foto de evidencia de incidente",
-    utility_shutoff_notice: "Aviso de corte de servicio",
-    license_suspension_notice: "Aviso de suspension de licencia",
-    citation_ticket: "Multa / infraccion",
-    general_legal_notice: "Aviso legal general",
-    non_legal_or_unclear_image: "Imagen no legal o poco clara",
-    unknown_legal_document: "Documento legal no identificado"
-  };
-  return labelsEs[value as ManualDocumentType] ?? found.label;
-}
-
-function fallbackSummaryForDocumentType(
-  documentType: string | null | undefined,
-  language: AppLanguage = "en"
-): string {
-  if (language === "es") {
-    if (!documentType) {
-      return "La carga esta completa. Todavia estamos determinando la mejor categoria. Agrega lo que no se ve en el documento (que paso, cuando, donde) y sube paginas mas claras para mejorar el resultado.";
-    }
-
-    if (documentType === "incident_evidence_photo") {
-      return "Esto parece evidencia de un incidente (contenido fotografico) y no un aviso legal formal. Agrega lo que no se ve en las fotos (que paso, cuando, donde) y sube documentos de respaldo para mayor claridad.";
-    }
-
-    if (documentType === "non_legal_or_unclear_image") {
-      return "Este archivo aun no parece un documento legal. Sube un aviso legal mas claro o agrega detalles del incidente para continuar.";
-    }
-
-    if (documentType === "unknown_legal_document") {
-      return "Esto parece legal, pero aun no esta clasificado con buena confianza. Muchas personas optan por agregar paginas mas claras y contexto del caso para mejorar la deteccion de fechas y obligaciones.";
-    }
-
-    return `Esto parece ser ${manualCategoryLabel(documentType, "es")}. En muchos casos se considera util revisar la lista y considerar una consulta con un abogado para orientacion especifica.`;
-  }
-
-  if (!documentType) {
-    return "Upload is complete. We are still determining the best category. Add anything not visible in the document (what happened, when, where) and upload clearer pages for a better result.";
-  }
-
-  if (documentType === "incident_evidence_photo") {
-    return "This appears to be incident evidence (photo-based context) rather than a formal legal notice. Add anything not visible in the photos (what happened, when, where) and upload supporting documents for stronger guidance.";
-  }
-
-  if (documentType === "non_legal_or_unclear_image") {
-    return "This file does not look like a legal document yet. Upload a clearer legal notice or add incident details to continue case building.";
-  }
-
-  if (documentType === "unknown_legal_document") {
-    return "This appears legal but is not confidently classified yet. Many people add clearer pages and case context to improve deadline and obligation detection.";
-  }
-
-  return `This appears to be ${manualCategoryLabel(documentType, "en")}. Review the checklist below and consider speaking with a licensed attorney for advice specific to your situation.`;
-}
-
-function buildRecommendedNextSteps(
-  documentType: string | null | undefined,
-  earliestDeadline: string | null | undefined,
-  language: AppLanguage = "en"
-): string[] {
-  if (language === "es") {
-    const genericEs: string[] = [
-      "Confirma que la categoria seleccionada coincida con tu archivo.",
-      "Agrega lo que no se ve en el documento (que paso, cuando, donde). Esto ayuda a mantener continuidad en futuras cargas.",
-      "Muchas personas optan por consultar con un abogado cuando podria afectar derechos legales."
-    ];
-
-    let stepsEs = genericEs;
-    if (
-      documentType === "summons_complaint" ||
-      documentType === "court_hearing_notice" ||
-      documentType === "subpoena_notice" ||
-      documentType === "judgment_notice" ||
-      documentType === "small_claims_complaint" ||
-      documentType === "family_court_notice" ||
-      documentType === "protective_order_notice"
-    ) {
-      stepsEs = [
-        "Muchas personas conservan juntas todas las paginas y sobres relacionados.",
-        "Muchas personas optan por consultar con un abogado de litigio o familia para revisar opciones de respuesta.",
-        "Una linea de tiempo simple de eventos y nombres puede facilitar una consulta."
-      ];
-    } else if (
-      documentType === "eviction_notice" ||
-      documentType === "foreclosure_default_notice" ||
-      documentType === "repossession_notice" ||
-      documentType === "lease_violation_notice" ||
-      documentType === "landlord_security_deposit_notice"
-    ) {
-      stepsEs = [
-        "Muchas personas reunen contrato, historial de pagos y comunicaciones relacionadas.",
-        "Muchas personas optan por contactar ayuda legal de vivienda cuando los plazos parecen cortos.",
-        "Fotos y notas con fecha suelen ayudar a preservar contexto del inmueble."
-      ];
-    } else if (
-      documentType === "debt_collection_notice" ||
-      documentType === "wage_garnishment_notice" ||
-      documentType === "tax_notice" ||
-      documentType === "benefits_overpayment_notice"
-    ) {
-      stepsEs = [
-        "Muchas personas reunen estados de cuenta y avisos previos.",
-        "Verifica si el aviso incluye instrucciones de disputa o apelacion.",
-        "Muchas personas optan por consultar con un abogado de consumo o impuestos antes de responder."
-      ];
-    } else if (
-      documentType === "insurance_denial_letter" ||
-      documentType === "insurance_subrogation_notice" ||
-      documentType === "workers_comp_denial_notice" ||
-      documentType === "unemployment_benefits_denial"
-    ) {
-      stepsEs = [
-        "Conserva la carta de denegacion completa y registros de poliza o reclamo.",
-        "Identifica fechas de apelacion y documentos de respaldo requeridos.",
-        "Muchas personas optan por consultar con un abogado de seguros o beneficios."
-      ];
-    } else if (documentType === "incident_evidence_photo") {
-      stepsEs = [
-        "Agrega lo que no se ve en las fotos (que paso, cuando, donde y quien participo).",
-        "Sube documentos de respaldo (reporte policial, notas medicas, presupuestos, mensajes).",
-        "Muchas personas optan por consultar con un abogado cuando hay lesiones o perdidas mayores."
-      ];
-    } else if (documentType === "non_legal_or_unclear_image") {
-      stepsEs = [
-        "Sube una imagen mas clara o un aviso formal si esta disponible.",
-        "Usa el contexto del caso para explicar por que esta imagen es importante.",
-        "Si esperabas un aviso legal, muchas personas optan por verificar detalles con el remitente o con un abogado."
-      ];
-    }
-
-    if (earliestDeadline) {
-      const label = fmtDate(earliestDeadline, "es");
-      return [`Muchas personas optan por agendar esta fecha: ${label}.`, ...stepsEs];
-    }
-    return stepsEs;
-  }
-
-  const generic: string[] = [
-    "Confirm the selected category matches your file.",
-    "Add anything not visible in the document (what happened, when, where). This helps future uploads stay consistent.",
-    "Many people choose to speak with a licensed attorney if this may affect legal rights."
-  ];
-
-  let steps = generic;
-
-  if (
-    documentType === "summons_complaint" ||
-    documentType === "court_hearing_notice" ||
-    documentType === "subpoena_notice" ||
-    documentType === "judgment_notice" ||
-    documentType === "small_claims_complaint" ||
-    documentType === "family_court_notice" ||
-    documentType === "protective_order_notice"
-  ) {
-    steps = [
-      "Many people keep all related pages and envelopes together.",
-      "Many people choose to consult a litigation or family-law attorney to discuss response options.",
-      "A simple timeline of events and key names can make consultations easier."
-    ];
-  } else if (
-    documentType === "eviction_notice" ||
-    documentType === "foreclosure_default_notice" ||
-    documentType === "repossession_notice" ||
-    documentType === "lease_violation_notice" ||
-    documentType === "landlord_security_deposit_notice"
-  ) {
-    steps = [
-      "Many people gather lease records, payment history, and related communications.",
-      "Many people choose to contact housing legal aid or an attorney when timelines feel short.",
-      "Timestamped photos and notes can help preserve property-condition details."
-    ];
-  } else if (
-    documentType === "debt_collection_notice" ||
-    documentType === "wage_garnishment_notice" ||
-    documentType === "tax_notice" ||
-    documentType === "benefits_overpayment_notice"
-  ) {
-    steps = [
-      "Many people gather account statements and prior notices.",
-      "Check whether the notice provides dispute/appeal instructions.",
-      "Many people choose to consult a consumer-law or tax attorney before responding."
-    ];
-  } else if (
-    documentType === "insurance_denial_letter" ||
-    documentType === "insurance_subrogation_notice" ||
-    documentType === "workers_comp_denial_notice" ||
-    documentType === "unemployment_benefits_denial"
-  ) {
-    steps = [
-      "Keep the full denial letter and policy or claim records together.",
-      "Identify appeal deadlines and required supporting records.",
-      "Many people choose to consult an attorney focused on insurance or benefits appeals."
-    ];
-  } else if (documentType === "incident_evidence_photo") {
-    steps = [
-      "Add anything not visible in the photo set (what happened, when, where, who was involved).",
-      "Upload supporting records (police report, medical notes, estimates, messages).",
-      "Many people choose to consult counsel when there are injuries or major losses."
-    ];
-  } else if (documentType === "non_legal_or_unclear_image") {
-    steps = [
-      "Upload a clearer image or a formal notice if available.",
-      "Use case context to explain why this image matters.",
-      "If you expected a legal notice, many people verify details with the sender or a lawyer."
-    ];
-  }
-
-  if (earliestDeadline) {
-    const label = fmtDate(earliestDeadline, "en");
-    return [`Many people choose to calendar this date: ${label}.`, ...steps];
-  }
-
-  return steps;
-}
-
-function daysUntil(value: string): number | null {
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return null;
-  const now = Date.now();
-  return Math.ceil((d.getTime() - now) / (1000 * 60 * 60 * 24));
-}
-
-function deriveCaseSeverity(
-  documentType: string | null | undefined,
-  timeSensitive: boolean | null | undefined,
-  earliestDeadline: string | null | undefined
-): CaseSeverity {
-  if (timeSensitive) return "high";
-
-  const urgentDocTypes = new Set<string>([
-    "summons_complaint",
-    "court_hearing_notice",
-    "subpoena_notice",
-    "judgment_notice",
-    "small_claims_complaint",
-    "protective_order_notice",
-    "family_court_notice",
-    "eviction_notice",
-    "foreclosure_default_notice",
-    "repossession_notice",
-    "wage_garnishment_notice"
-  ]);
-
-  if (documentType && urgentDocTypes.has(documentType)) return "high";
-
-  if (earliestDeadline) {
-    const days = daysUntil(earliestDeadline);
-    if (days !== null && days <= 7) return "high";
-    return "medium";
-  }
-
-  if (documentType === "non_legal_or_unclear_image") return "low";
-  if (documentType === "incident_evidence_photo") return "medium";
-  if (documentType === "unknown_legal_document") return "medium";
-  if (!documentType) return "medium";
-
-  return "medium";
-}
-
-function severityLabel(level: CaseSeverity, language: AppLanguage = "en"): string {
-  if (language === "es") {
-    if (level === "high") return "Prioridad alta";
-    if (level === "medium") return "Prioridad media";
-    return "Prioridad baja";
-  }
-  if (level === "high") return "High priority";
-  if (level === "medium") return "Medium priority";
-  return "Low priority";
-}
-
-function severitySummary(level: CaseSeverity, language: AppLanguage = "en"): string {
-  if (language === "es") {
-    if (level === "high") return "Este documento contiene senales que a menudo son sensibles al tiempo.";
-    if (level === "medium") return "La revision inicial esta completa. Los pasos siguientes suelen ayudar a reducir riesgo.";
-    return "No se detecta una senal legal inmediata. Continua documentando y monitoreando actualizaciones.";
-  }
-  if (level === "high") return "This document contains signals that are often time-sensitive.";
-  if (level === "medium") return "Initial review is complete. The steps below may help reduce risk.";
-  return "No immediate legal signal detected. Continue documenting and monitor updates.";
-}
-
-function fmtDate(value: string | null, language: AppLanguage = "en"): string {
-  if (!value) return language === "es" ? "No se detecta fecha" : "No deadline detected";
-  const d = new Date(value);
-  return Number.isNaN(d.getTime()) ? value : d.toLocaleDateString();
-}
-
-function fmtDateTime(value: string | null): string {
-  if (!value) return "Unknown";
-  const d = new Date(value);
-  return Number.isNaN(d.getTime()) ? value : d.toLocaleString();
-}
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-function isImageFileUpload(file: UploadAssetInput): boolean {
-  if (typeof file.mimeType === "string" && file.mimeType.toLowerCase().startsWith("image/")) {
-    return true;
-  }
-  return /\.(png|jpe?g|webp|heic|heif)$/i.test(file.name);
-}
-
-function replaceFileExtension(fileName: string, nextExtWithDot: string): string {
-  const idx = fileName.lastIndexOf(".");
-  if (idx <= 0) return `${fileName}${nextExtWithDot}`;
-  return `${fileName.slice(0, idx)}${nextExtWithDot}`;
-}
-
-async function getImageDimensions(uri: string): Promise<{ width: number; height: number } | null> {
-  return await new Promise((resolve) => {
-    Image.getSize(
-      uri,
-      (width, height) => resolve({ width, height }),
-      () => resolve(null)
-    );
-  });
-}
-
-async function compressUploadImage(file: UploadAssetInput): Promise<UploadAssetInput> {
-  if (!isImageFileUpload(file)) return file;
-
-  const dims = await getImageDimensions(file.uri);
-  const actions: ImageManipulator.Action[] = [];
-  if (dims) {
-    const maxSide = Math.max(dims.width, dims.height);
-    if (maxSide > IMAGE_UPLOAD_MAX_DIMENSION) {
-      if (dims.width >= dims.height) {
-        actions.push({ resize: { width: IMAGE_UPLOAD_MAX_DIMENSION } });
-      } else {
-        actions.push({ resize: { height: IMAGE_UPLOAD_MAX_DIMENSION } });
-      }
-    }
-  }
-
-  const result = await ImageManipulator.manipulateAsync(file.uri, actions, {
-    compress: IMAGE_UPLOAD_QUALITY,
-    format: ImageManipulator.SaveFormat.JPEG
-  });
-
-  return {
-    uri: result.uri,
-    name: replaceFileExtension(file.name, ".jpg"),
-    mimeType: "image/jpeg",
-    size: ((result as { fileSize?: number }).fileSize ?? file.size ?? null) as number | null
-  };
-}
+// Case logic, formatting, upload helpers, error helpers moved to src/utils/
 
 function deriveSubject(email: string): string {
   const local = email.split("@")[0] ?? "";
@@ -1515,14 +874,6 @@ if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental
 }
 
 const subtleSpring = { duration: 250, update: { type: "spring" as const, springDamping: 0.85 }, create: { type: "easeInEaseOut" as const, property: "opacity" as const }, delete: { type: "easeInEaseOut" as const, property: "opacity" as const } };
-
-function hapticTap() {
-  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-}
-
-function hapticSuccess() {
-  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-}
 
 function App() {
   const [fontsLoaded] = useFonts({
