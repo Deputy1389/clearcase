@@ -4583,15 +4583,15 @@ function App() {
                   {authMode === "signup" ? (
                     <>
                       <Text style={styles.fieldLabel}>{language === "es" ? "Nombre completo" : "Full Name"}</Text>
-                      <TextInput style={styles.input} placeholder="John Doe" placeholderTextColor={palette.subtle} value={authName} onChangeText={setAuthName} />
+                      <TextInput style={styles.input} placeholder="John Doe" placeholderTextColor={palette.subtle} value={authName} onChangeText={setAuthName} accessibilityLabel={language === "es" ? "Nombre completo" : "Full name"} />
                       <Text style={styles.fieldLabel}>{language === "es" ? "Codigo postal" : "ZIP Code"}</Text>
-                      <TextInput style={styles.input} placeholder="90210" placeholderTextColor={palette.subtle} keyboardType="number-pad" value={authZip} onChangeText={setAuthZip} />
+                      <TextInput style={styles.input} placeholder="90210" placeholderTextColor={palette.subtle} keyboardType="number-pad" value={authZip} onChangeText={setAuthZip} accessibilityLabel={language === "es" ? "Codigo postal" : "ZIP code"} />
                     </>
                   ) : null}
                   <Text style={styles.fieldLabel}>Email</Text>
-                  <TextInput style={styles.input} placeholder="john@example.com" placeholderTextColor={palette.subtle} autoCapitalize="none" value={authEmail} onChangeText={setAuthEmail} />
+                  <TextInput style={styles.input} placeholder="john@example.com" placeholderTextColor={palette.subtle} autoCapitalize="none" value={authEmail} onChangeText={setAuthEmail} accessibilityLabel="Email" textContentType="emailAddress" />
                   <Text style={styles.fieldLabel}>{language === "es" ? "Contrasena" : "Password"}</Text>
-                  <TextInput style={styles.input} placeholder="********" placeholderTextColor={palette.subtle} secureTextEntry autoCapitalize="none" value={authPassword} onChangeText={setAuthPassword} />
+                  <TextInput style={styles.input} placeholder="********" placeholderTextColor={palette.subtle} secureTextEntry autoCapitalize="none" value={authPassword} onChangeText={setAuthPassword} accessibilityLabel={language === "es" ? "Contrasena" : "Password"} textContentType="password" />
                   <Pressable
                     onPress={() => {
                       const trimmedEmail = authEmail.trim();
@@ -4706,7 +4706,7 @@ function App() {
             <View style={styles.screenSoft}>
               <ScrollView contentContainerStyle={styles.homeDashboardContent}>
                 <View style={styles.homeDashboardHeader}>
-                  <Pressable onPress={() => setDrawerOpen(true)} style={styles.info}>
+                  <Pressable onPress={() => setDrawerOpen(true)} style={styles.info} accessibilityRole="button" accessibilityLabel={language === "es" ? "Abrir menu" : "Open menu"}>
                     <Feather name="menu" size={18} color={palette.subtle} />
                   </Pressable>
                   <View style={styles.homeDashboardTitleWrap}>
@@ -4715,7 +4715,7 @@ function App() {
                       {language === "es" ? `Bienvenida, ${titleize(userFirstName)}.` : `Welcome back, ${titleize(userFirstName)}.`}
                     </Text>
                   </View>
-                  <Pressable onPress={() => setScreen("account")} style={styles.avatarButton}>
+                  <Pressable onPress={() => setScreen("account")} style={styles.avatarButton} accessibilityRole="button" accessibilityLabel={language === "es" ? "Cuenta de usuario" : "User account"}>
                     <Text style={styles.avatarButtonText}>{accountInitials}</Text>
                   </Pressable>
                 </View>
@@ -4728,6 +4728,7 @@ function App() {
                     placeholderTextColor={palette.subtle}
                     value={caseSearch}
                     onChangeText={setCaseSearch}
+                    accessibilityLabel={language === "es" ? "Buscar documentos" : "Search documents"}
                   />
                 </View>
 
@@ -5515,6 +5516,7 @@ function App() {
                     onChangeText={setCaseSearch}
                     placeholder={language === "es" ? "Buscar documentos..." : "Search documents..."}
                     placeholderTextColor={palette.subtle}
+                    accessibilityLabel={language === "es" ? "Buscar documentos" : "Search documents"}
                   />
                 </View>
                 <View style={styles.filterRow}>
@@ -5686,6 +5688,7 @@ function App() {
                     onChangeText={setProfileName}
                     placeholder="Full name"
                     placeholderTextColor={palette.subtle}
+                    accessibilityLabel="Full name"
                   />
                   <TextInput
                     style={styles.input}
@@ -5694,6 +5697,7 @@ function App() {
                     placeholder="ZIP code"
                     placeholderTextColor={palette.subtle}
                     keyboardType="number-pad"
+                    accessibilityLabel="ZIP code"
                   />
                   <Pressable onPress={() => { hapticTap(); void saveProfile(); }} style={styles.primaryBtn} disabled={savingProfile}>
                     <Text style={styles.primaryBtnText}>{savingProfile ? "Saving..." : "Save profile"}</Text>
@@ -5711,6 +5715,9 @@ function App() {
                     <Pressable
                       style={[styles.languageTogglePill, language === "en" ? styles.languageTogglePillActive : null]}
                       onPress={() => void applyLanguageFromSettings("en")}
+                      accessibilityRole="radio"
+                      accessibilityState={{ selected: language === "en" }}
+                      accessibilityLabel="English"
                     >
                       <Text
                         style={[
@@ -5724,6 +5731,9 @@ function App() {
                     <Pressable
                       style={[styles.languageTogglePill, language === "es" ? styles.languageTogglePillActive : null]}
                       onPress={() => void applyLanguageFromSettings("es")}
+                      accessibilityRole="radio"
+                      accessibilityState={{ selected: language === "es" }}
+                      accessibilityLabel="Espanol"
                     >
                       <Text
                         style={[
@@ -5735,7 +5745,7 @@ function App() {
                       </Text>
                     </Pressable>
                   </View>
-                  <Pressable style={styles.settingRow} onPress={() => void togglePushNotifications()} disabled={savingPushPreferences}>
+                  <Pressable style={styles.settingRow} onPress={() => void togglePushNotifications()} disabled={savingPushPreferences} accessibilityRole="switch" accessibilityState={{ checked: pushEnabled }} accessibilityLabel={language === "es" ? "Notificaciones push" : "Push notifications"}>
                     <Feather name="bell" size={16} color={palette.subtle} />
                     <Text style={styles.settingText}>{language === "es" ? "Notificaciones" : "Notifications"}</Text>
                     <Text style={styles.optionDesc}>
@@ -5777,15 +5787,25 @@ function App() {
                     <Text style={styles.settingText}>{language === "es" ? "Facturacion y planes" : "Billing and plans"}</Text>
                     <Feather name="chevron-right" size={14} color={palette.subtle} />
                   </Pressable>
-                  <Pressable style={styles.settingRow}>
+                  <Pressable style={styles.settingRow} accessibilityRole="button" accessibilityLabel={language === "es" ? "Seguridad" : "Security"}>
                     <Feather name="shield" size={16} color={palette.subtle} />
                     <Text style={styles.settingText}>{language === "es" ? "Seguridad" : "Security"}</Text>
                     <Feather name="chevron-right" size={14} color={palette.subtle} />
                   </Pressable>
+                  <Pressable
+                    style={styles.settingRow}
+                    accessibilityRole="button"
+                    accessibilityLabel={language === "es" ? "Aviso legal y privacidad" : "Legal and privacy"}
+                    onPress={() => { setLegalReturnScreen("account"); setScreen("legal"); }}
+                  >
+                    <Feather name="file-text" size={16} color={palette.subtle} />
+                    <Text style={styles.settingText}>{language === "es" ? "Legal y privacidad" : "Legal & Privacy"}</Text>
+                    <Feather name="chevron-right" size={14} color={palette.subtle} />
+                  </Pressable>
                 </View>
 
-                <Pressable onPress={() => void signOut()} style={[styles.outlineSoftBtn, styles.accountSignOutBtn]}>
-                  <Text style={styles.outlineSoftText}>Sign out</Text>
+                <Pressable onPress={() => void signOut()} style={[styles.outlineSoftBtn, styles.accountSignOutBtn]} accessibilityRole="button" accessibilityLabel={language === "es" ? "Cerrar sesion" : "Sign out"}>
+                  <Text style={styles.outlineSoftText}>{language === "es" ? "Cerrar sesion" : "Sign out"}</Text>
                 </Pressable>
               </ScrollView>
             </View>
@@ -5794,58 +5814,136 @@ function App() {
           {screen === "legal" ? (
             <View style={styles.screenSoft}>
               <View style={styles.verdictHead}>
-                <Pressable onPress={() => setScreen(legalReturnScreen)} style={styles.back}>
+                <Pressable onPress={() => setScreen(legalReturnScreen)} style={styles.back} accessibilityRole="button" accessibilityLabel="Go back">
                   <Feather name="chevron-left" size={24} color={palette.muted} />
                 </Pressable>
-                <Text style={styles.formTitleSmall}>Legal Notice</Text>
+                <Text style={styles.formTitleSmall}>{language === "es" ? "Aviso legal y privacidad" : "Legal & Privacy"}</Text>
                 <View style={styles.spacer} />
               </View>
               <ScrollView contentContainerStyle={styles.scrollBody}>
                 <View style={styles.card}>
-                  <Text style={styles.cardTitle}>Disclaimer and Terms</Text>
-                  <Text style={styles.cardBody}>
-                    ClearCase is an informational tool and not a law firm. Results are for general context and may be
-                    incomplete.
+                  <Text style={styles.cardTitle}>{language === "es" ? "Terminos de servicio" : "Terms of Service"}</Text>
+                  <Text style={[styles.cardBody, { fontFamily: font.semibold, marginBottom: 4 }]}>
+                    {language === "es" ? "1. Naturaleza del servicio" : "1. Nature of Service"}
                   </Text>
                   <Text style={styles.cardBody}>
-                    ClearCase does not provide legal advice and does not create an attorney-client relationship.
+                    {language === "es"
+                      ? "ClearCase es una herramienta informativa. No es un bufete de abogados y no proporciona asesoramiento legal. Los resultados son de contexto general y pueden estar incompletos."
+                      : "ClearCase is an informational tool. It is not a law firm and does not provide legal advice. Results are for general context and may be incomplete."}
+                  </Text>
+                  <Text style={[styles.cardBody, { fontFamily: font.semibold, marginBottom: 4, marginTop: 8 }]}>
+                    {language === "es" ? "2. Sin relacion abogado-cliente" : "2. No Attorney-Client Relationship"}
                   </Text>
                   <Text style={styles.cardBody}>
-                    For advice specific to your situation, consult a licensed attorney in your jurisdiction.
+                    {language === "es"
+                      ? "El uso de ClearCase no crea una relacion abogado-cliente. Para asesoria especifica de su situacion, consulte con un abogado con licencia en su jurisdiccion."
+                      : "Using ClearCase does not create an attorney-client relationship. For advice specific to your situation, consult a licensed attorney in your jurisdiction."}
+                  </Text>
+                  <Text style={[styles.cardBody, { fontFamily: font.semibold, marginBottom: 4, marginTop: 8 }]}>
+                    {language === "es" ? "3. Uso aceptable" : "3. Acceptable Use"}
+                  </Text>
+                  <Text style={styles.cardBody}>
+                    {language === "es"
+                      ? "Usted acepta usar ClearCase solo para fines legales y personales. No debe cargar contenido que viole leyes aplicables o derechos de terceros."
+                      : "You agree to use ClearCase only for lawful, personal purposes. You must not upload content that violates applicable laws or third-party rights."}
+                  </Text>
+                  <Text style={[styles.cardBody, { fontFamily: font.semibold, marginBottom: 4, marginTop: 8 }]}>
+                    {language === "es" ? "4. Limitacion de responsabilidad" : "4. Limitation of Liability"}
+                  </Text>
+                  <Text style={styles.cardBody}>
+                    {language === "es"
+                      ? "ClearCase se proporciona \"tal cual\" sin garantias de ninguna clase. No somos responsables por decisiones tomadas basandose en los resultados de la aplicacion."
+                      : "ClearCase is provided \"as is\" without warranties of any kind. We are not liable for decisions made based on the application's output."}
+                  </Text>
+                  <Text style={[styles.cardBody, { fontFamily: font.semibold, marginBottom: 4, marginTop: 8 }]}>
+                    {language === "es" ? "5. Cambios en los terminos" : "5. Changes to Terms"}
+                  </Text>
+                  <Text style={styles.cardBody}>
+                    {language === "es"
+                      ? "Podemos actualizar estos terminos en cualquier momento. El uso continuado de la aplicacion constituye aceptacion de los terminos actualizados."
+                      : "We may update these terms at any time. Continued use of the application constitutes acceptance of the updated terms."}
                   </Text>
                 </View>
+
                 <View style={styles.card}>
-                  <Text style={styles.cardTitle}>Privacy and Data Use</Text>
-                  <Text style={styles.cardBody}>Your uploaded files are processed to generate document insights and timeline signals.</Text>
-                  <Text style={styles.cardBody}>Avoid uploading unnecessary sensitive information when possible.</Text>
+                  <Text style={styles.cardTitle}>{language === "es" ? "Politica de privacidad" : "Privacy Policy"}</Text>
+                  <Text style={[styles.cardBody, { fontFamily: font.semibold, marginBottom: 4 }]}>
+                    {language === "es" ? "Datos que recopilamos" : "Data We Collect"}
+                  </Text>
+                  <Text style={styles.cardBody}>
+                    {language === "es"
+                      ? "Recopilamos la informacion de cuenta que usted proporciona (nombre, correo electronico, idioma) y los documentos que carga para su analisis."
+                      : "We collect the account information you provide (name, email, language preference) and the documents you upload for analysis."}
+                  </Text>
+                  <Text style={[styles.cardBody, { fontFamily: font.semibold, marginBottom: 4, marginTop: 8 }]}>
+                    {language === "es" ? "Como usamos sus datos" : "How We Use Your Data"}
+                  </Text>
+                  <Text style={styles.cardBody}>
+                    {language === "es"
+                      ? "Sus documentos se procesan exclusivamente para generar analisis de documentos, senales de cronologia y claridad situacional. No vendemos sus datos a terceros."
+                      : "Your documents are processed exclusively to generate document insights, timeline signals, and situational clarity. We do not sell your data to third parties."}
+                  </Text>
+                  <Text style={[styles.cardBody, { fontFamily: font.semibold, marginBottom: 4, marginTop: 8 }]}>
+                    {language === "es" ? "Almacenamiento y seguridad" : "Storage & Security"}
+                  </Text>
+                  <Text style={styles.cardBody}>
+                    {language === "es"
+                      ? "Los documentos se almacenan de forma cifrada en servidores seguros. Utilizamos HTTPS para todas las transmisiones y controles de acceso para proteger su informacion."
+                      : "Documents are stored encrypted on secure servers. We use HTTPS for all transmissions and access controls to protect your information."}
+                  </Text>
+                  <Text style={[styles.cardBody, { fontFamily: font.semibold, marginBottom: 4, marginTop: 8 }]}>
+                    {language === "es" ? "Retencion de datos" : "Data Retention"}
+                  </Text>
+                  <Text style={styles.cardBody}>
+                    {language === "es"
+                      ? "Puede solicitar la eliminacion de su cuenta y datos asociados en cualquier momento contactandonos a support@clearcase.com."
+                      : "You may request deletion of your account and associated data at any time by contacting us at support@clearcase.com."}
+                  </Text>
+                  <Text style={[styles.cardBody, { fontFamily: font.semibold, marginBottom: 4, marginTop: 8 }]}>
+                    {language === "es" ? "Notificaciones push" : "Push Notifications"}
+                  </Text>
+                  <Text style={styles.cardBody}>
+                    {language === "es"
+                      ? "Si habilita notificaciones push, almacenamos un token de dispositivo para enviar recordatorios de plazos. Puede desactivar las notificaciones en cualquier momento."
+                      : "If you enable push notifications, we store a device token to deliver deadline reminders. You can disable notifications at any time."}
+                  </Text>
+                  <Text style={[styles.cardBody, { fontFamily: font.semibold, marginBottom: 4, marginTop: 8 }]}>
+                    {language === "es" ? "Contacto" : "Contact"}
+                  </Text>
+                  <Text style={styles.cardBody}>
+                    {language === "es"
+                      ? "Para preguntas sobre privacidad, contactenos en support@clearcase.com."
+                      : "For privacy questions, contact us at support@clearcase.com."}
+                  </Text>
                 </View>
-                <Pressable onPress={() => setScreen(legalReturnScreen)} style={styles.primaryBtn}>
-                  <Text style={styles.primaryBtnText}>Back to app</Text>
+
+                <Pressable onPress={() => setScreen(legalReturnScreen)} style={styles.primaryBtn} accessibilityRole="button" accessibilityLabel={language === "es" ? "Regresar a la app" : "Back to app"}>
+                  <Text style={styles.primaryBtnText}>{language === "es" ? "Regresar a la app" : "Back to app"}</Text>
                 </Pressable>
               </ScrollView>
             </View>
           ) : null}
 
           {(screen === "home" || screen === "workspace" || screen === "cases" || screen === "account") ? (
-            <View style={styles.bottomTabs}>
-              <Pressable onPress={() => { hapticTap(); LayoutAnimation.configureNext(subtleSpring); setScreen("home"); }} style={styles.bottomTabItem}>
+            <View style={styles.bottomTabs} accessibilityRole="tablist">
+              <Pressable onPress={() => { hapticTap(); LayoutAnimation.configureNext(subtleSpring); setScreen("home"); }} style={styles.bottomTabItem} accessibilityRole="tab" accessibilityState={{ selected: screen === "home" }} accessibilityLabel={language === "es" ? "Inicio" : "Home"}>
                 <Feather name="home" size={20} color={screen === "home" ? palette.text : palette.subtle} />
                 <Text style={[styles.bottomTabLabel, screen === "home" ? styles.bottomTabLabelActive : null]}>
                   {language === "es" ? "Inicio" : "Home"}
                 </Text>
                 {screen === "home" ? <View style={styles.bottomDot} /> : null}
               </Pressable>
-              <Pressable onPress={() => { hapticTap(); LayoutAnimation.configureNext(subtleSpring); setScreen("cases"); }} style={styles.bottomTabItem}>
+              <Pressable onPress={() => { hapticTap(); LayoutAnimation.configureNext(subtleSpring); setScreen("cases"); }} style={styles.bottomTabItem} accessibilityRole="tab" accessibilityState={{ selected: screen === "cases" }} accessibilityLabel={language === "es" ? "Casos" : "Cases"}>
                 <Feather name="briefcase" size={20} color={screen === "cases" ? palette.text : palette.subtle} />
                 <Text style={[styles.bottomTabLabel, screen === "cases" ? styles.bottomTabLabelActive : null]}>
                   {language === "es" ? "Casos" : "Cases"}
                 </Text>
                 {screen === "cases" ? <View style={styles.bottomDot} /> : null}
               </Pressable>
-              <Pressable onPress={() => { hapticTap(); void homeUploadFlow(); }} style={styles.bottomUploadFab}>
+              <Pressable onPress={() => { hapticTap(); void homeUploadFlow(); }} style={styles.bottomUploadFab} accessibilityRole="button" accessibilityLabel={language === "es" ? "Subir documento" : "Upload document"}>
                 <Feather name="plus-circle" size={26} color="#FFFFFF" />
               </Pressable>
-              <Pressable onPress={() => { hapticTap(); LayoutAnimation.configureNext(subtleSpring); setScreen("account"); }} style={styles.bottomTabItem}>
+              <Pressable onPress={() => { hapticTap(); LayoutAnimation.configureNext(subtleSpring); setScreen("account"); }} style={styles.bottomTabItem} accessibilityRole="tab" accessibilityState={{ selected: screen === "account" }} accessibilityLabel={language === "es" ? "Cuenta" : "Account"}>
                 <Feather name="user" size={20} color={screen === "account" ? palette.text : palette.subtle} />
                 <Text style={[styles.bottomTabLabel, screen === "account" ? styles.bottomTabLabelActive : null]}>
                   {language === "es" ? "Cuenta" : "Account"}
@@ -5862,7 +5960,7 @@ function App() {
             onRequestClose={() => setLawyerSummaryOpen(false)}
           >
             <View style={styles.sheetOverlay}>
-              <Pressable style={styles.sheetBackdrop} onPress={() => setLawyerSummaryOpen(false)} />
+              <Pressable style={styles.sheetBackdrop} onPress={() => setLawyerSummaryOpen(false)} accessibilityRole="button" accessibilityLabel="Close" />
               <View style={[styles.sheetCard, styles.summarySheetCard]}>
                 <Text style={styles.sheetTitle}>{language === "es" ? "Paquete de consulta" : "Lawyer-ready packet"}</Text>
                 <Text style={styles.sheetSub}>
@@ -6061,7 +6159,7 @@ function App() {
             onRequestClose={() => setPlainMeaningOpen(false)}
           >
             <View style={styles.sheetOverlay}>
-              <Pressable style={styles.sheetBackdrop} onPress={() => setPlainMeaningOpen(false)} />
+              <Pressable style={styles.sheetBackdrop} onPress={() => setPlainMeaningOpen(false)} accessibilityRole="button" accessibilityLabel="Close" />
               <View style={[styles.sheetCard, styles.summarySheetCard]}>
                 <Text style={styles.sheetTitle}>
                   {language === "es" ? "Vista de significado simple" : "Plain meaning view"}
@@ -6142,7 +6240,7 @@ function App() {
             onRequestClose={closeAssetViewer}
           >
             <View style={styles.sheetOverlay}>
-              <Pressable style={styles.sheetBackdrop} onPress={closeAssetViewer} />
+              <Pressable style={styles.sheetBackdrop} onPress={closeAssetViewer} accessibilityRole="button" accessibilityLabel="Close" />
               <View style={[styles.sheetCard, styles.summarySheetCard]}>
                 <Text style={styles.sheetTitle}>
                   {language === "es" ? "Visor de documentos" : "Case document viewer"}
@@ -6327,7 +6425,7 @@ function App() {
             onRequestClose={() => setIntakeModalOpen(false)}
           >
             <View style={styles.sheetOverlay}>
-              <Pressable style={styles.sheetBackdrop} onPress={() => setIntakeModalOpen(false)} />
+              <Pressable style={styles.sheetBackdrop} onPress={() => setIntakeModalOpen(false)} accessibilityRole="button" accessibilityLabel="Close" />
               <View style={[styles.sheetCard, styles.summarySheetCard]}>
                 <Text style={styles.sheetTitle}>{language === "es" ? "Intake formal de consulta" : "Formal Consultation Intake"}</Text>
                 <Text style={styles.sheetSub}>
@@ -6391,7 +6489,7 @@ function App() {
             onRequestClose={() => setPlanSheetOpen(false)}
           >
             <View style={styles.sheetOverlay}>
-              <Pressable style={styles.sheetBackdrop} onPress={() => setPlanSheetOpen(false)} />
+              <Pressable style={styles.sheetBackdrop} onPress={() => setPlanSheetOpen(false)} accessibilityRole="button" accessibilityLabel="Close" />
               <View style={styles.sheetCard}>
                 <Text style={styles.sheetTitle}>
                   {language === "es" ? "Iniciar ClearCase Plus" : "Start ClearCase Plus"}
@@ -6499,6 +6597,7 @@ function App() {
                     onChangeText={setUploadCaseTitle}
                     placeholder="Optional case title (rename anytime)"
                     placeholderTextColor={palette.subtle}
+                    accessibilityLabel="Case title"
                   />
                 ) : null}
                 <TextInput
@@ -6508,12 +6607,13 @@ function App() {
                   onChangeText={setUploadDescription}
                   placeholder="Optional: add anything not visible in the document (what happened, when, where)."
                   placeholderTextColor={palette.subtle}
+                  accessibilityLabel="Document context description"
                 />
-                <Pressable onPress={() => void beginFileUpload()} style={styles.sheetActionBtn}>
+                <Pressable onPress={() => void beginFileUpload()} style={styles.sheetActionBtn} accessibilityRole="button" accessibilityLabel="Upload file or image">
                   <Feather name="upload" size={16} color={palette.text} />
                   <Text style={styles.sheetActionText}>Upload file or image</Text>
                 </Pressable>
-                <Pressable onPress={() => void beginCameraUpload()} style={styles.sheetActionBtn}>
+                <Pressable onPress={() => void beginCameraUpload()} style={styles.sheetActionBtn} accessibilityRole="button" accessibilityLabel="Take photos">
                   <Feather name="camera" size={16} color={palette.text} />
                   <Text style={styles.sheetActionText}>Take photos (multi-page)</Text>
                 </Pressable>
@@ -6539,7 +6639,7 @@ function App() {
             onRequestClose={() => setClassificationSheetOpen(false)}
           >
             <View style={styles.sheetOverlay}>
-              <Pressable style={styles.sheetBackdrop} onPress={() => setClassificationSheetOpen(false)} />
+              <Pressable style={styles.sheetBackdrop} onPress={() => setClassificationSheetOpen(false)} accessibilityRole="button" accessibilityLabel="Close" />
               <View style={[styles.sheetCard, styles.categorySheetCard]}>
                 <Text style={styles.sheetTitle}>Select category</Text>
                 <Text style={styles.sheetSub}>
