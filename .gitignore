@@ -1,7 +1,14 @@
 node_modules/
 .env
-dist/
+.env.local
+.env.*
+*.log
 logs/
+coverage/
+dist/
+build/
+.expo/
+.DS_Store
 .api.log
 .worker.log
 .playwright-cli/
