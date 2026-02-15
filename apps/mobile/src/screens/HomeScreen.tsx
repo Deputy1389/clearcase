@@ -6,6 +6,7 @@ import { hapticTap } from "../utils/haptics";
 import { titleize } from "../utils/formatting";
 import { casePriorityLevel, casePriorityLabel } from "../utils/case-logic";
 import { fmtDate } from "../utils/formatting";
+import RightNowCard from "./home/components/RightNowCard";
 import type { HomeScreenProps } from "./types";
 
 export default function HomeScreen({
@@ -31,6 +32,7 @@ export default function HomeScreen({
     uploadStatusText, 
     homeUploadFlow 
   } = upload;
+  const { planTier, openPaywall } = paywall;
   const { offlineMode } = ui;
   const { accountInitials } = auth;
   const { localizedCaseStatus } = helpers;
@@ -106,6 +108,19 @@ export default function HomeScreen({
             </View>
           </Pressable>
         </LinearGradient>
+
+        {cases.cases.length > 0 ? (
+          <RightNowCard
+            cases={cases.cases}
+            language={language}
+            planTier={planTier}
+            onOpenCase={(caseId) => {
+              setSelectedCaseId(caseId);
+              setScreen("workspace");
+            }}
+            onOpenPaywall={() => openPaywall("right_now_card")}
+          />
+        ) : null}
 
         <View style={styles.sectionTitleRow}>
           <Text style={styles.sectionTitle}>{language === "es" ? "Casos activos" : "Active Cases"}</Text>
