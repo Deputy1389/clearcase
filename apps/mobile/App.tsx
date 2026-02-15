@@ -1,7 +1,7 @@
 import * as Sentry from "@sentry/react-native";
 import React from "react";
 import { useAppController } from "./src/hooks/useAppController";
-import { AppRouter } from "./src/AppRouter";
+import { AppRouter } from "./src/navigation/AppRouter";
 
 // --- Sentry error tracking ---
 const SENTRY_DSN = process.env.EXPO_PUBLIC_SENTRY_DSN?.trim() ?? "";
