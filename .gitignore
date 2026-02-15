@@ -9,3 +9,5 @@ secrets/
 **/secrets/
 *.key.json
 **/*.key.json
+
+.claude/
