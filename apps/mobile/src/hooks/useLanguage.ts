@@ -20,7 +20,10 @@ export function useLanguage() {
   const loadPersistedLanguage = useCallback(async () => {
     try {
       const stored = await AsyncStorage.getItem(STORAGE_LANGUAGE);
-      if (stored) setLanguage(parseLanguage(stored));
+      if (stored) {
+        const parsed = parseLanguage(stored);
+        if (parsed) setLanguage(parsed);
+      }
     } catch {
       // Ignore storage failures.
     }
