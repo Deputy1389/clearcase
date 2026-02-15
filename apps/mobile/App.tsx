@@ -1,8 +1,6 @@
 
 import * as Sentry from "@sentry/react-native";
 import { StatusBar } from "expo-status-bar";
-import * as DocumentPicker from "expo-document-picker";
-import * as ImagePicker from "expo-image-picker";
 import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
 import { useFonts } from "expo-font";
@@ -50,20 +48,15 @@ import {
   type ManualDocumentType,
   type MeResponse,
   MANUAL_DOCUMENT_TYPES,
-  createBillingCheckout,
   createConsultPacketLink,
-  createAssetUploadPlan,
   createCase,
   disableConsultPacketLink,
   getCaseAssetAccess,
   getCaseAssets,
   finalizeAssetUpload,
   getConsultPacketLinks,
-  getCaseById,
   getCases,
-  getHealth,
   getMe,
-  getPaywallConfig,
   getPlainMeaning,
   patchNotificationPreferences,
   patchMe,
@@ -107,8 +100,7 @@ import {
   titleize,
   daysUntil,
   fmtDate,
-  fmtDateTime,
-  sleep
+  fmtDateTime
 } from "./src/utils/formatting";
 import {
   manualCategoryOptions,
@@ -123,21 +115,13 @@ import {
   casePriorityLabel
 } from "./src/utils/case-logic";
 import {
-  isImageFileUpload,
-  replaceFileExtension,
-  getImageDimensions,
-  compressUploadImage
-} from "./src/utils/upload-helpers";
-import {
   type FreeLimitApiPayload,
   summarizeError,
   withNetworkHint,
   isPlusRequiredApiError,
   parseFreeLimitApiError,
   isFreeOcrDisabledApiError,
-  formatLimitResetAt,
-  plusUpgradeExplainer,
-  isNetworkErrorLike
+  formatLimitResetAt
 } from "./src/utils/error-helpers";
 import {
   isValidEmail,
@@ -145,34 +129,44 @@ import {
   isStrongPassword
 } from "./src/utils/auth-helpers";
 import {
-  hapticTap,
-  hapticSuccess
+  hapticTap
 } from "./src/utils/haptics";
 import { palette, font } from "./src/theme";
+import {
+  DEFAULT_SUBJECT,
+  DEFAULT_EMAIL,
+  STORAGE_API_BASE,
+  STORAGE_SUBJECT,
+  STORAGE_EMAIL,
+  STORAGE_PLAN_TIER
+} from "./src/constants";
 import { onboardingSlidesByLanguage } from "./src/data/onboarding-slides";
 import { LEGAL_AID_RESOURCES } from "./src/data/legal-aid-resources";
 import type { LegalAidResource } from "./src/data/legal-aid-resources";
 import { DRAFT_TEMPLATES } from "./src/data/draft-templates";
 import type { DraftTemplate } from "./src/data/draft-templates";
 import { DEMO_CASES, buildDemoCaseDetail, DEMO_CASE_DETAIL_MAP } from "./src/data/demo-cases";
+import { useLanguage } from "./src/hooks/useLanguage";
+import { useNavigation } from "./src/hooks/useNavigation";
+import { useConnection, deriveSubject } from "./src/hooks/useConnection";
+import { useAuth } from "./src/hooks/useAuth";
+import { usePaywall } from "./src/hooks/usePaywall";
+import { useCases } from "./src/hooks/useCases";
+import { useUpload } from "./src/hooks/useUpload";
 import type {
   Screen,
   ContentScreen,
   AuthMode,
-  BannerTone,
   ConnStatus,
   UploadStage,
   CaseSeverity,
   PlanTier,
   AppLanguage,
-  PlusFeatureGate,
   StepProgress,
   PremiumStepGroup,
   PremiumActionStep,
-  UploadAssetInput,
   WorkspaceAccordionKey,
   IntakeDraft,
-  PaywallConfigState,
   OnboardingSlide,
   PacketHistoryEntry,
 } from "./src/types";
@@ -218,27 +212,15 @@ async function requestExpoPushToken(): Promise<string | null> {
 }
 
 
-const STORAGE_API_BASE = "clearcase.mobile.apiBase";
-const STORAGE_SUBJECT = "clearcase.mobile.subject";
-const STORAGE_EMAIL = "clearcase.mobile.email";
 const STORAGE_ONBOARDED = "clearcase.mobile.onboarded";
 const STORAGE_OFFLINE_SESSION = "clearcase.mobile.offlineSession";
-const STORAGE_PLAN_TIER = "clearcase.mobile.planTier";
-const STORAGE_LANGUAGE = "clearcase.mobile.language";
 const STORAGE_PUSH_DEVICE_ID = "clearcase.mobile.pushDeviceId";
 const STORAGE_INTAKE_PREFIX = "clearcase.mobile.intake";
 const STORAGE_STEP_STATUS_PREFIX = "clearcase.mobile.premiumSteps";
-const DEFAULT_PLUS_PRICE_MONTHLY = "$15/month";
 const IMAGE_UPLOAD_MAX_DIMENSION = 1600;
 const IMAGE_UPLOAD_QUALITY = 0.45;
 const MOBILE_BUILD_STAMP = "mobile-ui-2026-02-13b";
 
-
-function deriveSubject(email: string): string {
-  const local = email.split("@")[0] ?? "";
-  const normalized = local.toLowerCase().replace(/[^a-z0-9_-]+/g, "-").replace(/^-+|-+$/g, "");
-  return normalized ? `mobile-${normalized}` : DEFAULT_SUBJECT;
-}
 
 function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
@@ -305,15 +287,6 @@ function localizedCaseStatus(value: string | null | undefined, language: AppLang
   }
 
   return titleize(normalized);
-}
-
-function buildAutoCaseTitle(rawTitle?: string | null): string {
-  const cleaned = (rawTitle ?? "")
-    .replace(/\.[^.]+$/, "")
-    .replace(/\s+/g, " ")
-    .trim();
-  if (cleaned) return cleaned.slice(0, 120);
-  return `Uploaded Document - ${new Date().toLocaleDateString(undefined, { month: "short", day: "numeric" })}`;
 }
 
 function extractCaseContextFromAuditLogs(auditLogs: Array<{ payload: unknown }> | undefined): string {
@@ -398,15 +371,6 @@ function buildPacketHistoryEntries(
   return history.slice(-8);
 }
 
-function askTakeAnotherPhoto(): Promise<boolean> {
-  return new Promise((resolve) => {
-    Alert.alert("Photo added", "Take another photo?", [
-      { text: "Done", onPress: () => resolve(false), style: "cancel" },
-      { text: "Take another", onPress: () => resolve(true) }
-    ]);
-  });
-}
-
 // Enable LayoutAnimation on Android
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -424,26 +388,92 @@ function App() {
     PlusJakartaSans_700Bold
   });
 
-  const [screen, setScreen] = useState<Screen>("language");
-  const [postLanguageScreen, setPostLanguageScreen] = useState<ContentScreen>("onboarding");
-  const [authMode, setAuthMode] = useState<AuthMode>("selection");
+  const { language, setLanguage, setLanguageWithPersistence, loadPersistedLanguage } = useLanguage();
+  const { screen, setScreen, postLanguageScreen, setPostLanguageScreen, goBack } = useNavigation();
   const [slide, setSlide] = useState(0);
-  const [banner, setBanner] = useState<{ tone: BannerTone; text: string } | null>(null);
-  const [isBootstrapping, setIsBootstrapping] = useState(true);
-  const [offlineMode, setOfflineMode] = useState(false);
 
-  const [apiBase, setApiBase] = useState(DEFAULT_API_BASE ?? "http://127.0.0.1:3001");
-  const [apiBaseInput, setApiBaseInput] = useState(DEFAULT_API_BASE ?? "http://127.0.0.1:3001");
-  const [subject, setSubject] = useState(DEFAULT_SUBJECT);
-  const [subjectInput, setSubjectInput] = useState(DEFAULT_SUBJECT);
-  const [email, setEmail] = useState(DEFAULT_EMAIL);
-  const [emailInput, setEmailInput] = useState(DEFAULT_EMAIL);
-  const [connStatus, setConnStatus] = useState<ConnStatus>("unknown");
-  const [connMessage, setConnMessage] = useState("Connection not tested yet.");
+  const {
+    apiBase, setApiBase,
+    apiBaseInput, setApiBaseInput,
+    connStatus, setConnStatus,
+    connMessage, setConnMessage,
+    offlineMode, setOfflineMode,
+    banner, setBanner,
+    subject, setSubject,
+    subjectInput, setSubjectInput,
+    email, setEmail,
+    emailInput, setEmailInput,
+    headers,
+    showBanner,
+    verifyConnection,
+    detectLanApiBase,
+    persistConnection,
+    applyConnection
+  } = useConnection();
+
+  const {
+    paywallConfig, setPaywallConfig,
+    planTier, setPlanTier,
+    startingCheckout,
+    planSheetOpen, setPlanSheetOpen,
+    loadPaywallConfigState,
+    startPlusCheckout,
+    openPaywall,
+    promptPlusUpgrade,
+    callbacks: paywallCallbacks
+  } = usePaywall({ apiBase, headers, language, offlineMode, showBanner });
+
+  const {
+    me, setMe,
+    cases, setCases,
+    selectedCaseId, setSelectedCaseId,
+    selectedCase, setSelectedCase,
+    caseAssets, setCaseAssets,
+    loadingCaseAssets, setLoadingCaseAssets,
+    profileName, setProfileName,
+    profileZip, setProfileZip,
+    newCaseTitle, setNewCaseTitle,
+    caseSearch, setCaseSearch,
+    caseFilter, setCaseFilter,
+    loadingDashboard, setLoadingDashboard,
+    loadingCase, setLoadingCase,
+    creatingCase,
+    savingProfile,
+    refreshing,
+    selectedCaseSummary,
+    latestCase,
+    userFirstName,
+    filteredCases,
+    loadDashboard,
+    loadCase,
+    loadCaseAssetsForSelectedCase,
+    createCaseWithTitle,
+    saveProfile,
+    refreshWorkspace,
+    reconnectWorkspace,
+    callbacks: casesCallbacks
+  } = useCases({
+    apiBase, headers, language, offlineMode, showBanner,
+    verifyConnection, setConnStatus, setConnMessage, setOfflineMode, email
+  });
+
+  const {
+    uploading, uploadStage,
+    uploadDescription, setUploadDescription,
+    uploadTargetCaseId, setUploadTargetCaseId,
+    uploadCaseTitle, setUploadCaseTitle,
+    uploadSheetOpen, setUploadSheetOpen,
+    latestContextReuseSourceCaseId, setLatestContextReuseSourceCaseId,
+    uploadAssets, uploadDocument, uploadFromCamera,
+    beginFileUpload, beginCameraUpload,
+    homeUploadFlow, openUploadSheetForCase,
+    waitForCaseInsight,
+    callbacks: uploadCallbacks
+  } = useUpload({
+    apiBase, headers, language, offlineMode, showBanner
+  });
+
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [uploadSheetOpen, setUploadSheetOpen] = useState(false);
-  const [planSheetOpen, setPlanSheetOpen] = useState(false);
-  const [startingCheckout, setStartingCheckout] = useState(false);
   const [lawyerSummaryOpen, setLawyerSummaryOpen] = useState(false);
   const [assetViewerOpen, setAssetViewerOpen] = useState(false);
   const [assetViewerAsset, setAssetViewerAsset] = useState<CaseAsset | null>(null);
@@ -465,10 +495,6 @@ function App() {
   const [loadingConsultLinks, setLoadingConsultLinks] = useState(false);
   const [creatingConsultLink, setCreatingConsultLink] = useState(false);
   const [disablingConsultToken, setDisablingConsultToken] = useState<string | null>(null);
-  const [latestContextReuseSourceCaseId, setLatestContextReuseSourceCaseId] = useState<string | null>(null);
-  const [uploadDescription, setUploadDescription] = useState("");
-  const [uploadTargetCaseId, setUploadTargetCaseId] = useState<string | null>(null);
-  const [uploadCaseTitle, setUploadCaseTitle] = useState("");
   const [caseContextDraft, setCaseContextDraft] = useState("");
   const [classificationSheetOpen, setClassificationSheetOpen] = useState(false);
   const [classificationDraft, setClassificationDraft] = useState<ManualDocumentType>("unknown_legal_document");
@@ -476,47 +502,71 @@ function App() {
   const [legalAidSearch, setLegalAidSearch] = useState("");
   const [selectedTemplate, setSelectedTemplate] = useState<DraftTemplate | null>(null);
 
-  const [authName, setAuthName] = useState("");
-  const [authZip, setAuthZip] = useState("");
-  const [authEmail, setAuthEmail] = useState(DEFAULT_EMAIL);
-  const [authPassword, setAuthPassword] = useState("");
-  const [authIntent, setAuthIntent] = useState<"login" | "signup">("login");
-  const [authBusy, setAuthBusy] = useState(false);
-  const [authStage, setAuthStage] = useState<"idle" | "account" | "profile" | "workspace">("idle");
-
-  const [me, setMe] = useState<MeResponse | null>(null);
-  const [cases, setCases] = useState<CaseSummary[]>([]);
-  const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null);
-  const [selectedCase, setSelectedCase] = useState<CaseDetail | null>(null);
-  const [caseAssets, setCaseAssets] = useState<CaseAsset[]>([]);
-  const [loadingCaseAssets, setLoadingCaseAssets] = useState(false);
-  const [paywallConfig, setPaywallConfig] = useState<PaywallConfigState>({
-    plusPriceMonthly: DEFAULT_PLUS_PRICE_MONTHLY,
-    paywallVariant: "gold_v1",
-    showAlternatePlan: false,
-    billingEnabled: true
-  });
-
-  const [profileName, setProfileName] = useState("");
-  const [profileZip, setProfileZip] = useState("");
-  const [newCaseTitle, setNewCaseTitle] = useState("");
-  const [caseSearch, setCaseSearch] = useState("");
-  const [caseFilter, setCaseFilter] = useState<"all" | "active" | "urgent" | "archived">("all");
-  const [planTier, setPlanTier] = useState<PlanTier>("free");
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushQuietHoursEnabled, setPushQuietHoursEnabled] = useState(false);
   const [savingPushPreferences, setSavingPushPreferences] = useState(false);
 
-  const [loadingDashboard, setLoadingDashboard] = useState(false);
-  const [loadingCase, setLoadingCase] = useState(false);
-  const [creatingCase, setCreatingCase] = useState(false);
-  const [savingProfile, setSavingProfile] = useState(false);
+  const {
+    authMode, setAuthMode,
+    authName, setAuthName,
+    authZip, setAuthZip,
+    authEmail, setAuthEmail,
+    authPassword, setAuthPassword,
+    authIntent, setAuthIntent,
+    authBusy, setAuthBusy,
+    authStage, setAuthStage,
+    isBootstrapping, setIsBootstrapping,
+    signOut,
+    bootstrapOfflineSession,
+    agreeAndContinue,
+    resolveAuthApiBase
+  } = useAuth(
+    {
+      apiBase, setApiBase, apiBaseInput, setApiBaseInput,
+      email, setEmail, setEmailInput,
+      subject, setSubject, setSubjectInput,
+      headers, offlineMode, setOfflineMode,
+      setConnStatus, setConnMessage,
+      showBanner, detectLanApiBase, persistConnection
+    },
+    {
+      language,
+      resetAppState: () => {
+        setDrawerOpen(false);
+        setMe(null);
+        setCases([]);
+        setSelectedCaseId(null);
+        setSelectedCase(null);
+        setScreen("auth");
+        setPlanTier("free");
+        setPushEnabled(false);
+        setPushQuietHoursEnabled(false);
+      },
+      applyOfflineSession: (offMe, offCases, firstId) => {
+        setMe(offMe);
+        setCases(offCases);
+        setSelectedCaseId(firstId);
+        setSelectedCase(firstId ? (DEMO_CASE_DETAIL_MAP[firstId] ?? null) : null);
+        setProfileName(offMe.user.fullName ?? "");
+        setProfileZip(offMe.user.zipCode ?? "");
+        setPlanTier("plus");
+        setPushEnabled(false);
+        setPushQuietHoursEnabled(false);
+      },
+      applyServerMeState,
+      applyAuthSuccess: (nextCases, firstId) => {
+        setCases(nextCases);
+        setSelectedCaseId(firstId);
+        setScreen("home");
+      },
+      applyOfflineFallback: () => {
+        setScreen("home");
+      }
+    }
+  );
+
   const [savingCaseContext, setSavingCaseContext] = useState(false);
   const [savingClassification, setSavingClassification] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [uploadStage, setUploadStage] = useState<UploadStage>("idle");
-  const [refreshing, setRefreshing] = useState(false);
-  const [language, setLanguage] = useState<AppLanguage>("en");
   const [savingWatchMode, setSavingWatchMode] = useState(false);
   const [intakeDraft, setIntakeDraft] = useState<IntakeDraft>(emptyIntakeDraft());
   const [stepProgressMap, setStepProgressMap] = useState<Record<string, StepProgress>>({});
@@ -533,11 +583,6 @@ function App() {
   const plusEnabled = me?.entitlement?.isPlus ?? false;
   const onboardingSlides = useMemo(() => onboardingSlidesByLanguage[language], [language]);
 
-  const headers = useMemo(() => buildHeaders(subject, email), [subject, email]);
-  const selectedCaseSummary = useMemo(
-    () => cases.find((row) => row.id === selectedCaseId) ?? null,
-    [cases, selectedCaseId]
-  );
   const activeDocumentType = useMemo(
     () => selectedCase?.documentType ?? selectedCaseSummary?.documentType ?? null,
     [selectedCase?.documentType, selectedCaseSummary?.documentType]
@@ -563,31 +608,6 @@ function App() {
     () => buildRecommendedNextSteps(activeDocumentType, activeEarliestDeadline, language),
     [activeDocumentType, activeEarliestDeadline, language]
   );
-  const latestCase = useMemo(() => cases[0] ?? null, [cases]);
-  const userFirstName = useMemo(() => {
-    const fullName = me?.user.fullName?.trim();
-    if (fullName) return fullName.split(/\s+/)[0];
-    const emailName = email.split("@")[0]?.trim();
-    return emailName || "there";
-  }, [me, email]);
-  const filteredCases = useMemo(() => {
-    const q = caseSearch.trim().toLowerCase();
-    return cases.filter((row) => {
-      const status = (row.status ?? "").toLowerCase();
-      const title = (row.title ?? "").toLowerCase();
-      const docType = (row.documentType ?? "").toLowerCase();
-      const matchesSearch = !q || title.includes(q) || docType.includes(q) || status.includes(q);
-      const matchesFilter =
-        caseFilter === "all"
-          ? true
-          : caseFilter === "active"
-            ? !status.includes("archived") && !status.includes("closed")
-            : caseFilter === "urgent"
-              ? row.timeSensitive || Boolean(row.earliestDeadline)
-              : status.includes("archived") || status.includes("closed");
-      return matchesSearch && matchesFilter;
-    });
-  }, [cases, caseFilter, caseSearch]);
   const workspaceSectionMeta = useMemo(() => {
     return {
       steps: {
@@ -1778,11 +1798,6 @@ function App() {
     void AsyncStorage.setItem(stepStatusStorageKey(selectedCaseId), JSON.stringify(stepProgressMap));
   }, [stepProgressMap, selectedCaseId]);
 
-  function showBanner(tone: BannerTone, text: string): void {
-    if (tone === "good") hapticSuccess();
-    setBanner({ tone, text });
-  }
-
   async function sendTrackedEvent(
     event: string,
     source?: string,
@@ -1800,16 +1815,6 @@ function App() {
     } catch {
       // Tracking is best-effort.
     }
-  }
-
-  function openPaywall(triggerSource: string): void {
-    setPlanSheetOpen(true);
-    void sendTrackedEvent("paywall_viewed", triggerSource);
-  }
-
-  function promptPlusUpgrade(feature: PlusFeatureGate): void {
-    showBanner("info", plusUpgradeExplainer(language, feature));
-    openPaywall(feature === "watch_mode" ? "watch_mode_lock" : "consult_links_lock");
   }
 
   function stepGroupLabel(group: PremiumStepGroup): string {
@@ -1885,68 +1890,6 @@ function App() {
       desiredOutcome: "What a reasonable outcome would look like for you."
     };
     return labelsEn[key];
-  }
-
-  async function startPlusCheckout(triggerSource: string): Promise<void> {
-    if (offlineMode) {
-      showBanner(
-        "info",
-        language === "es"
-          ? "La facturacion requiere conexion API."
-          : "Billing checkout requires API connectivity."
-      );
-      return;
-    }
-    if (!paywallConfig.billingEnabled) {
-      showBanner(
-        "info",
-        language === "es"
-          ? "La facturacion no esta disponible por ahora."
-          : "Billing is not available right now."
-      );
-      return;
-    }
-
-    setStartingCheckout(true);
-    try {
-      const checkout = await createBillingCheckout(apiBase, headers, {
-        plan: "plus_monthly",
-        triggerSource,
-        locale: language
-      });
-      setPaywallConfig((current) => ({
-        ...current,
-        plusPriceMonthly: checkout.plusPriceMonthly || current.plusPriceMonthly,
-        paywallVariant: checkout.paywallVariant || current.paywallVariant
-      }));
-      setPlanSheetOpen(false);
-      await Linking.openURL(checkout.checkoutUrl);
-      showBanner(
-        "info",
-        language === "es"
-          ? "Se abrio checkout. Puede cancelar desde configuracion de cuenta."
-          : "Checkout opened. You can cancel from account settings."
-      );
-      await loadDashboard();
-    } catch (error) {
-      showBanner(
-        "bad",
-        language === "es"
-          ? `No se pudo iniciar checkout: ${withNetworkHint(error, apiBase)}`
-          : `Could not start checkout: ${withNetworkHint(error, apiBase)}`
-      );
-    } finally {
-      setStartingCheckout(false);
-    }
-  }
-
-  async function setLanguageWithPersistence(nextLanguage: AppLanguage): Promise<void> {
-    setLanguage(nextLanguage);
-    try {
-      await AsyncStorage.setItem(STORAGE_LANGUAGE, nextLanguage);
-    } catch {
-      // Ignore storage failures.
-    }
   }
 
   async function selectInitialLanguage(nextLanguage: AppLanguage): Promise<void> {
@@ -2313,111 +2256,11 @@ function App() {
     }
   }
 
-  async function bootstrapOfflineSession(nextEmail: string, fullName: string, zipCode: string): Promise<void> {
-    const now = new Date().toISOString();
-    const idSuffix = `${Date.now()}`;
-    const offlineMe: MeResponse = {
-      user: {
-        id: `offline-user-${idSuffix}`,
-        authProviderUserId: `offline-${deriveSubject(nextEmail)}`,
-        email: nextEmail,
-        fullName: fullName || null,
-        zipCode: zipCode || null,
-        jurisdictionState: null,
-        createdAt: now,
-        updatedAt: now
-      },
-      needsProfile: !fullName || !zipCode,
-      entitlement: {
-        id: `offline-entitlement-${idSuffix}`,
-        plan: "plus",
-        status: "active",
-        source: "manual",
-        startAt: now,
-        endAt: null,
-        isPlus: true,
-        viaAllowlistFallback: false
-      },
-      pushPreferences: {
-        enabled: false,
-        language,
-        quietHoursStart: null,
-        quietHoursEnd: null
-      },
-      pushDevices: {
-        activeCount: 0
-      }
-    };
-
-    const offlineCases: CaseSummary[] = [...DEMO_CASES];
-
-    setMe(offlineMe);
-    setCases(offlineCases);
-    setSelectedCaseId(offlineCases[0]?.id ?? null);
-    setSelectedCase(DEMO_CASE_DETAIL_MAP[offlineCases[0]?.id] ?? null);
-    setProfileName(offlineMe.user.fullName ?? "");
-    setProfileZip(offlineMe.user.zipCode ?? "");
-    setPlanTier("plus");
-    setPushEnabled(false);
-    setPushQuietHoursEnabled(false);
-    setOfflineMode(true);
-
-    try {
-      await AsyncStorage.setItem(STORAGE_OFFLINE_SESSION, JSON.stringify({ me: offlineMe, cases: offlineCases }));
-      await AsyncStorage.setItem(STORAGE_ONBOARDED, "1");
-    } catch {
-      // Ignore storage failures.
-    }
-  }
-
   async function completeOnboarding(): Promise<void> {
     setSlide(0);
     setScreen("auth");
     try {
       await AsyncStorage.setItem(STORAGE_ONBOARDED, "1");
-    } catch {
-      // Ignore storage failures.
-    }
-  }
-
-  async function signOut(): Promise<void> {
-    setDrawerOpen(false);
-    setMe(null);
-    setCases([]);
-    setSelectedCaseId(null);
-    setSelectedCase(null);
-    setOfflineMode(false);
-    setAuthPassword("");
-    setAuthIntent("login");
-    setAuthMode("selection");
-    setScreen("auth");
-    setPlanTier("free");
-    setPushEnabled(false);
-    setPushQuietHoursEnabled(false);
-    setSubject(DEFAULT_SUBJECT);
-    setSubjectInput(DEFAULT_SUBJECT);
-    setEmail(DEFAULT_EMAIL);
-    setEmailInput(DEFAULT_EMAIL);
-    setAuthEmail(DEFAULT_EMAIL);
-    try {
-      await Promise.all([
-        AsyncStorage.removeItem(STORAGE_SUBJECT),
-        AsyncStorage.removeItem(STORAGE_EMAIL),
-        AsyncStorage.removeItem(STORAGE_OFFLINE_SESSION)
-      ]);
-    } catch {
-      // Ignore storage failures.
-    }
-    showBanner("info", "Signed out.");
-  }
-
-  async function persistConnection(nextBase: string, nextSubject: string, nextEmail: string): Promise<void> {
-    try {
-      await Promise.all([
-        AsyncStorage.setItem(STORAGE_API_BASE, nextBase),
-        AsyncStorage.setItem(STORAGE_SUBJECT, nextSubject),
-        AsyncStorage.setItem(STORAGE_EMAIL, nextEmail)
-      ]);
     } catch {
       // Ignore storage failures.
     }
@@ -2477,122 +2320,18 @@ function App() {
     void registerDefaultPushDevice(base, auth, pushLanguage);
   }
 
-  async function loadPaywallConfigState(base = apiBase, auth = headers): Promise<void> {
-    if (offlineMode) return;
-    try {
-      const config = await getPaywallConfig(base, auth);
-      setPaywallConfig({
-        plusPriceMonthly: config.plusPriceMonthly || DEFAULT_PLUS_PRICE_MONTHLY,
-        paywallVariant: config.paywallVariant || "gold_v1",
-        showAlternatePlan: config.showAlternatePlan === true,
-        billingEnabled: config.billingEnabled !== false
-      });
-    } catch {
-      // Keep local defaults when config endpoint is unavailable.
-    }
-  }
+  // Wire up callbacks for useCases (breaks circular deps with applyServerMeState)
+  casesCallbacks.current = { applyServerMeState, loadPaywallConfigState };
 
-  async function verifyConnection(base = apiBase): Promise<void> {
-    try {
-      const health = await getHealth(base);
-      if (!health.ok) throw new Error("health failed");
-      setConnStatus("ok");
-      setConnMessage(`Connected to ${base}`);
-    } catch (error) {
-      setConnStatus("error");
-      setConnMessage(`Connection failed: ${withNetworkHint(error, base)}`);
-      throw error;
-    }
-  }
+  // Wire up paywall callbacks now that sendTrackedEvent / loadDashboard exist
+  paywallCallbacks.current = { sendTrackedEvent, loadDashboard };
 
-  function detectLanApiBase(): string | null {
-    const metroHost = extractMetroHost();
-    if (!metroHost || !isPrivateIpv4Host(metroHost)) return null;
-    return `http://${metroHost}:3001`;
-  }
-
-  async function resolveAuthApiBase(preferredBase: string): Promise<string> {
-    const primaryBase = preferredBase.trim();
-    if (!primaryBase) return preferredBase;
-
-    try {
-      const primaryHealth = await getHealth(primaryBase);
-      if (primaryHealth.ok) return primaryBase;
-    } catch (primaryError) {
-      const lanBase = detectLanApiBase();
-      if (lanBase && lanBase !== primaryBase) {
-        try {
-          const lanHealth = await getHealth(lanBase);
-          if (lanHealth.ok) {
-            setApiBase(lanBase);
-            setApiBaseInput(lanBase);
-            setConnStatus("ok");
-            setConnMessage(`Connected to ${lanBase}`);
-            showBanner("info", "Primary API unavailable. Switched to local network API.");
-            return lanBase;
-          }
-        } catch {
-          // Keep the original error path; caller can fallback to offline mode.
-        }
-      }
-      throw primaryError;
-    }
-
-    return primaryBase;
-  }
-
-  async function loadDashboard(base = apiBase, auth = headers): Promise<void> {
-    setLoadingDashboard(true);
-    try {
-      const [meData, caseData] = await Promise.all([getMe(base, auth), getCases(base, auth)]);
-      setConnStatus("ok");
-      setConnMessage(`Connected to ${base}`);
-      setOfflineMode(false);
-      void AsyncStorage.removeItem(STORAGE_OFFLINE_SESSION);
-      await applyServerMeState(meData, base, auth);
-      await loadPaywallConfigState(base, auth);
-      setCases(caseData.cases);
-      setSelectedCaseId((cur) => (cur && caseData.cases.some((row) => row.id === cur) ? cur : (caseData.cases[0]?.id ?? null)));
-    } catch (error) {
-      setConnStatus("error");
-      setConnMessage(`Connection failed: ${withNetworkHint(error, base)}`);
-      showBanner("bad", `Workspace load failed: ${withNetworkHint(error, base)}`);
-    } finally {
-      setLoadingDashboard(false);
-    }
-  }
-
-  async function loadCase(caseId: string, base = apiBase, auth = headers): Promise<void> {
-    setLoadingCase(true);
-    try {
-      setSelectedCase(await getCaseById(base, auth, caseId));
-    } catch (error) {
-      setSelectedCase(null);
-      showBanner("bad", `Case load failed: ${withNetworkHint(error, base)}`);
-    } finally {
-      setLoadingCase(false);
-    }
-  }
-
-  async function loadCaseAssetsForSelectedCase(
-    caseId: string,
-    base = apiBase,
-    auth = headers
-  ): Promise<void> {
-    if (offlineMode) {
-      setCaseAssets([]);
-      return;
-    }
-    setLoadingCaseAssets(true);
-    try {
-      const response = await getCaseAssets(base, auth, caseId);
-      setCaseAssets(response.assets);
-    } catch {
-      setCaseAssets([]);
-    } finally {
-      setLoadingCaseAssets(false);
-    }
-  }
+  // Wire up upload callbacks (cross-domain actions from useCases, useNavigation, etc.)
+  uploadCallbacks.current = {
+    createCaseWithTitle, loadCase, loadDashboard, loadCaseAssetsForSelectedCase,
+    setCases, setSelectedCaseId, setSelectedCase, setScreen,
+    sendTrackedEvent, reconnectWorkspace, openPaywall
+  };
 
   function closeAssetViewer(): void {
     setAssetViewerOpen(false);
@@ -2692,442 +2431,7 @@ function App() {
     }
   }
 
-  async function applyConnection(): Promise<void> {
-    const nextBase = apiBaseInput.trim();
-    const nextSubject = subjectInput.trim() || DEFAULT_SUBJECT;
-    const nextEmail = emailInput.trim() || DEFAULT_EMAIL;
-    if (!nextBase) {
-      Alert.alert("Missing API URL", "Enter an API base URL first.");
-      return;
-    }
-    setApiBase(nextBase);
-    setSubject(nextSubject);
-    setEmail(nextEmail);
-    await persistConnection(nextBase, nextSubject, nextEmail);
-    await loadDashboard(nextBase, buildHeaders(nextSubject, nextEmail));
-    showBanner("info", "Connection settings applied.");
-  }
-
-  async function refreshWorkspace(): Promise<void> {
-    setRefreshing(true);
-    if (offlineMode) {
-      setRefreshing(false);
-      return;
-    }
-    await loadDashboard();
-    if (selectedCaseId) await loadCase(selectedCaseId);
-    setRefreshing(false);
-  }
-
-  async function reconnectWorkspace(): Promise<void> {
-    setRefreshing(true);
-    try {
-      await verifyConnection(apiBase);
-      await loadDashboard(apiBase, headers);
-      if (selectedCaseId) {
-        await loadCase(selectedCaseId, apiBase, headers);
-      }
-      showBanner("good", "Connection restored. Uploads are available.");
-    } catch (error) {
-      const message = withNetworkHint(error, apiBase);
-      showBanner("bad", "Still offline: " + message);
-      Alert.alert("Still offline", message);
-    } finally {
-      setRefreshing(false);
-    }
-  }
-
-  async function createCaseWithTitle(title?: string): Promise<string | null> {
-    const clean = buildAutoCaseTitle(title);
-    const fallbackTitle = buildAutoCaseTitle(undefined);
-    if (offlineMode) {
-      const now = new Date().toISOString();
-      const offlineCase: CaseSummary = {
-        id: `offline-case-${Date.now()}`,
-        title: clean,
-        documentType: null,
-        classificationConfidence: null,
-        status: "draft",
-        timeSensitive: false,
-        earliestDeadline: null,
-        plainEnglishExplanation: "Offline mode case. Connect API to process documents.",
-        nonLegalAdviceDisclaimer: "For informational context only. Not legal advice.",
-        updatedAt: now,
-        _count: { assets: 0, extractions: 0, verdicts: 0 }
-      };
-      const nextCases = [offlineCase, ...cases];
-      setCases(nextCases);
-      setSelectedCaseId(offlineCase.id);
-      try {
-        if (me) {
-          await AsyncStorage.setItem(STORAGE_OFFLINE_SESSION, JSON.stringify({ me, cases: nextCases }));
-        }
-      } catch {
-        // Ignore storage failures.
-      }
-      showBanner("info", "Case created in offline mode.");
-      return offlineCase.id;
-    }
-    setCreatingCase(true);
-    try {
-      const titleCandidates = Array.from(new Set([clean, fallbackTitle]));
-      let lastError: unknown = null;
-
-      for (const candidate of titleCandidates) {
-        try {
-          const created = await createCase(apiBase, headers, candidate);
-          setSelectedCaseId(created.id);
-          setNewCaseTitle("");
-          await loadDashboard();
-          showBanner("good", "Case created.");
-          return created.id;
-        } catch (error) {
-          lastError = error;
-        }
-      }
-
-      const message = withNetworkHint(lastError, apiBase);
-      showBanner("bad", `Case creation failed: ${message}`);
-      Alert.alert("Case creation failed", message);
-      return null;
-    } catch (error) {
-      const message = withNetworkHint(error, apiBase);
-      showBanner("bad", `Case creation failed: ${message}`);
-      Alert.alert("Case creation failed", message);
-      return null;
-    } finally {
-      setCreatingCase(false);
-    }
-  }
-
-  async function waitForCaseInsight(caseId: string, maxWaitMs = 20000): Promise<CaseDetail | null> {
-    if (offlineMode) return null;
-
-    const startedAt = Date.now();
-    let lastSeen: CaseDetail | null = null;
-
-    while (Date.now() - startedAt < maxWaitMs) {
-      try {
-        const found = await getCaseById(apiBase, headers, caseId);
-        lastSeen = found;
-
-        const hasInsight =
-          Boolean(found.documentType) ||
-          Boolean(found.plainEnglishExplanation) ||
-          found.extractions.length > 0 ||
-          found.verdicts.length > 0;
-
-        if (hasInsight) {
-          return found;
-        }
-      } catch {
-        // Keep polling window short; transient fetch failures are handled by caller.
-      }
-
-      await sleep(2000);
-    }
-
-    return lastSeen;
-  }
-
-  async function uploadAssets(
-    assets: UploadAssetInput[],
-    caseIdArg?: string,
-    userDescription?: string,
-    preferredCaseTitle?: string
-  ): Promise<void> {
-    if (offlineMode) {
-      Alert.alert("Offline mode", "Uploads need API connectivity.", [
-        { text: "Retry connection", onPress: () => void reconnectWorkspace() },
-        { text: "Open workspace", onPress: () => setScreen("workspace") },
-        { text: "Cancel", style: "cancel" }
-      ]);
-      return;
-    }
-    if (assets.length === 0) {
-      setUploadStage("idle");
-      return;
-    }
-
-    let caseId = caseIdArg ?? null;
-    if (!caseId) {
-      const baseTitle = buildAutoCaseTitle(preferredCaseTitle);
-      caseId = await createCaseWithTitle(baseTitle);
-    }
-    if (!caseId) {
-      setUploadStage("idle");
-      Alert.alert("Could not start case", "We could not create a case from this upload. Please retry.");
-      return;
-    }
-
-    setUploading(true);
-    void sendTrackedEvent("upload_started", "asset_upload_flow", {
-      caseId: caseIdArg ?? null,
-      fileCount: assets.length
-    });
-    try {
-      let uploadedCount = 0;
-      let crossCaseReuseSource: string | null = null;
-      for (const sourceFile of assets) {
-        setUploadStage("preparing");
-        const file = await compressUploadImage(sourceFile);
-        const blob = await (await fetch(file.uri)).blob();
-        const safeFileName = (file.name ?? "").trim() || `upload-${Date.now()}.bin`;
-        const plan = await createAssetUploadPlan(apiBase, headers, caseId, {
-          fileName: safeFileName,
-          mimeType: file.mimeType ?? "application/octet-stream",
-          byteSize: file.size ?? blob.size
-        });
-
-        setUploadStage("sending");
-        const response = await fetch(plan.uploadUrl, {
-          method: plan.uploadMethod,
-          headers: plan.uploadHeaders,
-          body: blob
-        });
-        if (!response.ok) throw new Error("Upload failed (" + response.status + ")");
-        const finalized = await finalizeAssetUpload(apiBase, headers, caseId, plan.assetId, {
-          userDescription: userDescription?.trim() || undefined
-        });
-        if (finalized.contextReuse?.reused && finalized.contextReuse.sourceCaseId) {
-          crossCaseReuseSource = finalized.contextReuse.sourceCaseId;
-        }
-        uploadedCount += 1;
-      }
-
-      setUploadStage("processing");
-      setSelectedCaseId(caseId);
-      await Promise.all([loadDashboard(), loadCase(caseId)]);
-      await loadCaseAssetsForSelectedCase(caseId);
-      setScreen("workspace");
-      const uploadedCountText = uploadedCount > 1 ? `${uploadedCount} files uploaded.` : "Upload complete.";
-      if (crossCaseReuseSource) {
-        setLatestContextReuseSourceCaseId(crossCaseReuseSource);
-        showBanner(
-          "info",
-          `${uploadedCountText} Saved details were reused to reduce repeat entry. Processing started in workspace.`
-        );
-      } else {
-        setLatestContextReuseSourceCaseId(null);
-        showBanner("info", `${uploadedCountText} Processing started in workspace.`);
-      }
-      void sendTrackedEvent("upload_completed", "asset_upload_flow", {
-        caseId,
-        fileCount: uploadedCount,
-        reusedCrossCaseMemory: Boolean(crossCaseReuseSource)
-      });
-
-      void (async () => {
-        try {
-          const caseAfterUpload = await waitForCaseInsight(caseId, 12000);
-          if (!caseAfterUpload) {
-            showBanner("info", "Still processing. Pull to refresh in Workspace in a few seconds.");
-            return;
-          }
-
-          await Promise.all([loadDashboard(), loadCase(caseId)]);
-          await loadCaseAssetsForSelectedCase(caseId);
-          if (caseAfterUpload.earliestDeadline) {
-            void sendTrackedEvent("first_deadline_detected", "asset_upload_flow", {
-              caseId,
-              earliestDeadline: caseAfterUpload.earliestDeadline
-            });
-          }
-          const detectedType = caseAfterUpload.documentType ?? null;
-          if (
-            detectedType &&
-            detectedType !== "unknown_legal_document" &&
-            detectedType !== "non_legal_or_unclear_image"
-          ) {
-            showBanner("good", `Auto-detected: ${titleize(detectedType)}.`);
-          } else {
-            showBanner(
-              "info",
-              "Upload complete. We could not confidently identify a legal document yet. Add upload context and clearer legal pages for better extraction."
-            );
-          }
-        } catch {
-          showBanner("info", "Upload succeeded. Insight is still processing.");
-        }
-      })();
-    } catch (error) {
-      const freeLimit = parseFreeLimitApiError(error);
-      if (freeLimit) {
-        const resetAtLabel = formatLimitResetAt(freeLimit.resetAt, language);
-        const baseMessage =
-          language === "es"
-            ? "Aun puede revisar su caso. Plus reactiva procesamiento ahora y mantiene recordatorios, memoria y preparacion para consulta."
-            : "You can still review your case. Plus re-enables new processing now and keeps reminders, memory, and consultation prep active.";
-        const detail =
-          language === "es"
-            ? `Uso actual: ${freeLimit.used}/${freeLimit.limit}. En Free se reinicia al final del mes (${resetAtLabel}).`
-            : `Current usage: ${freeLimit.used}/${freeLimit.limit}. Resets at month end on Free (${resetAtLabel}).`;
-        showBanner("info", `${baseMessage} ${detail}`);
-        openPaywall("free_limit_reached");
-        Alert.alert(
-          language === "es" ? "Se alcanzo el limite mensual de Free" : "Free monthly limit reached",
-          `${baseMessage}\n\n${detail}`,
-          [
-            {
-              text: language === "es" ? "Activar Plus" : "Unlock Plus",
-              onPress: () => openPaywall("free_limit_reached")
-            },
-            {
-              text: language === "es" ? "Ahora no" : "Not now",
-              style: "cancel"
-            }
-          ]
-        );
-        return;
-      }
-
-      if (isFreeOcrDisabledApiError(error)) {
-        const message =
-          language === "es"
-            ? "Aun puede revisar su caso. Plus reactiva procesamiento ahora y mantiene recordatorios, memoria y preparacion para consulta."
-            : "You can still review your case. Plus re-enables new processing now and keeps reminders, memory, and consultation prep active.";
-        showBanner("info", message);
-        openPaywall("free_ocr_disabled");
-        Alert.alert(language === "es" ? "Se alcanzo el limite mensual de Free" : "Free monthly limit reached", message, [
-          { text: language === "es" ? "Activar Plus" : "Unlock Plus", onPress: () => openPaywall("free_ocr_disabled") },
-          { text: language === "es" ? "Ahora no" : "Not now", style: "cancel" }
-        ]);
-        return;
-      }
-
-      const message = withNetworkHint(error, apiBase);
-      showBanner("bad", "Upload failed: " + message);
-      Alert.alert("Upload failed", message);
-    } finally {
-      setUploading(false);
-      setUploadStage("idle");
-    }
-  }
-
-  async function uploadDocument(
-    caseIdArg?: string,
-    userDescription?: string,
-    preferredCaseTitle?: string
-  ): Promise<void> {
-    setUploadStage("picking");
-    const picked = await DocumentPicker.getDocumentAsync({
-      type: ["image/*", "application/pdf"],
-      multiple: true,
-      copyToCacheDirectory: true
-    });
-    if (picked.canceled || picked.assets.length === 0) {
-      setUploadStage("idle");
-      return;
-    }
-    await uploadAssets(
-      picked.assets.map((file) => ({
-        uri: file.uri,
-        name: file.name,
-        mimeType: file.mimeType,
-        size: file.size
-      })),
-      caseIdArg,
-      userDescription,
-      preferredCaseTitle
-    );
-  }
-
-  async function uploadFromCamera(
-    caseIdArg?: string,
-    userDescription?: string,
-    preferredCaseTitle?: string
-  ): Promise<void> {
-    if (offlineMode) {
-      Alert.alert("Offline mode", "Uploads need API connectivity.", [
-        { text: "Retry connection", onPress: () => void reconnectWorkspace() },
-        { text: "Open workspace", onPress: () => setScreen("workspace") },
-        { text: "Cancel", style: "cancel" }
-      ]);
-      return;
-    }
-
-    const permission = await ImagePicker.requestCameraPermissionsAsync();
-    if (!permission.granted) {
-      Alert.alert("Camera permission needed", "Allow camera access to capture photos.");
-      return;
-    }
-
-    setUploadStage("picking");
-    const captured: Array<{ uri: string; name: string; mimeType?: string | null; size?: number | null }> = [];
-    let keepTaking = true;
-
-    while (keepTaking) {
-      const shot = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: false,
-        quality: 0.5
-      });
-      if (shot.canceled || shot.assets.length === 0) break;
-
-      const image = shot.assets[0];
-      const generatedName = image.fileName ?? `camera-${Date.now()}-${captured.length + 1}.jpg`;
-      captured.push({
-        uri: image.uri,
-        name: generatedName,
-        mimeType: image.mimeType ?? "image/jpeg",
-        size: (image as { fileSize?: number | null }).fileSize ?? null
-      });
-      keepTaking = await askTakeAnotherPhoto();
-    }
-
-    if (captured.length === 0) {
-      setUploadStage("idle");
-      return;
-    }
-    await uploadAssets(captured, caseIdArg, userDescription, preferredCaseTitle);
-  }
-
-  async function saveProfile(): Promise<void> {
-    const fullName = profileName.trim();
-    const zipCode = profileZip.trim();
-    if (!fullName && !zipCode) {
-      Alert.alert("Nothing to save", "Enter full name or ZIP code.");
-      return;
-    }
-    if (offlineMode) {
-      if (!me) return;
-      const now = new Date().toISOString();
-      const updated: MeResponse = {
-        ...me,
-        user: {
-          ...me.user,
-          fullName: fullName || me.user.fullName,
-          zipCode: zipCode || me.user.zipCode,
-          updatedAt: now
-        },
-        needsProfile: !(fullName || me.user.fullName) || !(zipCode || me.user.zipCode)
-      };
-      setMe(updated);
-      try {
-        await AsyncStorage.setItem(STORAGE_OFFLINE_SESSION, JSON.stringify({ me: updated, cases }));
-      } catch {
-        // Ignore storage failures.
-      }
-      showBanner("info", "Profile saved in offline mode.");
-      return;
-    }
-
-    setSavingProfile(true);
-    try {
-      const payload: { fullName?: string; zipCode?: string } = {};
-      if (fullName) payload.fullName = fullName;
-      if (zipCode) payload.zipCode = zipCode;
-      const updated = await patchMe(apiBase, headers, payload);
-      await applyServerMeState(updated, apiBase, headers);
-      showBanner("good", "Profile saved.");
-    } catch (error) {
-      const message = withNetworkHint(error, apiBase);
-      showBanner("bad", `Profile save failed: ${message}`);
-      Alert.alert("Profile save failed", message);
-    } finally {
-      setSavingProfile(false);
-    }
-  }
+  // --- uploadAssets / uploadDocument / uploadFromCamera / waitForCaseInsight moved to useUpload ---
 
   async function saveCaseContextForSelectedCase(): Promise<void> {
     const description = caseContextDraft.trim();
@@ -3234,120 +2538,6 @@ function App() {
     } finally {
       setSavingClassification(false);
     }
-  }
-
-  async function agreeAndContinue(): Promise<void> {
-    const trimmedEmail = authEmail.trim();
-    if (!trimmedEmail) {
-      Alert.alert("Email required", "Enter your email address.");
-      return;
-    }
-    if (!isValidEmail(trimmedEmail)) {
-      Alert.alert("Invalid email", "Enter a valid email address.");
-      return;
-    }
-    if (!isStrongPassword(authPassword)) {
-      Alert.alert("Weak password", "Password must be at least 8 characters.");
-      return;
-    }
-    if (authIntent === "signup" && !authName.trim()) {
-      Alert.alert("Name required", "Enter your full name.");
-      return;
-    }
-    if (authIntent === "signup" && authZip.trim() && !isValidUsZip(authZip)) {
-      Alert.alert("Invalid ZIP", "Use a valid US ZIP code like 90210.");
-      return;
-    }
-
-    setAuthBusy(true);
-    setAuthStage("account");
-    try {
-      const baseForAuth = await resolveAuthApiBase(apiBase);
-      const nextEmail = trimmedEmail;
-      const nextSubject = deriveSubject(nextEmail);
-      const nextHeaders = buildHeaders(nextSubject, nextEmail);
-
-      setApiBase(baseForAuth);
-      setApiBaseInput(baseForAuth);
-      setEmail(nextEmail);
-      setEmailInput(nextEmail);
-      setSubject(nextSubject);
-      setSubjectInput(nextSubject);
-      await persistConnection(baseForAuth, nextSubject, nextEmail);
-
-      let meData = await getMe(baseForAuth, nextHeaders);
-      if (authIntent === "signup") {
-        setAuthStage("profile");
-        const payload: { fullName?: string; zipCode?: string } = {};
-        if (authName.trim()) payload.fullName = authName.trim();
-        if (authZip.trim()) payload.zipCode = authZip.trim();
-        if (payload.fullName || payload.zipCode) {
-          meData = await patchMe(baseForAuth, nextHeaders, payload);
-        }
-      }
-
-      await applyServerMeState(meData, baseForAuth, nextHeaders);
-      setAuthStage("workspace");
-      const caseData = await getCases(baseForAuth, nextHeaders);
-      const nextCases = caseData.cases;
-      setConnStatus("ok");
-      setConnMessage(`Connected to ${baseForAuth}`);
-      setOfflineMode(false);
-      await AsyncStorage.removeItem(STORAGE_OFFLINE_SESSION);
-      setCases(nextCases);
-      setSelectedCaseId(nextCases[0]?.id ?? null);
-      await AsyncStorage.setItem(STORAGE_ONBOARDED, "1");
-      setScreen("home");
-      setAuthMode("selection");
-      showBanner("good", "Welcome to ClearCase.");
-    } catch (error) {
-      const message = withNetworkHint(error, apiBase);
-      if (isNetworkErrorLike(message)) {
-        await bootstrapOfflineSession(trimmedEmail, authName.trim(), authZip.trim());
-        setAuthMode("selection");
-        setScreen("home");
-        showBanner("info", "Connected in offline mode. Some features are limited until API is reachable.");
-      } else {
-        showBanner("bad", `Could not continue: ${message}`);
-        Alert.alert("Could not continue", message);
-      }
-    } finally {
-      setAuthBusy(false);
-      setAuthStage("idle");
-    }
-  }
-
-  async function openUploadSheetForCase(caseId: string | null): Promise<void> {
-    setUploadTargetCaseId(caseId);
-    setUploadDescription("");
-    setUploadCaseTitle("");
-    setUploadSheetOpen(true);
-  }
-
-  async function homeUploadFlow(): Promise<void> {
-    await openUploadSheetForCase(null);
-  }
-
-  async function beginFileUpload(): Promise<void> {
-    const description = uploadDescription.trim();
-    const caseTitle = uploadCaseTitle.trim();
-    const targetCaseId = uploadTargetCaseId;
-    setUploadSheetOpen(false);
-    setUploadDescription("");
-    setUploadCaseTitle("");
-    setUploadTargetCaseId(null);
-    await uploadDocument(targetCaseId ?? undefined, description, caseTitle || undefined);
-  }
-
-  async function beginCameraUpload(): Promise<void> {
-    const description = uploadDescription.trim();
-    const caseTitle = uploadCaseTitle.trim();
-    const targetCaseId = uploadTargetCaseId;
-    setUploadSheetOpen(false);
-    setUploadDescription("");
-    setUploadCaseTitle("");
-    setUploadTargetCaseId(null);
-    await uploadFromCamera(targetCaseId ?? undefined, description, caseTitle || undefined);
   }
 
   const uploadStatusText = uploading ? formatUploadStage(uploadStage, language) : language === "es" ? "Listo para cargar" : "Ready to upload";
