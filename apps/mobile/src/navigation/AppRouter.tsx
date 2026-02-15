@@ -37,16 +37,16 @@ import {
 import {
   MANUAL_DOCUMENT_TYPES,
   type CaseSummary
-} from "../src/api";
+} from "../api";
 import {
   languageLabel
-} from "../src/utils/parsing";
+} from "../utils/parsing";
 import {
   clamp,
   titleize,
   fmtDate,
   fmtDateTime
-} from "../src/utils/formatting";
+} from "../utils/formatting";
 import {
   manualCategoryOptions,
   manualCategoryLabel,
@@ -54,28 +54,28 @@ import {
   casePriorityLabel,
   severityLabel,
   severitySummary
-} from "../src/utils/case-logic";
+} from "../utils/case-logic";
 import {
   hapticTap
-} from "../src/utils/haptics";
-import { palette, font } from "../src/theme";
+} from "../utils/haptics";
+import { palette, font } from "../theme";
 
-import LanguageScreen from "../src/screens/LanguageScreen";
-import OnboardingScreen from "../src/screens/OnboardingScreen";
-import LegalScreen from "../src/screens/LegalScreen";
-import LegalAidScreen from "../src/screens/LegalAidScreen";
-import DraftingScreen from "../src/screens/DraftingScreen";
-import CasesScreen from "../src/screens/CasesScreen";
-import AuthScreen from "../src/screens/AuthScreen";
-import HomeScreen from "../src/screens/HomeScreen";
-import WorkspaceScreen from "../src/screens/WorkspaceScreen";
+import LanguageScreen from "../screens/LanguageScreen";
+import OnboardingScreen from "../screens/OnboardingScreen";
+import LegalScreen from "../screens/LegalScreen";
+import LegalAidScreen from "../screens/LegalAidScreen";
+import DraftingScreen from "../screens/DraftingScreen";
+import CasesScreen from "../screens/CasesScreen";
+import AuthScreen from "../screens/AuthScreen";
+import HomeScreen from "../screens/HomeScreen";
+import WorkspaceScreen from "../screens/WorkspaceScreen";
 
 import type {
   OnboardingSlide,
   UploadStage,
   AppLanguage,
   IntakeDraft
-} from "../src/types";
+} from "../types";
 
 function renderSlideIcon(slide: OnboardingSlide) {
   if (slide.icon === "scale") {
@@ -1097,7 +1097,7 @@ export function AppRouter({ controller }: { controller: any }) {
                       "desiredOutcome"
                     ] as Array<keyof IntakeDraft>
                   ).map((fieldKey) => (
-                    <View key={`intake-field-${fieldKey}`} style={styles.intakeFieldBlock}>
+                    <View key={`intake-field-${String(fieldKey)}`} style={styles.intakeFieldBlock}>
                       <Text style={styles.summarySectionTitle}>{controller.intakeSectionLabel(fieldKey)}</Text>
                       <TextInput
                         style={styles.caseContextInput}
