@@ -1,50 +1,72 @@
 import React from "react";
-import { Alert, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import {
+  Alert,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View
+} from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
-import { palette } from "../theme";
-import { isValidEmail, isValidUsZip, isStrongPassword } from "../utils/auth-helpers";
 import type { AppLanguage, AuthMode } from "../types";
 
-type Props = {
+export interface AuthScreenProps {
   language: AppLanguage;
   authMode: AuthMode;
   setAuthMode: (mode: AuthMode) => void;
   authName: string;
-  setAuthName: (value: string) => void;
-  authEmail: string;
-  setAuthEmail: (value: string) => void;
-  authPassword: string;
-  setAuthPassword: (value: string) => void;
+  setAuthName: (name: string) => void;
   authZip: string;
-  setAuthZip: (value: string) => void;
-  authIntent: string;
-  setAuthIntent: (value: string) => void;
+  setAuthZip: (zip: string) => void;
+  authEmail: string;
+  setAuthEmail: (email: string) => void;
+  authPassword: string;
+  setAuthPassword: (password: string) => void;
   authBusy: boolean;
   authStage: string;
+  authIntent: "login" | "signup";
+  setAuthIntent: (mode: "login" | "signup") => void;
   agreeAndContinue: () => Promise<void>;
-  styles: any;
-};
+  styles: Record<string, any>;
+  palette: Record<string, string>;
+}
 
-export default function AuthScreen({
-  language,
-  authMode,
-  setAuthMode,
-  authName,
-  setAuthName,
-  authEmail,
-  setAuthEmail,
-  authPassword,
-  setAuthPassword,
-  authZip,
-  setAuthZip,
-  authIntent,
-  setAuthIntent,
-  authBusy,
-  authStage,
-  agreeAndContinue,
-  styles,
-}: Props) {
+function isValidEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+}
+
+function isValidUsZip(value: string): boolean {
+  return /^\d{5}(?:-\d{4})?$/.test(value.trim());
+}
+
+function isStrongPassword(value: string): boolean {
+  return value.trim().length >= 8;
+}
+
+function AuthScreen(props: AuthScreenProps) {
+  const {
+    language,
+    authMode,
+    setAuthMode,
+    authName,
+    setAuthName,
+    authZip,
+    setAuthZip,
+    authEmail,
+    setAuthEmail,
+    authPassword,
+    setAuthPassword,
+    authBusy,
+    authStage,
+    authIntent,
+    setAuthIntent,
+    agreeAndContinue,
+    styles,
+    palette
+  } = props;
+
   return (
     <>
       {authMode === "selection" ? (
@@ -242,7 +264,7 @@ export default function AuthScreen({
                     : "Agree and Continue to ClearCase"}
               </Text>
             </Pressable>
-            <Pressable onPress={() => setAuthMode(authIntent as AuthMode)} style={styles.link}>
+            <Pressable onPress={() => authIntent && setAuthMode(authIntent)} style={styles.link}>
               <Text style={styles.linkText}>{language === "es" ? "Volver" : "Back"}</Text>
             </Pressable>
           </View>
@@ -251,3 +273,5 @@ export default function AuthScreen({
     </>
   );
 }
+
+export default AuthScreen;
