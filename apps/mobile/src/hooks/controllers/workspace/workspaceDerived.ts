@@ -103,7 +103,8 @@ export function computeDeadlineGuardReminders(
 export function computeTimelineRows(
   verdictOutput: Record<string, unknown> | null
 ): TimelineRow[] {
-  const deadlines = asRecord(verdictOutput?.deadlines);
+  if (!verdictOutput) return [];
+  const deadlines = asRecord(verdictOutput.deadlines);
   const signalRows = Array.isArray(deadlines?.signals)
     ? deadlines.signals
     : [];
@@ -112,19 +113,25 @@ export function computeTimelineRows(
     .map((row) => asRecord(row))
     .filter((row): row is Record<string, unknown> => Boolean(row))
     .map((row) => {
-      const dateIso =
-        typeof row.dateIso === "string" ? row.dateIso : null;
-      const remaining = dateIso ? daysUntil(dateIso) : null;
+      const rawDate = typeof row.dateIso === "string" ? row.dateIso : null;
+      const parsedDate = rawDate ? new Date(rawDate) : null;
+      const dateIso = parsedDate && !Number.isNaN(parsedDate.getTime()) ? rawDate : null;
+      const remaining = dateIso ? daysUntil(dateIso!) : null;
+      const rawConfidence = typeof row.confidence === "number" ? row.confidence : null;
+      const confidence = rawConfidence !== null && Number.isFinite(rawConfidence) ? rawConfidence : null;
+
+      const label =
+        (typeof row.label === "string" && row.label) ||
+        (typeof row.sourceText === "string" && row.sourceText) ||
+        (typeof row.title === "string" && row.title) ||
+        "Deadline";
+
       return {
         kind: typeof row.kind === "string" ? row.kind : "signal",
-        label:
-          typeof row.sourceText === "string"
-            ? row.sourceText
-            : "Detected signal",
+        label,
         dateIso,
         daysRemaining: remaining,
-        confidence:
-          typeof row.confidence === "number" ? row.confidence : null,
+        confidence,
         sourceText:
           typeof row.sourceText === "string"
             ? row.sourceText

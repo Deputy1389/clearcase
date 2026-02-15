@@ -620,31 +620,34 @@ export default function WorkspaceScreen({
         {timelineRows && timelineRows.length > 0 ? (
           <View style={styles.card}>
             <Text style={styles.cardTitle}>{language === "es" ? "Posibles plazos" : "Deadline candidates"}</Text>
-            {timelineRows.slice(0, 3).map((row, i) => (
-              <View key={`deadline-${i}`} style={styles.deadlineCandidateRow}>
-                <View style={styles.deadlineCandidateDot} />
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.deadlineCandidateLabel}>{row.label || (language === "es" ? "Plazo" : "Deadline")}</Text>
-                  <Text style={styles.deadlineCandidateMeta}>
-                    {row.dateIso ? fmtDate(row.dateIso, language) : (language === "es" ? "Sin fecha" : "No date")}
-                    {row.daysRemaining !== null
-                      ? ` · ${row.daysRemaining === 0
-                          ? (language === "es" ? "hoy" : "today")
-                          : row.daysRemaining === 1
-                            ? (language === "es" ? "manana" : "tomorrow")
-                            : row.daysRemaining > 0
-                              ? (language === "es" ? `en ${row.daysRemaining} dias` : `in ${row.daysRemaining} days`)
-                              : (language === "es" ? `${Math.abs(row.daysRemaining)} dias vencido` : `${Math.abs(row.daysRemaining)} days overdue`)}`
-                      : ""}
-                  </Text>
-                  {row.confidence !== null ? (
-                    <Text style={styles.optionDesc}>
-                      {language === "es" ? "Confianza" : "Confidence"}: {Math.round(row.confidence * 100)}%
-                    </Text>
-                  ) : null}
+            {timelineRows.slice(0, 3).map((row, i) => {
+              const label = row.label ?? (language === "es" ? "Plazo" : "Deadline");
+              const dateText = row.dateIso ? fmtDate(row.dateIso, language) : (language === "es" ? "Fecha desconocida" : "Unknown date");
+              const days = row.daysRemaining;
+              const daysText = days !== null
+                ? ` · ${days === 0
+                    ? (language === "es" ? "hoy" : "today")
+                    : days === 1
+                      ? (language === "es" ? "manana" : "tomorrow")
+                      : days > 0
+                        ? (language === "es" ? `en ${days} dias` : `in ${days} days`)
+                        : (language === "es" ? `${Math.abs(days)} dias vencido` : `${Math.abs(days)} days overdue`)}`
+                : "";
+              return (
+                <View key={`deadline-${i}`} style={styles.deadlineCandidateRow}>
+                  <View style={styles.deadlineCandidateDot} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.deadlineCandidateLabel}>{label}</Text>
+                    <Text style={styles.deadlineCandidateMeta}>{dateText}{daysText}</Text>
+                    {Number.isFinite(row.confidence) && row.confidence !== null ? (
+                      <Text style={styles.optionDesc}>
+                        {language === "es" ? "Confianza" : "Confidence"}: {Math.round(row.confidence * 100)}%
+                      </Text>
+                    ) : null}
+                  </View>
                 </View>
-              </View>
-            ))}
+              );
+            })}
           </View>
         ) : null}
 

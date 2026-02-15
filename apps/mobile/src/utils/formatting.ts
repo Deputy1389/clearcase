@@ -34,11 +34,21 @@ export function titleize(value: string): string {
     .join(" ");
 }
 
+export function startOfLocalDay(d: Date): Date {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  return x;
+}
+
 export function daysUntil(value: string): number | null {
-  const d = new Date(value);
+  // Parse date-only strings (YYYY-MM-DD) as local midnight, not UTC
+  const d = /^\d{4}-\d{2}-\d{2}$/.test(value)
+    ? new Date(`${value}T00:00:00`)
+    : new Date(value);
   if (Number.isNaN(d.getTime())) return null;
-  const now = Date.now();
-  return Math.ceil((d.getTime() - now) / (1000 * 60 * 60 * 24));
+  const a = startOfLocalDay(d).getTime();
+  const b = startOfLocalDay(new Date()).getTime();
+  return Math.round((a - b) / 86400000);
 }
 
 export function fmtDate(value: string | null, language: AppLanguage = "en"): string {
