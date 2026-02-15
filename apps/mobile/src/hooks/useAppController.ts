@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useAuthController } from "./controllers/useAuthController";
 import { useCasesController } from "./controllers/useCasesController";
 import { useUploadController } from "./controllers/useUploadController";
@@ -9,16 +10,16 @@ export function useAppController() {
   const auth = useAuthController(ui);
   const cases = useCasesController(ui);
   const upload = useUploadController(ui, cases);
-  const workspace = useWorkspaceController(ui, cases);
+  const workspace = useWorkspaceController(ui, cases, upload);
 
   // Cross-wire callbacks if needed
   // ...
 
-  return {
+  return useMemo(() => ({
     ...ui,
     ...auth,
     ...cases,
     ...upload,
     ...workspace
-  };
+  }), [ui, auth, cases, upload, workspace]);
 }

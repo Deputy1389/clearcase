@@ -106,7 +106,8 @@ export default function WorkspaceScreen({
     setAssetViewerImagePan,
     openAssetAccess,
     closeAssetViewer,
-    openViewerUrlExternally
+    openViewerUrlExternally,
+    timelineRows
   } = workspace;
   const { localizedCaseStatus, formatUploadStage, manualCategoryLabel: manualLabel } = helpers;
 
@@ -612,6 +613,38 @@ export default function WorkspaceScreen({
               {selectedCase?.nonLegalAdviceDisclaimer ??
                 (language === "es" ? "Solo contexto informativo. No asesoria legal." : "For informational context only. Not legal advice.")}
             </Text>
+          </View>
+        ) : null}
+
+        {/* Deadline Candidates */}
+        {timelineRows && timelineRows.length > 0 ? (
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>{language === "es" ? "Posibles plazos" : "Deadline candidates"}</Text>
+            {timelineRows.slice(0, 3).map((row, i) => (
+              <View key={`deadline-${i}`} style={styles.deadlineCandidateRow}>
+                <View style={styles.deadlineCandidateDot} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.deadlineCandidateLabel}>{row.label || (language === "es" ? "Plazo" : "Deadline")}</Text>
+                  <Text style={styles.deadlineCandidateMeta}>
+                    {row.dateIso ? fmtDate(row.dateIso, language) : (language === "es" ? "Sin fecha" : "No date")}
+                    {row.daysRemaining !== null
+                      ? ` · ${row.daysRemaining === 0
+                          ? (language === "es" ? "hoy" : "today")
+                          : row.daysRemaining === 1
+                            ? (language === "es" ? "manana" : "tomorrow")
+                            : row.daysRemaining > 0
+                              ? (language === "es" ? `en ${row.daysRemaining} dias` : `in ${row.daysRemaining} days`)
+                              : (language === "es" ? `${Math.abs(row.daysRemaining)} dias vencido` : `${Math.abs(row.daysRemaining)} days overdue`)}`
+                      : ""}
+                  </Text>
+                  {row.confidence !== null ? (
+                    <Text style={styles.optionDesc}>
+                      {language === "es" ? "Confianza" : "Confidence"}: {Math.round(row.confidence * 100)}%
+                    </Text>
+                  ) : null}
+                </View>
+              </View>
+            ))}
           </View>
         ) : null}
 

@@ -1,5 +1,6 @@
 import type { CaseSummary, CaseDetail, CaseAsset, MeResponse, ConsultPacketLink, PlainMeaningRow, ManualDocumentType } from "../api";
 import type { AppLanguage, BannerTone, ConnStatus, PlanTier, Screen, ContentScreen, UploadStage, CaseSeverity, WorkspaceAccordionKey, StepProgress, PremiumActionStep, IntakeDraft, PaywallConfigState } from "../types";
+import type { TimelineRow } from "../hooks/controllers/workspace/workspaceDerived";
 
 // Navigation bundle
 export interface NavigationBundle {
@@ -201,6 +202,8 @@ export interface WorkspaceBundle {
   // Premium steps
   premiumActionSteps: PremiumActionStep[];
   groupedPremiumSteps: Record<string, PremiumActionStep[]>;
+  // Timeline rows (deadline candidates)
+  timelineRows?: TimelineRow[];
   // Evidence
   evidenceCompleteness: { score: number; status: string; missing: string[] };
   // Cost saving

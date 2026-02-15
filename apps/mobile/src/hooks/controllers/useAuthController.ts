@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo, useCallback } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "../useAuth";
 import { STORAGE_ONBOARDED } from "../../constants";
@@ -48,15 +48,15 @@ export function useAuthController(ui: any) {
     language: ui.language
   });
 
-  async function completeOnboarding() {
+  const completeOnboarding = useCallback(async () => {
     setSlide(0);
     ui.setScreen("auth");
     try {
       await AsyncStorage.setItem(STORAGE_ONBOARDED, "1");
     } catch {}
-  }
+  }, [ui.setScreen]);
 
-  return {
+  return useMemo(() => ({
     authMode, setAuthMode,
     authName, setAuthName,
     authZip, setAuthZip,
@@ -72,5 +72,10 @@ export function useAuthController(ui: any) {
     resolveAuthApiBase,
     slide, setSlide,
     completeOnboarding
-  };
+  }), [
+    authMode, authName, authZip, authEmail, authPassword,
+    authIntent, authBusy, authStage, isBootstrapping, slide,
+    signOut, bootstrapOfflineSession, agreeAndContinue, resolveAuthApiBase,
+    completeOnboarding
+  ]);
 }

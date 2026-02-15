@@ -958,5 +958,34 @@ export const styles: any = StyleSheet.create({
     borderRadius: 2,
     backgroundColor: palette.primary,
     marginTop: 2
+  },
+  deadlineCandidateRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F1F5F9"
+  },
+  deadlineCandidateDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#F59E0B",
+    marginTop: 5
+  },
+  deadlineCandidateLabel: {
+    flex: 1,
+    color: palette.text,
+    fontFamily: font.medium,
+    fontSize: 13,
+    lineHeight: 18
+  },
+  deadlineCandidateMeta: {
+    color: palette.muted,
+    fontFamily: font.regular,
+    fontSize: 12,
+    lineHeight: 17,
+    marginTop: 1
   }
 });

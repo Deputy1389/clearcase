@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useUpload } from "../useUpload";
 
 export function useUploadController(ui: any, cases: any) {
@@ -36,7 +37,7 @@ export function useUploadController(ui: any, cases: any) {
     openPaywall: ui.openPaywall
   };
 
-  return {
+  return useMemo(() => ({
     uploading, setUploading,
     uploadStage, setUploadStage,
     uploadDescription, setUploadDescription,
@@ -48,5 +49,11 @@ export function useUploadController(ui: any, cases: any) {
     beginFileUpload, beginCameraUpload, homeUploadFlow, openUploadSheetForCase,
     waitForCaseInsight,
     uploadCallbacks
-  };
+  }), [
+    uploading, uploadStage, uploadDescription, uploadTargetCaseId,
+    uploadCaseTitle, uploadSheetOpen, latestContextReuseSourceCaseId,
+    uploadAssets, uploadDocument, uploadFromCamera,
+    beginFileUpload, beginCameraUpload, homeUploadFlow, openUploadSheetForCase,
+    waitForCaseInsight, uploadCallbacks
+  ]);
 }

@@ -52,7 +52,7 @@ export function useCasesController(ui: any) {
 
   const [lawyerSummaryOpen, setLawyerSummaryOpen] = useState(false);
 
-  return {
+  return useMemo(() => ({
     me, setMe,
     cases, setCases,
     selectedCaseId, setSelectedCaseId,
@@ -83,5 +83,13 @@ export function useCasesController(ui: any) {
     casesCallbacks,
     completion,
     lawyerSummaryOpen, setLawyerSummaryOpen
-  };
+  }), [
+    me, cases, selectedCaseId, selectedCase, caseAssets, loadingCaseAssets,
+    profileName, profileZip, newCaseTitle, caseSearch, caseFilter,
+    loadingDashboard, loadingCase, creatingCase, savingProfile, refreshing,
+    selectedCaseSummary, latestCase, userFirstName, filteredCases,
+    loadDashboard, loadCase, loadCaseAssetsForSelectedCase,
+    createCaseWithTitle, saveProfile, refreshWorkspace, reconnectWorkspace,
+    casesCallbacks, completion, lawyerSummaryOpen
+  ]);
 }
