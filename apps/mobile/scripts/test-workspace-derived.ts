@@ -17,10 +17,16 @@ import {
   computeResponseSignals,
   computeResponsePlan,
   computeTimeSensitivity,
+  computeResponseOutline,
 } from "../src/hooks/controllers/workspace/workspaceDerived";
 import { VERDICT_FIXTURES } from "../src/data/verdict-fixtures";
 
 function assert(condition: boolean, message: string) {
+  if (!condition) throw new Error(`FAIL: ${message}`);
+  console.log(`PASS: ${message}`);
+}
+
+function assertBool(condition: any, message: string) {
   if (!condition) throw new Error(`FAIL: ${message}`);
   console.log(`PASS: ${message}`);
 }
@@ -775,5 +781,44 @@ assert(srSignals2.jurisdictionState === "CA", "summons-full jurisdiction -> CA")
 
 const dcSignals2 = computeResponseSignals({ family: "debt_collection", extracted: { courtAddress: "New York, NY 10013" } });
 assert(dcSignals2.jurisdictionState === "NY", "manual address jurisdiction -> NY");
+
+// ─── Case 37: Response outline tests ───────────────────────────────
+
+console.log("\n--- Response outline tests ---");
+
+// 1. summons-full fixture -> subject includes caseNumber
+const summonsData = VERDICT_FIXTURES.find((f) => f.name === "summons-full")!.data;
+const sfExt = normalizeExtractedFields(summonsData);
+const sfSig = computeResponseSignals({ family: "summons", extracted: sfExt });
+const sfPln = computeResponsePlan({ family: "summons", extracted: sfExt, signals: sfSig });
+const sfOutline = computeResponseOutline({ family: "summons", plan: sfPln, extracted: sfExt, signals: sfSig, language: "en" });
+
+assertBool(sfOutline.subject?.includes("23STCV-04821"), "summons-full outline: subject includes case number");
+assert(sfOutline.sections.length >= 4, "summons-full outline: has at least 4 sections");
+
+// 2. demand-letter-full -> subject includes date placeholder (since date not in extracted fields root)
+const demandData = VERDICT_FIXTURES.find((f) => f.name === "demand-letter-full")!.data;
+const dfExt = normalizeExtractedFields(demandData);
+const dfSig = computeResponseSignals({ family: "demand_letter", extracted: dfExt });
+const dfPln = computeResponsePlan({ family: "demand_letter", extracted: dfExt, signals: dfSig });
+const dfOutline = computeResponseOutline({ family: "demand_letter", plan: dfPln, extracted: dfExt, signals: dfSig, language: "en" });
+
+assertBool(dfOutline.subject?.includes("[Insert date]"), "demand-letter-full outline: subject includes date placeholder");
+assert(dfOutline.sections[1].toLowerCase().includes("dispute"), "demand-letter-full outline: section 2 mentions dispute");
+
+// 3. unknown-other -> fallback structure
+const unknownData = VERDICT_FIXTURES.find((f) => f.name === "unknown-other")!.data;
+const uoExt = normalizeExtractedFields(unknownData);
+const uoSig = computeResponseSignals({ family: "other", extracted: uoExt });
+const uoPln = computeResponsePlan({ family: "other", extracted: uoExt, signals: uoSig });
+const uoOutline = computeResponseOutline({ family: "other", plan: uoPln, extracted: uoExt, signals: uoSig, language: "en" });
+
+assert(uoOutline.subject === "Response to legal communication", "unknown outline: fallback subject");
+assert(uoOutline.sections.length === 4, "unknown outline: 4 sections");
+
+// 4. Spanish output
+const esOutline = computeResponseOutline({ family: "summons", plan: sfPln, extracted: sfExt, signals: sfSig, language: "es" });
+assertBool(esOutline.subject?.includes("Respuesta relativa al caso"), "Spanish outline: translated subject");
+assert(esOutline.sections[0].includes("Acuse de recibo"), "Spanish outline: translated section");
 
 console.log("\nAll tests passed.");

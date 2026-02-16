@@ -261,6 +261,91 @@ export type ResponsePlan = {
   deadlineISO?: string;
 };
 
+export type ResponseOutline = {
+  subject?: string;
+  sections: string[];
+};
+
+export function computeResponseOutline(args: {
+  family: DocumentFamily;
+  plan: ResponsePlan;
+  extracted: ExtractedFields;
+  signals: ResponseSignals;
+  language: AppLanguage;
+}): ResponseOutline {
+  const { family, plan, extracted, language } = args;
+  const es = language === "es";
+  const datePlaceholder = es ? "[Insertar fecha]" : "[Insert date]";
+  const casePlaceholder = es ? "[Insertar numero de caso]" : "[Insert case number]";
+
+  let subject: string | undefined;
+  const sections: string[] = [];
+
+  switch (family) {
+    case "summons":
+    case "small_claims":
+      subject = es
+        ? `Respuesta relativa al caso ${extracted.caseNumber || casePlaceholder}`
+        : `Response regarding case ${extracted.caseNumber || casePlaceholder}`;
+      sections.push(es ? "Acuse de recibo de la citacion" : "Acknowledge receipt of the summons");
+      sections.push(es ? "Declaracion de intencion de responder o comparecer" : "State intent to respond or appear");
+      sections.push(es ? "Solicitud de aclaracion sobre las alegaciones si es necesario" : "Request clarification on allegations if needed");
+      sections.push(es ? "Cierre respetuoso" : "Close respectfully");
+      break;
+
+    case "subpoena":
+      subject = es
+        ? `Respuesta a la citacion con fecha ${extracted.appearanceDateISO || datePlaceholder}`
+        : `Response to Subpoena dated ${extracted.appearanceDateISO || datePlaceholder}`;
+      sections.push(es ? "Acuse de recibo de la citacion" : "Acknowledge receipt of the subpoena");
+      sections.push(es ? "Confirmacion de la revision de los materiales solicitados" : "Confirm review of requested materials");
+      sections.push(es ? "Plan de cumplimiento o necesidad de aclaracion" : "State compliance plan or need for clarification");
+      sections.push(es ? "Solicitud de confirmacion de recibo" : "Request confirmation of receipt");
+      break;
+
+    case "demand_letter":
+    case "debt_collection":
+    case "collections_validation":
+      subject = es
+        ? `Respuesta a la carta con fecha ${datePlaceholder}`
+        : `Response to Letter dated ${datePlaceholder}`;
+      sections.push(es ? "Acuse de recibo de la comunicacion" : "Acknowledge receipt of the communication");
+      sections.push(es ? "Declaracion de disputa o solicitud de validacion de deuda" : "State dispute or request validation of debt");
+      sections.push(es ? "Solicitud de documentacion de respaldo si aplica" : "Request supporting documentation if applicable");
+      sections.push(es ? "Solicitud de confirmacion por escrito" : "Request written confirmation");
+      break;
+
+    case "agency_notice":
+      subject = es
+        ? `Respuesta al aviso con fecha ${datePlaceholder}`
+        : `Response to Notice dated ${datePlaceholder}`;
+      sections.push(es ? "Acuse de recibo del aviso gubernamental" : "Acknowledge receipt of government notice");
+      sections.push(es ? "Declaracion de intencion de responder o solicitar revision" : "State intent to respond or request review");
+      sections.push(es ? "Solicitud de aclaracion o documentacion adicional" : "Request clarification or documentation");
+      sections.push(es ? "Cierre" : "Close");
+      break;
+
+    case "eviction":
+      subject = es
+        ? `Respuesta al aviso con fecha ${datePlaceholder}`
+        : `Response to Notice dated ${datePlaceholder}`;
+      sections.push(es ? "Acuse de recibo del aviso de desalojo" : "Acknowledge receipt of eviction notice");
+      sections.push(es ? "Declaracion de intencion de abordar el asunto" : "State intent to address the matter");
+      sections.push(es ? "Solicitud de aclaracion o discusion sobre el cumplimiento" : "Request clarification or discuss compliance");
+      sections.push(es ? "Cierre respetuoso" : "Close respectfully");
+      break;
+
+    default:
+      subject = es ? "Respuesta a la comunicacion legal" : "Response to legal communication";
+      sections.push(es ? "Acuse de recibo del documento" : "Acknowledge receipt of the document");
+      sections.push(es ? "Declaracion de intencion de revisar y responder" : "State intent to review and respond");
+      sections.push(es ? "Solicitud de informacion adicional si es necesario" : "Request additional information if needed");
+      sections.push(es ? "Cierre" : "Close");
+  }
+
+  return { subject, sections };
+}
+
 export function computeResponsePlan(args: {
   family: DocumentFamily;
   extracted: ExtractedFields;

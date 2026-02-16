@@ -111,6 +111,7 @@ export default function WorkspaceScreen({
     timelineRows,
     actionInstructions,
     responseSignals,
+    responseOutline,
     toggleStepCompletion,
     isStepCompleted
   } = workspace;
@@ -269,6 +270,7 @@ export default function WorkspaceScreen({
               language={language} 
               styles={styles} 
               palette={palette} 
+              responseOutline={responseOutline}
               toggleStepCompletion={toggleStepCompletion}
               isStepCompleted={isStepCompleted}
             />

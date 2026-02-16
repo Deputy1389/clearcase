@@ -1,6 +1,6 @@
 import type { CaseSummary, CaseDetail, CaseAsset, MeResponse, ConsultPacketLink, PlainMeaningRow, ManualDocumentType } from "../api";
 import type { AppLanguage, BannerTone, ConnStatus, PlanTier, Screen, ContentScreen, UploadStage, CaseSeverity, WorkspaceAccordionKey, StepProgress, PremiumActionStep, IntakeDraft, PaywallConfigState } from "../types";
-import type { TimelineRow, ActionInstruction, ResponseSignals } from "../hooks/controllers/workspace/workspaceDerived";
+import type { TimelineRow, ActionInstruction, ResponseSignals, ResponsePlan, ResponseOutline } from "../hooks/controllers/workspace/workspaceDerived";
 
 // Navigation bundle
 export interface NavigationBundle {
@@ -208,6 +208,8 @@ export interface WorkspaceBundle {
   actionInstructions?: ActionInstruction[];
   // Response signals (destination, channels, missing info)
   responseSignals?: ResponseSignals;
+  // Response outline
+  responseOutline?: ResponseOutline;
   // Guided assistance
   toggleStepCompletion: (instructionId: string, stepIndex: number) => Promise<void>;
   isStepCompleted: (instructionId: string, stepIndex: number) => boolean;

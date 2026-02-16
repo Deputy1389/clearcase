@@ -12,11 +12,12 @@ import {
   normalizeExtractedFields,
   computeResponseSignals,
   computeResponsePlan,
+  computeResponseOutline,
 } from "./workspaceDerived";
 import type { AppLanguage, CaseSeverity, UploadStage } from "../../../types";
 import type { CaseDetail, CaseSummary } from "../../../api";
 
-export type { TimelineRow, ActionInstruction, ResponseSignals, ResponsePlan } from "./workspaceDerived";
+export type { TimelineRow, ActionInstruction, ResponseSignals, ResponsePlan, ResponseOutline } from "./workspaceDerived";
 
 type DerivedInput = {
   language: AppLanguage;
@@ -99,6 +100,18 @@ export function useWorkspaceDerived(input: DerivedInput) {
     });
   }, [activeDocumentType, latestVerdictOutput, responseSignals]);
 
+  const responseOutline = useMemo(() => {
+    const family = computeDocumentFamily({ docType: activeDocumentType });
+    const extracted = normalizeExtractedFields(latestVerdictOutput);
+    return computeResponseOutline({
+      family,
+      plan: responsePlan,
+      extracted,
+      signals: responseSignals,
+      language,
+    });
+  }, [activeDocumentType, latestVerdictOutput, responsePlan, responseSignals, language]);
+
   const actionInstructions = useMemo(
     () => computeActionInstructions({
       language,
@@ -127,6 +140,7 @@ export function useWorkspaceDerived(input: DerivedInput) {
     actionInstructions,
     responseSignals,
     responsePlan,
+    responseOutline,
   }), [
     activeDocumentType,
     activeEarliestDeadline,
@@ -141,5 +155,6 @@ export function useWorkspaceDerived(input: DerivedInput) {
     actionInstructions,
     responseSignals,
     responsePlan,
+    responseOutline,
   ]);
 }
