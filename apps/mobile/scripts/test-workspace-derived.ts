@@ -11,6 +11,8 @@ import {
   computeUploadStatusText,
   computeDeadlineGuardReminders,
   computeLatestVerdictOutput,
+  computeActionInstructions,
+  normalizeExtractedFields,
 } from "../src/hooks/controllers/workspace/workspaceDerived";
 
 function assert(condition: boolean, message: string) {
@@ -21,7 +23,10 @@ function assert(condition: boolean, message: string) {
 function isoDate(offsetDays: number): string {
   const d = new Date();
   d.setDate(d.getDate() + offsetDays);
-  return d.toISOString().slice(0, 10);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
 
 function buildVerdictWithSignals(signals: Record<string, unknown>[]) {
@@ -142,5 +147,153 @@ const verdict10 = buildVerdictWithSignals([
 const rows10 = computeTimelineRows(verdict10);
 assert(rows10[0].label === "Sooner", "sorting → earliest date first");
 assert(rows10[rows10.length - 1].dateIso === null, "sorting → null dates last");
+
+// ─── Case 11: Extracted-field normalizer ────────────────────────────
+
+const ef1 = normalizeExtractedFields(null);
+assert(Object.keys(ef1).length === 0, "normalizer: null → empty object");
+
+const ef2 = normalizeExtractedFields({
+  issuingParty: "Smith Law",
+  contactEmail: "info@smith.com",
+  courtName: "LA Superior Court",
+  caseNumber: "BC-123",
+  junk: 42,
+});
+assert(ef2.senderName === "Smith Law", "normalizer: issuingParty → senderName");
+assert(ef2.senderEmail === "info@smith.com", "normalizer: contactEmail → senderEmail");
+assert(ef2.courtName === "LA Superior Court", "normalizer: courtName preserved");
+assert(ef2.caseNumber === "BC-123", "normalizer: caseNumber preserved");
+
+const ef3 = normalizeExtractedFields({ senderName: "  ", from: "Agency X" });
+assert(ef3.senderName === "Agency X", "normalizer: blank senderName skipped, from used");
+
+// ─── Case 12: Action instructions — subpoena (template match) ──────
+
+const ai1 = computeActionInstructions({
+  language: "en",
+  activeDocumentType: "subpoena",
+  activeEarliestDeadlineISO: null,
+  activeTimeSensitive: false,
+  extracted: null,
+});
+assert(ai1.length === 1, "subpoena → 1 action instruction");
+assert(ai1[0].id === "subpoena-respond", "subpoena → template id");
+assert(ai1[0].steps.length === 5, "subpoena → 5 steps");
+assert(ai1[0].contact === undefined, "subpoena no contact → contact undefined");
+assert(ai1[0].deadlineISO === undefined, "subpoena no deadline → deadlineISO undefined");
+assert(ai1[0].confidence === 40, "subpoena no contact/deadline → confidence 40");
+assert(ai1[0].missingInfo !== undefined && ai1[0].missingInfo.length === 2, "subpoena no fields → 2 missing info lines");
+
+// ─── Case 13: Subpoena with deadline + email (high confidence) ─────
+
+const ai2 = computeActionInstructions({
+  language: "en",
+  activeDocumentType: "civil_subpoena",
+  activeEarliestDeadlineISO: "2026-03-15",
+  activeTimeSensitive: true,
+  extracted: {
+    issuingParty: "Smith & Associates",
+    contactEmail: "filing@smith.com",
+    courtName: "Superior Court of LA",
+    caseNumber: "BC-2026-1234",
+  },
+});
+assert(ai2.length === 1, "subpoena with fields → 1 instruction");
+assert(ai2[0].deadlineISO === "2026-03-15", "subpoena deadline → deadlineISO present");
+assert(ai2[0].contact !== undefined, "subpoena with email → contact present");
+assert(ai2[0].contact!.email === "filing@smith.com", "subpoena → contact.email");
+assert(ai2[0].contact!.name === "Smith & Associates", "subpoena → contact.name");
+assert(ai2[0].court !== undefined, "subpoena with court → court present");
+assert(ai2[0].court!.name === "Superior Court of LA", "subpoena → court.name");
+assert(ai2[0].court!.caseNumber === "BC-2026-1234", "subpoena → court.caseNumber");
+assert(ai2[0].confidence === 80, "subpoena deadline+issuer → confidence 80");
+assert(ai2[0].missingInfo === undefined, "subpoena with all fields → no missing info");
+assert(ai2[0].steps[2].includes("Smith & Associates"), "subpoena → step 3 includes issuing party");
+
+// ─── Case 14: Subpoena Spanish ─────────────────────────────────────
+
+const ai3 = computeActionInstructions({
+  language: "es",
+  activeDocumentType: "subpoena",
+  activeEarliestDeadlineISO: "2026-04-01",
+  extracted: { issuingParty: "Oficina Legal" },
+});
+assert(ai3.length === 1, "subpoena es → 1 instruction");
+assert(ai3[0].title === "Responder a la citacion", "subpoena es → Spanish title");
+assert(ai3[0].deadlineLabel === "Responder antes de", "subpoena es → Spanish deadline label");
+assert(ai3[0].confidence === 80, "subpoena es deadline+issuer → confidence 80");
+
+// ─── Case 15: Summons template match ────────────────────────────────
+
+const ai4 = computeActionInstructions({
+  language: "en",
+  activeDocumentType: "summons",
+  activeEarliestDeadlineISO: "2026-03-01",
+  extracted: { issuingParty: "County Court" },
+});
+assert(ai4.length === 1, "summons → 1 instruction");
+assert(ai4[0].id === "summons-respond", "summons → template id");
+assert(ai4[0].confidence === 80, "summons deadline+issuer → confidence 80");
+
+// ─── Case 16: Demand letter template match ──────────────────────────
+
+const ai5 = computeActionInstructions({
+  language: "en",
+  activeDocumentType: "demand_letter",
+  activeEarliestDeadlineISO: null,
+  extracted: null,
+});
+assert(ai5.length === 1, "demand letter → 1 instruction");
+assert(ai5[0].id === "demand-letter-respond", "demand letter → template id");
+assert(ai5[0].confidence === 40, "demand letter no fields → confidence 40");
+
+// ─── Case 17: Generic fallback — unknown doc type ───────────────────
+
+const ai6 = computeActionInstructions({
+  language: "en",
+  activeDocumentType: "eviction_notice",
+  activeEarliestDeadlineISO: "2026-03-01",
+  extracted: null,
+});
+assert(ai6.length === 1, "unknown docType → generic fallback (1 instruction)");
+assert(ai6[0].id === "generic-respond", "unknown docType → generic id");
+assert(ai6[0].steps.length === 5, "generic → 5 steps");
+assert(ai6[0].confidence === 60, "generic with deadline only → confidence 60");
+assert(ai6[0].missingInfo !== undefined && ai6[0].missingInfo.length === 1, "generic deadline-only → 1 missing (sender)");
+
+// ─── Case 18: Generic fallback — null doc type ─────────────────────
+
+const ai7 = computeActionInstructions({
+  language: "en",
+  activeDocumentType: null,
+  extracted: null,
+});
+assert(ai7.length === 1, "null docType → generic fallback (always present)");
+assert(ai7[0].id === "generic-respond", "null docType → generic id");
+assert(ai7[0].confidence === 40, "null docType no fields → confidence 40");
+assert(ai7[0].missingInfo !== undefined && ai7[0].missingInfo.length === 2, "null docType no fields → 2 missing");
+
+// ─── Case 19: Generic fallback Spanish ──────────────────────────────
+
+const ai8 = computeActionInstructions({
+  language: "es",
+  activeDocumentType: "unknown_type",
+  extracted: { senderName: "Abogado Garcia" },
+});
+assert(ai8[0].title === "Como responder", "generic es → Spanish title");
+assert(ai8[0].steps[1].includes("Abogado Garcia"), "generic es → step 2 includes sender name");
+assert(ai8[0].missingInfo !== undefined && ai8[0].missingInfo.length === 1, "generic es sender-only → 1 missing (deadline)");
+
+// ─── Case 20: Generic with both fields → no missing info ───────────
+
+const ai9 = computeActionInstructions({
+  language: "en",
+  activeDocumentType: null,
+  activeEarliestDeadlineISO: "2026-05-01",
+  extracted: { issuingParty: "Office of ABC" },
+});
+assert(ai9[0].confidence === 80, "generic deadline+issuer → confidence 80");
+assert(ai9[0].missingInfo === undefined, "generic both fields → no missing info");
 
 console.log("\nAll tests passed.");

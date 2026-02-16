@@ -7,11 +7,12 @@ import {
   computeUploadStatusText,
   computeDeadlineGuardReminders,
   computeTimelineRows,
+  computeActionInstructions,
 } from "./workspaceDerived";
 import type { AppLanguage, CaseSeverity, UploadStage } from "../../../types";
 import type { CaseDetail, CaseSummary } from "../../../api";
 
-export type { TimelineRow } from "./workspaceDerived";
+export type { TimelineRow, ActionInstruction } from "./workspaceDerived";
 
 type DerivedInput = {
   language: AppLanguage;
@@ -74,6 +75,18 @@ export function useWorkspaceDerived(input: DerivedInput) {
     [latestVerdictOutput]
   );
 
+  const actionInstructions = useMemo(
+    () => computeActionInstructions({
+      language,
+      activeDocumentType,
+      activeEarliestDeadlineISO: activeEarliestDeadline,
+      activeTimeSensitive,
+      extracted: latestVerdictOutput,
+      latestVerdictOutput,
+    }),
+    [language, activeDocumentType, activeEarliestDeadline, activeTimeSensitive, latestVerdictOutput]
+  );
+
   return useMemo(() => ({
     activeDocumentType,
     activeEarliestDeadline,
@@ -85,6 +98,7 @@ export function useWorkspaceDerived(input: DerivedInput) {
     uploadStatusText,
     deadlineGuardReminders,
     timelineRows,
+    actionInstructions,
   }), [
     activeDocumentType,
     activeEarliestDeadline,
@@ -96,5 +110,6 @@ export function useWorkspaceDerived(input: DerivedInput) {
     uploadStatusText,
     deadlineGuardReminders,
     timelineRows,
+    actionInstructions,
   ]);
 }

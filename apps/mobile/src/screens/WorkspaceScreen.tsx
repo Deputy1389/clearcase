@@ -107,7 +107,8 @@ export default function WorkspaceScreen({
     openAssetAccess,
     closeAssetViewer,
     openViewerUrlExternally,
-    timelineRows
+    timelineRows,
+    actionInstructions
   } = workspace;
   const { localizedCaseStatus, formatUploadStage, manualCategoryLabel: manualLabel } = helpers;
 
@@ -255,6 +256,58 @@ export default function WorkspaceScreen({
             </View>
           )}
         </View>
+
+        {/* Action Instructions Section */}
+        {actionInstructions && actionInstructions.length > 0 ? (
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>{language === "es" ? "Como responder" : "How to respond"}</Text>
+            {actionInstructions.slice(0, 1).map((ai) => (
+              <View key={ai.id}>
+                <Text style={styles.actionInstructionTitle}>{ai.title}</Text>
+                <Text style={styles.cardBody}>{ai.explanation}</Text>
+                {ai.deadlineISO ? (
+                  <View style={styles.actionDeadlineRow}>
+                    <Feather name="clock" size={13} color={palette.primary} />
+                    <Text style={styles.actionDeadlineText}>
+                      {ai.deadlineLabel ?? (language === "es" ? "Fecha limite" : "Deadline")}: {fmtDate(ai.deadlineISO, language)}
+                    </Text>
+                  </View>
+                ) : null}
+                {ai.steps.slice(0, 5).map((step, i) => (
+                  <View key={`action-step-${i}`} style={styles.actionStepRow}>
+                    <View style={styles.actionStepDot}>
+                      <Text style={styles.actionStepDotText}>{i + 1}</Text>
+                    </View>
+                    <Text style={styles.actionStepText}>{step}</Text>
+                  </View>
+                ))}
+                {ai.contact ? (
+                  <View style={styles.actionContactCard}>
+                    <Text style={styles.miniLabel}>{language === "es" ? "CONTACTO" : "CONTACT"}</Text>
+                    {ai.contact.name ? <Text style={styles.actionContactLine}>{ai.contact.name}</Text> : null}
+                    {ai.contact.email ? <Text style={styles.actionContactLine}>{ai.contact.email}</Text> : null}
+                    {ai.contact.phone ? <Text style={styles.actionContactLine}>{ai.contact.phone}</Text> : null}
+                    {ai.contact.address ? <Text style={styles.actionContactLine}>{ai.contact.address}</Text> : null}
+                  </View>
+                ) : null}
+                {ai.missingInfo && ai.missingInfo.length > 0 ? (
+                  <View style={styles.actionMissingCard}>
+                    <Text style={styles.miniLabel}>{language === "es" ? "NO ENCONTRADO" : "NOT FOUND"}</Text>
+                    {ai.missingInfo.map((info, j) => (
+                      <Text key={`missing-${j}`} style={styles.actionMissingLine}>{info}</Text>
+                    ))}
+                  </View>
+                ) : null}
+                {ai.consequences && ai.consequences.length > 0 ? (
+                  <View style={styles.actionConsequenceRow}>
+                    <Feather name="alert-circle" size={13} color="#B45309" />
+                    <Text style={styles.actionConsequenceText}>{ai.consequences[0]}</Text>
+                  </View>
+                ) : null}
+              </View>
+            ))}
+          </View>
+        ) : null}
 
         {/* Watch Section */}
         <View style={styles.fill}>

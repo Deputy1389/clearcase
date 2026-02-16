@@ -66,6 +66,19 @@ export type OnboardingSlide = {
   iconBg: string;
 };
 
+export type ExtractedFields = {
+  senderName?: string;
+  senderEmail?: string;
+  senderPhone?: string;
+  senderAddress?: string;
+  courtName?: string;
+  courtAddress?: string;
+  courtWebsite?: string;
+  caseNumber?: string;
+  website?: string;
+  sources?: string[];
+};
+
 export type ManualCategoryOption = {
   value: string;
   label: string;
