@@ -136,6 +136,27 @@ export function useWorkspaceTimeline(ui: any, cases: any, summary: any, uiState:
     return rows.map((r: any) => ({ createdAt: r.createdAt, score: 0 })).filter(Boolean);
   }, [cases.selectedCase?.auditLogs]);
 
+  const readinessTrajectory = useMemo(() => {
+    if (readinessSnapshots.length === 0) {
+      return {
+        start: evidenceCompleteness.score,
+        end: evidenceCompleteness.score,
+        delta: 0,
+        days: 0,
+        message: language === "es" ? "La linea base de preparacion del caso esta disponible." : "Case readiness baseline is available."
+      };
+    }
+    const first = readinessSnapshots[0];
+    const last = readinessSnapshots[readinessSnapshots.length - 1];
+    return {
+      start: first.score,
+      end: last.score,
+      delta: last.score - first.score,
+      days: 0,
+      message: language === "es" ? "Historial de progreso disponible." : "Progress history available."
+    };
+  }, [readinessSnapshots, evidenceCompleteness.score, language]);
+
   const caseWatchEnabled = useMemo(
     () => extractCaseWatchModeFromAuditLogs(cases.selectedCase?.auditLogs),
     [cases.selectedCase?.auditLogs]
@@ -166,10 +187,41 @@ export function useWorkspaceTimeline(ui: any, cases: any, summary: any, uiState:
     return language === "es" ? "Listo para compartir con asesoria legal." : "Ready to share with legal counsel.";
   }, [language]);
 
+  const intakeSections = useMemo(() => [
+    uiState.intakeDraft.matterSummary,
+    uiState.intakeDraft.clientGoals,
+    uiState.intakeDraft.constraints,
+    uiState.intakeDraft.timelineNarrative,
+    uiState.intakeDraft.partiesAndRoles,
+    uiState.intakeDraft.communicationsLog,
+    uiState.intakeDraft.financialImpact,
+    uiState.intakeDraft.questionsForCounsel,
+    uiState.intakeDraft.desiredOutcome
+  ], [uiState.intakeDraft]);
+
+  const intakeCompleteness = useMemo(() => {
+    const total = intakeSections.length;
+    const completed = intakeSections.filter((row) => row.trim().length >= 8).length;
+    return Math.round((completed / total) * 100);
+  }, [intakeSections]);
+
+  const costSavingIndicator = useMemo(() => {
+    const readinessWeight = readinessTrajectory.end / 100;
+    const intakeWeight = intakeCompleteness / 100;
+    const evidenceWeight = evidenceCompleteness.score / 100;
+    const stepsDoneWeight = Object.values(uiState.stepProgressMap).length > 0 ? Object.values(uiState.stepProgressMap).filter((v) => v === "done").length / Math.max(1, Object.keys(uiState.stepProgressMap).length) : 0;
+    const minutesSaved = Math.round(12 + readinessWeight * 18 + intakeWeight * 22 + evidenceWeight * 15 + stepsDoneWeight * 14);
+    const low = Math.max(8, minutesSaved - 8);
+    const high = Math.min(95, minutesSaved + 12);
+    const confidence = intakeCompleteness >= 75 && evidenceCompleteness.score >= 70 ? "high" : intakeCompleteness >= 45 ? "medium" : "low";
+    const message = language === "es" ? `Ahorro estimado en preparacion de consulta: ${low}-${high} minutos.` : `Estimated consultation prep time saved: ${low}-${high} minutes.`;
+    const assumptions = language === "es" ? "Basado en integridad de evidencia, completitud de intake y continuidad de cronologia." : "Based on evidence completeness, intake completeness, and timeline continuity.";
+    return { low, high, confidence, message, assumptions };
+  }, [readinessTrajectory.end, intakeCompleteness, evidenceCompleteness.score, uiState.stepProgressMap, language]);
+
   const premiumActionSteps = useMemo((): PremiumActionStep[] => {
     const steps: PremiumActionStep[] = [];
     const caseIdReceipt = cases.selectedCase?.id ?? cases.selectedCaseSummary?.id ?? "case";
-    const confidenceText = localizedConfidenceLabel(language, summary.classificationConfidenceValue);
 
     if (summary.activeEarliestDeadline) {
       steps.push({
@@ -177,15 +229,14 @@ export function useWorkspaceTimeline(ui: any, cases: any, summary: any, uiState:
         group: "now",
         title: language === "es" ? "Guarda esta fecha en tu calendario" : "Add this date to your calendar",
         detail: language === "es" ? `Agregar la fecha ${fmtDate(summary.activeEarliestDeadline, language)} al calendario ayuda a mantener continuidad.` : `Adding ${fmtDate(summary.activeEarliestDeadline, language)} to your calendar helps maintain continuity.`,
-                  consequenceIfIgnored: language === "es" ? "Si se pospone, muchas personas observan menos margen para organizar documentos antes de responder." : "If delayed, many people see less time to organize records before responding.",
-                  effort: language === "es" ? "Bajo" : "Low",
-                  receipts: [`${caseIdReceipt}-cal`],
-                  confidence: "high"
-                });
-        
+        consequenceIfIgnored: language === "es" ? "Si se pospone, muchas personas observan menos margen para organizar documentos antes de responder." : "If delayed, many people see less time to organize records before responding.",
+        effort: language === "es" ? "Bajo" : "Low",
+        receipts: [`${caseIdReceipt}-cal`],
+        confidence: "high"
+      });
     }
     return steps;
-  }, [cases.selectedCase?.id, cases.selectedCaseSummary?.id, language, summary.classificationConfidenceValue, summary.activeEarliestDeadline]);
+  }, [cases.selectedCase?.id, cases.selectedCaseSummary?.id, language, summary.activeEarliestDeadline]);
 
   const groupedPremiumSteps = useMemo(() => {
     const groups: Record<PremiumStepGroup, PremiumActionStep[]> = {
@@ -208,12 +259,9 @@ export function useWorkspaceTimeline(ui: any, cases: any, summary: any, uiState:
     return `${premiumActionSteps.length} dynamic steps available with consequences, receipts, and confidence.`;
   }, [plusEnabled, language, premiumActionSteps.length]);
 
-  const readinessTrajectory = useMemo(() => ({ start: 0, end: 0, delta: 0, days: 0, message: "" }), []);
-  const weeklyAssuranceData = useMemo(() => ({ message: "No changes.", receiptCount: 0, confidence: "low", uncertainty: "" }), []);
+  const weeklyAssuranceData = useMemo(() => ({ message: "No changes.", receiptCount: 0, confidence: "low" as const, uncertainty: "" }), []);
   const weeklyCheckInStatus = useMemo(() => "", []);
   const weeklyCheckInAction = useMemo(() => "", []);
-  const intakeCompleteness = useMemo(() => 0, []);
-  const costSavingIndicator = useMemo(() => ({ low: 0, high: 0, confidence: "low", message: "", assumptions: "" }), []);
   const workspaceChecklistItems = useMemo(() => [], []);
 
   return useMemo(() => ({

@@ -78,7 +78,7 @@ export function useWorkspaceUI(ui: any, cases: any) {
   const [assetViewerPdfZoom, setAssetViewerPdfZoom] = useState(100);
   const [assetViewerImageZoom, setAssetViewerImageZoom] = useState(1);
   const [assetViewerImagePan, setAssetViewerImagePan] = useState({ x: 0, y: 0 });
-  const [assetViewerImageBounds, setAssetViewerImageBounds] = useState({ width: 1, height: 1 });
+  const [assetViewerImageBounds, setAssetViewerImageBounds] = useState({ width: 320, height: 340 });
   const [assetViewerLoading, setAssetViewerLoading] = useState(false);
   const assetViewerImagePanRef = useRef({ x: 0, y: 0 });
   const assetViewerImagePanStartRef = useRef({ x: 0, y: 0 });
@@ -188,12 +188,53 @@ export function useWorkspaceUI(ui: any, cases: any) {
     return labelsEn[key];
   }, [language]);
 
-  const accountInitials = useMemo(() => "CC", []);
-  const assetViewerIsPdf = useMemo(() => false, []);
-  const assetViewerIsImage = useMemo(() => false, []);
-  const assetViewerRenderUrl = useMemo(() => null, []);
+  const accountInitials = useMemo(() => {
+    const source = cases.me?.user.fullName?.trim() || ui.email.split("@")[0] || "CC";
+    const parts = source.split(/\s+/).filter(Boolean);
+    if (parts.length >= 2) return `${parts[0][0] ?? ""}${parts[1][0] ?? ""}`.toUpperCase();
+    return (parts[0]?.slice(0, 2) ?? "CC").toUpperCase();
+  }, [cases.me, ui.email]);
+
+  const assetViewerIsPdf = useMemo(
+    () => Boolean(assetViewerAsset?.mimeType?.toLowerCase().includes("pdf")),
+    [assetViewerAsset?.mimeType]
+  );
+  const assetViewerIsImage = useMemo(
+    () => Boolean(assetViewerAsset?.mimeType?.toLowerCase().includes("image") || assetViewerAsset?.assetType === "image"),
+    [assetViewerAsset?.mimeType, assetViewerAsset?.assetType]
+  );
+
+  const buildViewerUrlWithPdfControls = useCallback((url: string, p: number, z: number) => {
+    if (!url.includes(".pdf")) return url;
+    const separator = url.includes("?") ? "&" : "?";
+    return `${url}${separator}page=${p}&zoom=${z}`;
+  }, []);
+
+  const assetViewerRenderUrl = useMemo(() => {
+    if (!assetViewerUrl) return null;
+    if (!assetViewerIsPdf) return assetViewerUrl;
+    return buildViewerUrlWithPdfControls(assetViewerUrl, assetViewerPdfPage, assetViewerPdfZoom);
+  }, [assetViewerUrl, assetViewerIsPdf, assetViewerPdfPage, assetViewerPdfZoom, buildViewerUrlWithPdfControls]);
 
   const closeAssetViewer = useCallback(() => setAssetViewerOpen(false), []);
+
+  const casePriorityLevel = useCallback((row: any): "high" | "medium" | "low" => {
+    if (row.timeSensitive) return "high";
+    if (row.earliestDeadline) return "medium";
+    return "low";
+  }, []);
+
+  const casePriorityLabel = useCallback((row: any, lang: any = "en"): string => {
+    const level = casePriorityLevel(row);
+    if (lang === "es") {
+      if (level === "high") return "Alta";
+      if (level === "medium") return "Media";
+      return "Baja";
+    }
+    if (level === "high") return "High";
+    if (level === "medium") return "Medium";
+    return "Low";
+  }, [casePriorityLevel]);
 
   return useMemo(() => ({
     plusEnabled, onboardingSlides,
@@ -228,7 +269,8 @@ export function useWorkspaceUI(ui: any, cases: any) {
     disablingConsultToken, setDisablingConsultToken,
     localizedCaseStatus, stepGroupLabel, intakeSectionLabel, intakePlaceholder,
     accountInitials, assetViewerIsPdf, assetViewerIsImage, assetViewerRenderUrl,
-    closeAssetViewer
+    closeAssetViewer, buildViewerUrlWithPdfControls,
+    casePriorityLevel, casePriorityLabel
   }), [
     plusEnabled, onboardingSlides, workspaceSectionOpen, workspaceSectionMeta, toggleWorkspaceSection,
     caseContextDraft, classificationDraft, classificationSheetOpen, savingClassification,
@@ -239,6 +281,7 @@ export function useWorkspaceUI(ui: any, cases: any) {
     consultLinks, loadingConsultLinks, creatingConsultLink, disablingConsultToken,
     localizedCaseStatus, stepGroupLabel, intakeSectionLabel, intakePlaceholder,
     accountInitials, assetViewerIsPdf, assetViewerIsImage, assetViewerRenderUrl,
-    closeAssetViewer
+    closeAssetViewer, buildViewerUrlWithPdfControls,
+    casePriorityLevel, casePriorityLabel
   ]);
 }

@@ -8,7 +8,7 @@ import {
 import { asStringArray, asRecord } from "../../../utils/parsing";
 import { fmtDate, fmtDateTime } from "../../../utils/formatting";
 
-export function useWorkspaceSummary(ui: any, cases: any) {
+export function useWorkspaceSummary(ui: any, cases: any, uiState: any) {
   const language = ui.language;
 
   const activeDocumentType = useMemo(
@@ -49,7 +49,8 @@ export function useWorkspaceSummary(ui: any, cases: any) {
 
   const lawyerReadySummary = useMemo(() => {
     const caseTitle = cases.selectedCase?.title ?? cases.selectedCaseSummary?.title ?? (language === "es" ? "Caso sin titulo" : "Untitled case");
-    
+    const intake = uiState.intakeDraft;
+
     const facts: string[] = [
       language === "es" ? `Titulo del caso: ${caseTitle}.` : `Case title: ${caseTitle}.`,
       language === "es" ? `Categoria del documento: ${manualCategoryLabel(activeDocumentType, "es")}.` : `Document category: ${manualCategoryLabel(activeDocumentType, "en")}.`,
@@ -73,6 +74,10 @@ export function useWorkspaceSummary(ui: any, cases: any) {
       openQuestions.push(language === "es" ? "Existe una fecha de respuesta en paginas que todavia no se han cargado?" : "Is there a response date in pages that were not uploaded yet?");
     }
 
+    const intakeOverview: string[] = [];
+    if (intake.matterSummary.trim()) intakeOverview.push(intake.matterSummary.trim());
+    if (intake.clientGoals.trim()) intakeOverview.push(language === "es" ? `Objetivo: ${intake.clientGoals}` : `Goal: ${intake.clientGoals}`);
+
     const disclaimer = language === "es" ? "Solo para contexto informativo. No es asesoria legal." : cases.selectedCase?.nonLegalAdviceDisclaimer ?? "For informational context only. Not legal advice.";
 
     return {
@@ -83,15 +88,15 @@ export function useWorkspaceSummary(ui: any, cases: any) {
       parties,
       openQuestions,
       evidence: [],
-      intakeOverview: [],
-      communicationsLog: "",
-      financialImpact: "",
-      desiredOutcome: "",
+      intakeOverview,
+      communicationsLog: intake.communicationsLog || (language === "es" ? "Sin registro." : "No log."),
+      financialImpact: intake.financialImpact || (language === "es" ? "Sin impacto." : "No impact."),
+      desiredOutcome: intake.desiredOutcome || (language === "es" ? "Sin especificar." : "Not specified."),
       consultAgenda: openQuestions,
       nextSteps: workspaceNextSteps,
       disclaimer
     };
-  }, [cases.selectedCase?.title, cases.selectedCaseSummary?.title, cases.selectedCase?.nonLegalAdviceDisclaimer, workspaceSummaryText, workspaceNextSteps, activeDocumentType, activeTimeSensitive, activeEarliestDeadline, language, cases.me?.user.fullName, ui.email]);
+  }, [cases.selectedCase?.title, cases.selectedCaseSummary?.title, cases.selectedCase?.nonLegalAdviceDisclaimer, workspaceSummaryText, workspaceNextSteps, activeDocumentType, activeTimeSensitive, activeEarliestDeadline, language, cases.me?.user.fullName, ui.email, uiState.intakeDraft]);
 
   return useMemo(() => ({
     activeDocumentType,

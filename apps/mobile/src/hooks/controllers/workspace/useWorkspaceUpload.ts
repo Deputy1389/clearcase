@@ -159,12 +159,6 @@ export function useWorkspaceUpload(ui: any, cases: any, uiState: any, upload: an
     }
   }, [buildLawyerReadySummaryText, uiState.lawyerReadySummary.caseTitle]);
   
-  const buildViewerUrlWithPdfControls = useCallback((url: string, p: number, z: number) => {
-    if (!url.includes(".pdf")) return url;
-    const separator = url.includes("?") ? "&" : "?";
-    return `${url}${separator}page=${p}&zoom=${z}`;
-  }, []);
-
   const openViewerUrlExternally = useCallback(async () => {
     if (uiState.assetViewerUrl) {
       try {
@@ -311,7 +305,6 @@ export function useWorkspaceUpload(ui: any, cases: any, uiState: any, upload: an
     buildLawyerReadySummaryText,
     shareLawyerReadySummary,
     emailLawyerReadySummary,
-    buildViewerUrlWithPdfControls,
     openViewerUrlExternally,
     openAssetAccess,
     openPlainMeaningTranslator,
@@ -325,7 +318,6 @@ export function useWorkspaceUpload(ui: any, cases: any, uiState: any, upload: an
     buildLawyerReadySummaryText,
     shareLawyerReadySummary,
     emailLawyerReadySummary,
-    buildViewerUrlWithPdfControls,
     openViewerUrlExternally,
     openAssetAccess,
     openPlainMeaningTranslator,

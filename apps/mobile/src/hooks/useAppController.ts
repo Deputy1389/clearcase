@@ -1,4 +1,4 @@
-import { useMemo, useEffect } from "react";
+import { useMemo, useCallback } from "react";
 import { useAuthController } from "./controllers/useAuthController";
 import { useCasesController } from "./controllers/useCasesController";
 import { useUploadController } from "./controllers/useUploadController";
@@ -75,11 +75,18 @@ export function useAppController() {
     openPaywall: ui.openPaywall
   };
 
+  const togglePushNotifications = useCallback(() => ui.togglePushNotifications(cases.setMe), [ui.togglePushNotifications, cases.setMe]);
+  const togglePushQuietHours = useCallback(() => ui.togglePushQuietHours(cases.setMe), [ui.togglePushQuietHours, cases.setMe]);
+  const applyLanguageFromSettings = useCallback((lang: any) => ui.applyLanguageFromSettings(lang, cases.setMe), [ui.applyLanguageFromSettings, cases.setMe]);
+
   return useMemo(() => ({
     ...ui,
     ...auth,
     ...cases,
     ...upload,
-    ...workspace
-  }), [ui, auth, cases, upload, workspace]);
+    ...workspace,
+    togglePushNotifications,
+    togglePushQuietHours,
+    applyLanguageFromSettings
+  }), [ui, auth, cases, upload, workspace, togglePushNotifications, togglePushQuietHours, applyLanguageFromSettings]);
 }
