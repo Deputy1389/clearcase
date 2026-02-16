@@ -277,6 +277,99 @@ export const ACTION_TEMPLATES: ActionTemplate[] = [
           seekHelpStep(lang),
         ],
   },
+  {
+    id: "small_claims-respond",
+    family: "small_claims",
+    strings: {
+      en: {
+        title: "Respond to the small claims summons",
+        explanation: "Small claims court is for smaller disputes. You must either file a response or appear on the hearing date to avoid losing automatically.",
+        consequence: "Failing to appear or respond will likely result in a judgment against you for the amount claimed",
+      },
+      es: {
+        title: "Responder a la citacion de reclamos menores",
+        explanation: "El tribunal de reclamos menores es para disputas pequenas. Debe presentar una respuesta o comparecer en la fecha de la audiencia para evitar perder automaticamente.",
+        consequence: "No comparecer o no responder probablemente resultara en un fallo en su contra por el monto reclamado",
+      },
+    },
+    buildSteps: (f, lang) => lang === "es"
+      ? [
+          deadlineStep(f, lang),
+          senderStep(f, lang),
+          "Verifique la fecha y el lugar de la audiencia en el tribunal",
+          "Prepare su defensa y reuna cualquier evidencia (recibos, fotos, mensajes)",
+          seekHelpStep(lang),
+        ]
+      : [
+          deadlineStep(f, lang),
+          senderStep(f, lang),
+          "Verify the hearing date and court location",
+          "Prepare your defense and gather any evidence (receipts, photos, messages)",
+          seekHelpStep(lang),
+        ],
+  },
+  {
+    id: "lien-respond",
+    family: "lien",
+    strings: {
+      en: {
+        title: "Respond to the lien notice",
+        explanation: "A lien notice means someone intends to record a legal claim against your property. This is a serious matter that can affect your ability to sell or refinance.",
+        consequence: "A recorded lien stays on your property title and can lead to foreclosure or collection actions",
+      },
+      es: {
+        title: "Responder al aviso de gravamen",
+        explanation: "Un aviso de gravamen (lien) significa que alguien tiene la intencion de registrar un reclamo legal contra su propiedad. Este es un asunto serio que puede afectar su capacidad para vender o refinanciar.",
+        consequence: "Un gravamen registrado permanece en el titulo de su propiedad y puede llevar a un juicio hipotecario o acciones de cobro",
+      },
+    },
+    buildSteps: (f, lang) => lang === "es"
+      ? [
+          deadlineStep(f, lang),
+          senderStep(f, lang),
+          "Verifique si el reclamo es valido y si se siguieron los procedimientos de entrega",
+          "Considere pagar el monto si es correcto para evitar que se registre el gravamen",
+          seekHelpStep(lang),
+        ]
+      : [
+          deadlineStep(f, lang),
+          senderStep(f, lang),
+          "Verify whether the claim is valid and if notice procedures were followed",
+          "Consider paying the amount if correct to prevent the lien from being recorded",
+          seekHelpStep(lang),
+        ],
+  },
+  {
+    id: "collections_validation-respond",
+    family: "collections_validation",
+    strings: {
+      en: {
+        title: "Request validation of the debt",
+        explanation: "This notice gives you a 30-day window to request proof that the debt is valid and that the collector has the right to collect it.",
+        consequence: "If you do not dispute within 30 days, the collector can assume the debt is valid",
+      },
+      es: {
+        title: "Solicitar validacion de la deuda",
+        explanation: "Este aviso le da un plazo de 30 dias para solicitar pruebas de que la deuda es valida y que el cobrador tiene derecho a cobrarla.",
+        consequence: "Si no disputa dentro de los 30 dias, el cobrador puede asumir que la deuda es valida",
+      },
+    },
+    buildSteps: (f, lang) => lang === "es"
+      ? [
+          "Envie una carta de solicitud de validacion de deuda por correo certificado dentro de 30 dias",
+          "Exija prueba del monto original y la identidad del acreedor original",
+          "Mantenga una copia de su carta y el recibo de correo certificado",
+          "No realice ningun pago parcial si planea disputar la deuda completa",
+          seekHelpStep(lang),
+        ]
+      : [
+          "Send a debt validation request letter via certified mail within 30 days",
+          "Demand proof of the original amount and the identity of the original creditor",
+          "Keep a copy of your letter and the certified mail receipt",
+          "Do not make any partial payments if you plan to dispute the entire debt",
+          seekHelpStep(lang),
+        ],
+  },
 ];
 
 export function findTemplateByFamily(family: DocumentFamily): ActionTemplate | null {

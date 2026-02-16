@@ -8,6 +8,9 @@ import agencyNotice from "./agency-notice.json";
 import eviction3day from "./eviction-3day.json";
 import unknownOther from "./unknown-other.json";
 import ceaseDesist from "./cease-desist.json";
+import smallClaims from "./small-claims.json";
+import lienNotice from "./lien-notice.json";
+import debtValidation from "./debt-validation.json";
 
 export type VerdictFixture = {
   name: string;
@@ -25,4 +28,7 @@ export const VERDICT_FIXTURES: VerdictFixture[] = [
   { name: "eviction-3day", data: eviction3day as Record<string, unknown> },
   { name: "unknown-other", data: unknownOther as Record<string, unknown> },
   { name: "cease-desist", data: ceaseDesist as Record<string, unknown> },
+  { name: "small-claims", data: smallClaims as Record<string, unknown> },
+  { name: "lien-notice", data: lienNotice as Record<string, unknown> },
+  { name: "debt-validation", data: debtValidation as Record<string, unknown> },
 ];

@@ -1,0 +1,12 @@
+{
+  "documentType": "lien_notice",
+  "issuingParty": "ABC Construction Co.",
+  "contactPhone": "(555) 123-4567",
+  "contactAddress": "789 Builder Lane, Austin, TX 78701",
+  "sources": ["Page 1: 'Notice of Intent to File Lien'", "Page 1: 'Final notice before recording lien'"],
+  "deadlines": {
+    "signals": [
+      { "dateIso": "2026-03-05", "sourceText": "Deadline to pay", "kind": "deadline", "confidence": 0.88 }
+    ]
+  }
+}

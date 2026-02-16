@@ -68,9 +68,11 @@ export type OnboardingSlide = {
 
 export type DocumentFamily =
   | "summons"
+  | "small_claims"
   | "demand_letter"
   | "subpoena"
   | "debt_collection"
+  | "collections_validation"
   | "agency_notice"
   | "eviction"
   | "cease_and_desist"

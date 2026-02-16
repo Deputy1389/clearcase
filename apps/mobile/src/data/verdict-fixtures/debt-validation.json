@@ -1,0 +1,12 @@
+{
+  "documentType": "debt_validation_notice",
+  "issuingParty": "Global Debt Recovery",
+  "contactEmail": "disputes@globaldebt.example.com",
+  "contactPhone": "(800) 111-2222",
+  "sources": ["Page 1: 'Validation of Debt Notice'", "Page 1: 'You have 30 days to dispute this debt'"],
+  "deadlines": {
+    "signals": [
+      { "dateIso": "2026-03-15", "sourceText": "30-day dispute deadline", "kind": "deadline", "confidence": 0.98 }
+    ]
+  }
+}

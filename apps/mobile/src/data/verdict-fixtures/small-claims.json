@@ -1,0 +1,13 @@
+{
+  "documentType": "small_claims_summons",
+  "issuingParty": "Plaintiff John Doe",
+  "courtName": "Small Claims Court of New York",
+  "courtAddress": "111 Centre St, New York, NY 10013",
+  "caseNumber": "SC-2026-9988",
+  "sources": ["Page 1: 'Notice to Defendant'", "Page 1: 'You are being sued in Small Claims Court'"],
+  "deadlines": {
+    "signals": [
+      { "dateIso": "2026-04-10", "sourceText": "Hearing Date", "kind": "hearing", "confidence": 0.95 }
+    ]
+  }
+}

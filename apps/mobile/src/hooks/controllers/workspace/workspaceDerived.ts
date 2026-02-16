@@ -274,8 +274,10 @@ export function computeDocumentFamily(args: {
   const raw = args.docType?.toLowerCase().trim() ?? "";
   if (!raw) return "other";
   if (raw.includes("subpoena") || raw.includes("duces")) return "subpoena";
+  if (raw.includes("small") && raw.includes("claim")) return "small_claims";
   if (raw.includes("summons") || raw.includes("complaint") || raw.includes("petition")) return "summons";
   if (raw.includes("cease") || raw.includes("desist")) return "cease_and_desist";
+  if (raw.includes("validation") && (raw.includes("debt") || raw.includes("collection"))) return "collections_validation";
   if (raw.includes("debt") || raw.includes("collection")) return "debt_collection";
   if (raw.includes("eviction") || raw.includes("unlawful detainer") || raw.includes("notice to quit") || raw.includes("pay or quit")) return "eviction";
   if (raw.includes("agency") || raw.includes("administrative") || raw.includes("government")) return "agency_notice";
