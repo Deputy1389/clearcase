@@ -208,6 +208,9 @@ export interface WorkspaceBundle {
   actionInstructions?: ActionInstruction[];
   // Response signals (destination, channels, missing info)
   responseSignals?: ResponseSignals;
+  // Guided assistance
+  toggleStepCompletion: (instructionId: string, stepIndex: number) => Promise<void>;
+  isStepCompleted: (instructionId: string, stepIndex: number) => boolean;
   // Evidence
   evidenceCompleteness: { score: number; status: string; missing: string[] };
   // Cost saving

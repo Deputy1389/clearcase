@@ -1,5 +1,5 @@
 import React from "react";
-import { Text, View } from "react-native";
+import { Text, View, Pressable } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { fmtDate } from "../../../utils/formatting";
 import MissingInfoCard from "./MissingInfoCard";
@@ -11,9 +11,11 @@ type Props = {
   language: AppLanguage;
   styles: any;
   palette: any;
+  toggleStepCompletion: (id: string, index: number) => void;
+  isStepCompleted: (id: string, index: number) => boolean;
 };
 
-export default function ActionLayerCard({ instruction, language, styles, palette }: Props) {
+export default function ActionLayerCard({ instruction, language, styles, palette, toggleStepCompletion, isStepCompleted }: Props) {
   const ai = instruction;
   return (
     <View style={styles.card}>
@@ -28,14 +30,25 @@ export default function ActionLayerCard({ instruction, language, styles, palette
           </Text>
         </View>
       ) : null}
-      {ai.steps.slice(0, 5).map((step, i) => (
-        <View key={`action-step-${i}`} style={styles.actionStepRow}>
-          <View style={styles.actionStepDot}>
-            <Text style={styles.actionStepDotText}>{i + 1}</Text>
-          </View>
-          <Text style={styles.actionStepText}>{step}</Text>
-        </View>
-      ))}
+      {ai.steps.slice(0, 8).map((step, i) => {
+        const done = isStepCompleted(ai.id, i);
+        return (
+          <Pressable 
+            key={`action-step-${i}`} 
+            style={styles.actionStepRow}
+            onPress={() => toggleStepCompletion(ai.id, i)}
+          >
+            <View style={[styles.actionStepDot, done ? { backgroundColor: "#BBF7D0", borderColor: "#86EFAC" } : null]}>
+              {done ? (
+                <Feather name="check" size={10} color="#166534" />
+              ) : (
+                <Text style={styles.actionStepDotText}>{i + 1}</Text>
+              )}
+            </View>
+            <Text style={[styles.actionStepText, done ? { color: palette.subtle, textDecorationLine: "line-through" } : null]}>{step}</Text>
+          </Pressable>
+        );
+      })}
       {ai.contact ? (
         <View style={styles.actionContactCard}>
           <Text style={styles.miniLabel}>{language === "es" ? "CONTACTO" : "CONTACT"}</Text>

@@ -110,7 +110,9 @@ export default function WorkspaceScreen({
     openViewerUrlExternally,
     timelineRows,
     actionInstructions,
-    responseSignals
+    responseSignals,
+    toggleStepCompletion,
+    isStepCompleted
   } = workspace;
   const { localizedCaseStatus, formatUploadStage, manualCategoryLabel: manualLabel } = helpers;
 
@@ -262,7 +264,14 @@ export default function WorkspaceScreen({
         {/* Action Instructions Section */}
         {actionInstructions && actionInstructions.length > 0 ? (
           <>
-            <ActionLayerCard instruction={actionInstructions[0]} language={language} styles={styles} palette={palette} />
+            <ActionLayerCard 
+              instruction={actionInstructions[0]} 
+              language={language} 
+              styles={styles} 
+              palette={palette} 
+              toggleStepCompletion={toggleStepCompletion}
+              isStepCompleted={isStepCompleted}
+            />
             {responseSignals ? (
               <View style={styles.actionContactCard}>
                 <Text style={styles.miniLabel}>{language === "es" ? "DETALLES DE RESPUESTA" : "RESPONSE DETAILS"}</Text>
