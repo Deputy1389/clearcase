@@ -66,6 +66,17 @@ export type OnboardingSlide = {
   iconBg: string;
 };
 
+export type DocumentFamily =
+  | "summons"
+  | "demand_letter"
+  | "subpoena"
+  | "debt_collection"
+  | "agency_notice"
+  | "eviction"
+  | "cease_and_desist"
+  | "lien"
+  | "other";
+
 export type ExtractedFields = {
   senderName?: string;
   senderEmail?: string;

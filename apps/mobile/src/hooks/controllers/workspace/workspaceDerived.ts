@@ -5,8 +5,8 @@ import {
 } from "../../../utils/case-logic";
 import { asRecord, asStringArray } from "../../../utils/parsing";
 import { daysUntil } from "../../../utils/formatting";
-import { findMatchingTemplate } from "../../../data/action-templates";
-import type { AppLanguage, CaseSeverity, UploadStage, ExtractedFields } from "../../../types";
+import { findTemplateByFamily } from "../../../data/action-templates";
+import type { AppLanguage, CaseSeverity, UploadStage, ExtractedFields, DocumentFamily } from "../../../types";
 import type { CaseDetail, CaseSummary, Verdict } from "../../../api";
 
 // ── Types ────────────────────────────────────────────────────────────
@@ -209,6 +209,26 @@ export function normalizeExtractedFields(
   return fields;
 }
 
+// ── Document family classification ──────────────────────────────────
+
+export function computeDocumentFamily(args: {
+  docType?: string | null;
+  extracted?: ExtractedFields;
+  latestVerdictOutput?: unknown;
+}): DocumentFamily {
+  const raw = args.docType?.toLowerCase().trim() ?? "";
+  if (!raw) return "other";
+  if (raw.includes("subpoena") || raw.includes("duces")) return "subpoena";
+  if (raw.includes("summons") || raw.includes("complaint") || raw.includes("petition")) return "summons";
+  if (raw.includes("cease") || raw.includes("desist")) return "cease_and_desist";
+  if (raw.includes("debt") || raw.includes("collection")) return "debt_collection";
+  if (raw.includes("eviction") || raw.includes("unlawful detainer") || raw.includes("notice to quit") || raw.includes("pay or quit")) return "eviction";
+  if (raw.includes("agency") || raw.includes("administrative") || raw.includes("government")) return "agency_notice";
+  if (raw.includes("demand")) return "demand_letter";
+  if (raw.includes("lien")) return "lien";
+  return "other";
+}
+
 // ── Action instructions ─────────────────────────────────────────────
 
 function buildContact(f: ExtractedFields): ActionInstruction["contact"] | undefined {
@@ -299,7 +319,8 @@ export function computeActionInstructions(args: {
   const hasDeadline = Boolean(activeEarliestDeadlineISO);
   const hasIssuer = Boolean(fields.senderName);
 
-  const template = findMatchingTemplate(activeDocumentType);
+  const family = computeDocumentFamily({ docType: activeDocumentType, extracted: fields });
+  const template = findTemplateByFamily(family);
 
   let id: string;
   let title: string;

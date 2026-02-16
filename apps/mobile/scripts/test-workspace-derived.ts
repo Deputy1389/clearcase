@@ -13,6 +13,7 @@ import {
   computeLatestVerdictOutput,
   computeActionInstructions,
   normalizeExtractedFields,
+  computeDocumentFamily,
 } from "../src/hooks/controllers/workspace/workspaceDerived";
 import { VERDICT_FIXTURES } from "../src/data/verdict-fixtures";
 
@@ -253,7 +254,7 @@ assert(ai5[0].confidence === 40, "demand letter no fields → confidence 40");
 
 const ai6 = computeActionInstructions({
   language: "en",
-  activeDocumentType: "eviction_notice",
+  activeDocumentType: "legal_notice",
   activeEarliestDeadlineISO: "2026-03-01",
   extracted: null,
 });
@@ -392,5 +393,178 @@ assert(cdFields.senderName === "Johnson & Park LLP", "fixture cease-desist: send
 assert(cdFields.senderEmail === "jpark@johnsonpark.law", "fixture cease-desist: senderEmail from email");
 assert(cdFields.senderAddress === "350 S Grand Ave, Suite 3100, Los Angeles, CA 90071", "fixture cease-desist: senderAddress from contactAddress");
 assert(cdFields.sources !== undefined && cdFields.sources.length === 2, "fixture cease-desist: 2 sources");
+
+// ─── Case 21: DocumentFamily classification — fixture docTypes ──────
+
+console.log("\n--- DocumentFamily classification tests ---");
+
+const familyTests: [string, string][] = [
+  ["summons", "summons"],
+  ["complaint_and_summons", "summons"],
+  ["demand_letter", "demand_letter"],
+  ["legal_notice", "other"],
+  ["subpoena_duces_tecum", "subpoena"],
+  ["debt_collection_notice", "debt_collection"],
+  ["government_agency_notice", "agency_notice"],
+  ["eviction_notice_3day", "eviction"],
+  ["unknown", "other"],
+  ["cease_and_desist", "cease_and_desist"],
+];
+
+for (const [docType, expectedFamily] of familyTests) {
+  const family = computeDocumentFamily({ docType });
+  assert(family === expectedFamily, `family: "${docType}" → "${expectedFamily}" (got "${family}")`);
+}
+
+// Anti-misclassification: eviction must NOT match summons
+assert(
+  computeDocumentFamily({ docType: "eviction_notice_3day" }) === "eviction",
+  "anti-misclassify: eviction_notice_3day → eviction, NOT summons"
+);
+
+// Edge cases
+assert(computeDocumentFamily({ docType: null }) === "other", "family: null → other");
+assert(computeDocumentFamily({ docType: "" }) === "other", "family: empty → other");
+assert(computeDocumentFamily({ docType: "  " }) === "other", "family: whitespace → other");
+assert(computeDocumentFamily({ docType: "SUBPOENA" }) === "subpoena", "family: case-insensitive SUBPOENA → subpoena");
+assert(computeDocumentFamily({ docType: "Unlawful Detainer" }) === "eviction", "family: unlawful detainer → eviction");
+assert(computeDocumentFamily({ docType: "pay or quit notice" }) === "eviction", "family: pay or quit → eviction");
+assert(computeDocumentFamily({ docType: "notice to quit" }) === "eviction", "family: notice to quit → eviction");
+assert(computeDocumentFamily({ docType: "lien" }) === "lien", "family: lien → lien");
+assert(computeDocumentFamily({ docType: "petition" }) === "summons", "family: petition → summons");
+assert(computeDocumentFamily({ docType: "administrative_hearing" }) === "agency_notice", "family: administrative → agency_notice");
+
+// ─── Case 22: Debt collection template match (fixture-driven) ───────
+
+console.log("\n--- Template match tests (new families) ---");
+
+const dcFixture = VERDICT_FIXTURES.find((f) => f.name === "debt-collection")!;
+const dcInstr = computeActionInstructions({
+  language: "en",
+  activeDocumentType: dcFixture.data.documentType as string,
+  activeEarliestDeadlineISO: "2026-04-15",
+  extracted: dcFixture.data,
+});
+assert(dcInstr.length === 1, "debt-collection fixture → 1 instruction");
+assert(dcInstr[0].id === "debt-collection-respond", "debt-collection → template id (not generic)");
+assert(dcInstr[0].title === "Respond to the debt collection notice", "debt-collection → correct title");
+assert(dcInstr[0].steps.length === 5, "debt-collection → 5 steps");
+assert(dcInstr[0].deadlineISO === "2026-04-15", "debt-collection → deadline passed through");
+assert(dcInstr[0].contact !== undefined, "debt-collection → contact present");
+assert(dcInstr[0].contact!.name === "National Recovery Associates", "debt-collection → contact.name");
+assert(dcInstr[0].contact!.phone === "(800) 555-0234", "debt-collection → contact.phone");
+assert(dcInstr[0].court === undefined, "debt-collection → no court");
+assert(dcInstr[0].confidence === 80, "debt-collection deadline+sender → confidence 80");
+
+// Spanish
+const dcInstrEs = computeActionInstructions({
+  language: "es",
+  activeDocumentType: dcFixture.data.documentType as string,
+  activeEarliestDeadlineISO: "2026-04-15",
+  extracted: dcFixture.data,
+});
+assert(dcInstrEs[0].title === "Responder al aviso de cobro de deuda", "debt-collection es → Spanish title");
+
+// ─── Case 23: Agency notice template match (fixture-driven) ─────────
+
+const anFixture = VERDICT_FIXTURES.find((f) => f.name === "agency-notice")!;
+const anInstr = computeActionInstructions({
+  language: "en",
+  activeDocumentType: anFixture.data.documentType as string,
+  activeEarliestDeadlineISO: null,
+  extracted: anFixture.data,
+});
+assert(anInstr[0].id === "agency-notice-respond", "agency-notice → template id (not generic)");
+assert(anInstr[0].title === "Respond to the government notice", "agency-notice → correct title");
+assert(anInstr[0].steps.length === 5, "agency-notice → 5 steps");
+assert(anInstr[0].contact !== undefined, "agency-notice → contact present");
+assert(anInstr[0].contact!.name === "State Department of Labor", "agency-notice → contact.name");
+assert(anInstr[0].contact!.email === "compliance@labor.state.example.gov", "agency-notice → contact.email");
+assert(anInstr[0].deadlineISO === undefined, "agency-notice no deadline passed → deadlineISO absent");
+assert(anInstr[0].confidence === 60, "agency-notice sender-only → confidence 60");
+assert(anInstr[0].missingInfo !== undefined && anInstr[0].missingInfo.length === 1, "agency-notice no deadline → 1 missing info");
+
+// ─── Case 24: Eviction template match (fixture-driven) ──────────────
+
+const evFixture = VERDICT_FIXTURES.find((f) => f.name === "eviction-3day")!;
+const evInstr = computeActionInstructions({
+  language: "en",
+  activeDocumentType: evFixture.data.documentType as string,
+  activeEarliestDeadlineISO: "2026-02-20",
+  extracted: evFixture.data,
+});
+assert(evInstr[0].id === "eviction-respond", "eviction → template id (not generic)");
+assert(evInstr[0].title === "Respond to the eviction notice", "eviction → correct title");
+assert(evInstr[0].steps.length === 5, "eviction → 5 steps");
+assert(evInstr[0].steps[0].includes("3-day"), "eviction → first step mentions notice types");
+assert(evInstr[0].contact !== undefined, "eviction → contact present");
+assert(evInstr[0].contact!.name === "Pacific Property Management", "eviction → contact.name");
+assert(evInstr[0].court !== undefined, "eviction → court present (fixture has court)");
+assert(evInstr[0].court!.name === "Los Angeles County Superior Court", "eviction → court.name");
+assert(evInstr[0].deadlineISO === "2026-02-20", "eviction → deadline passed through");
+assert(evInstr[0].confidence === 80, "eviction deadline+sender → confidence 80");
+
+// Spanish
+const evInstrEs = computeActionInstructions({
+  language: "es",
+  activeDocumentType: evFixture.data.documentType as string,
+  activeEarliestDeadlineISO: "2026-02-20",
+  extracted: evFixture.data,
+});
+assert(evInstrEs[0].title === "Responder al aviso de desalojo", "eviction es → Spanish title");
+assert(evInstrEs[0].steps[0].includes("3 dias"), "eviction es → first step mentions notice types in Spanish");
+
+// ─── Case 25: Cease-and-desist template match (fixture-driven) ──────
+
+const cdFixture = VERDICT_FIXTURES.find((f) => f.name === "cease-desist")!;
+const cdInstr = computeActionInstructions({
+  language: "en",
+  activeDocumentType: cdFixture.data.documentType as string,
+  activeEarliestDeadlineISO: null,
+  extracted: cdFixture.data,
+});
+assert(cdInstr[0].id === "cease-desist-respond", "cease-desist → template id (not generic)");
+assert(cdInstr[0].title === "Review the cease and desist letter", "cease-desist → correct title");
+assert(cdInstr[0].steps.length === 5, "cease-desist → 5 steps");
+assert(cdInstr[0].contact !== undefined, "cease-desist → contact present");
+assert(cdInstr[0].contact!.name === "Johnson & Park LLP", "cease-desist → contact.name");
+assert(cdInstr[0].court === undefined, "cease-desist → no court (fixture has none)");
+assert(cdInstr[0].confidence === 60, "cease-desist sender-only no deadline → confidence 60");
+
+// No sender, no deadline → confidence 40
+const cdInstrBare = computeActionInstructions({
+  language: "en",
+  activeDocumentType: "cease_and_desist",
+  activeEarliestDeadlineISO: null,
+  extracted: null,
+});
+assert(cdInstrBare[0].id === "cease-desist-respond", "cease-desist bare → still template match");
+assert(cdInstrBare[0].confidence === 40, "cease-desist bare → confidence 40");
+assert(cdInstrBare[0].missingInfo !== undefined && cdInstrBare[0].missingInfo.length === 2, "cease-desist bare → 2 missing info");
+
+// ─── Case 26: Unknown-other fixture → generic fallback ──────────────
+
+const uoFixture = VERDICT_FIXTURES.find((f) => f.name === "unknown-other")!;
+const uoInstr = computeActionInstructions({
+  language: "en",
+  activeDocumentType: uoFixture.data.documentType as string,
+  activeEarliestDeadlineISO: null,
+  extracted: uoFixture.data,
+});
+assert(uoInstr[0].id === "generic-respond", "unknown-other → generic fallback");
+assert(uoInstr[0].confidence === 40, "unknown-other no fields → confidence 40");
+
+// ─── Case 27: demand-letter-sparse (legal_notice) → generic ─────────
+
+const dsFixture = VERDICT_FIXTURES.find((f) => f.name === "demand-letter-sparse")!;
+const dsInstr = computeActionInstructions({
+  language: "en",
+  activeDocumentType: dsFixture.data.documentType as string,
+  activeEarliestDeadlineISO: null,
+  extracted: dsFixture.data,
+});
+assert(dsInstr[0].id === "generic-respond", "demand-letter-sparse (legal_notice) → generic fallback");
+assert(dsInstr[0].contact !== undefined, "demand-letter-sparse → contact present (from field)");
+assert(dsInstr[0].confidence === 60, "demand-letter-sparse sender-only → confidence 60");
 
 console.log("\nAll tests passed.");

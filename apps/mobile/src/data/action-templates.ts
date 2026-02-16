@@ -1,4 +1,4 @@
-import type { ExtractedFields } from "../types";
+import type { ExtractedFields, DocumentFamily } from "../types";
 
 type Lang = "en" | "es";
 
@@ -10,7 +10,7 @@ export type ActionTemplateStrings = {
 
 export type ActionTemplate = {
   id: string;
-  patterns: RegExp[];
+  family: DocumentFamily;
   strings: { en: ActionTemplateStrings; es: ActionTemplateStrings };
   buildSteps: (fields: ExtractedFields, lang: Lang) => string[];
 };
@@ -39,7 +39,7 @@ function contactStep(f: ExtractedFields, lang: Lang): string {
     : "Contact the issuing party using the information on the document";
 }
 
-function deadlineStep(f: ExtractedFields, lang: Lang): string {
+function deadlineStep(_f: ExtractedFields, lang: Lang): string {
   return lang === "es"
     ? "Localice la fecha limite de respuesta y la fecha de comparecencia (si aplica)"
     : "Locate the response deadline and appearance date (if any)";
@@ -62,7 +62,7 @@ function seekHelpStep(lang: Lang): string {
 export const ACTION_TEMPLATES: ActionTemplate[] = [
   {
     id: "subpoena-respond",
-    patterns: [/subpoena/i],
+    family: "subpoena",
     strings: {
       en: {
         title: "Respond to the subpoena",
@@ -93,7 +93,7 @@ export const ACTION_TEMPLATES: ActionTemplate[] = [
   },
   {
     id: "summons-respond",
-    patterns: [/summons/i, /complaint/i, /petition/i],
+    family: "summons",
     strings: {
       en: {
         title: "Respond to the court summons",
@@ -124,7 +124,7 @@ export const ACTION_TEMPLATES: ActionTemplate[] = [
   },
   {
     id: "demand-letter-respond",
-    patterns: [/demand/i, /attorney.*letter/i, /letter.*attorney/i, /legal.*notice/i, /notice.*legal/i, /cease.*desist/i, /desist/i],
+    family: "demand_letter",
     strings: {
       en: {
         title: "Review and respond to this letter",
@@ -153,10 +153,133 @@ export const ACTION_TEMPLATES: ActionTemplate[] = [
           seekHelpStep(lang),
         ],
   },
+  {
+    id: "debt-collection-respond",
+    family: "debt_collection",
+    strings: {
+      en: {
+        title: "Respond to the debt collection notice",
+        explanation: "A debt collector is claiming you owe money. You have rights under federal law, including the right to dispute the debt within 30 days.",
+        consequence: "Ignoring a debt collection notice does not make the debt go away and may limit your options",
+      },
+      es: {
+        title: "Responder al aviso de cobro de deuda",
+        explanation: "Un cobrador de deudas reclama que usted debe dinero. Tiene derechos bajo la ley federal, incluyendo el derecho de disputar la deuda dentro de 30 dias.",
+        consequence: "Ignorar un aviso de cobro no elimina la deuda y puede limitar sus opciones",
+      },
+    },
+    buildSteps: (f, lang) => lang === "es"
+      ? [
+          deadlineStep(f, lang),
+          senderStep(f, lang),
+          "Verifique que la deuda sea suya y que el monto sea correcto",
+          "Si no reconoce la deuda, envie una carta de disputa por escrito dentro de 30 dias",
+          seekHelpStep(lang),
+        ]
+      : [
+          deadlineStep(f, lang),
+          senderStep(f, lang),
+          "Verify the debt is yours and the amount is correct",
+          "If you do not recognize the debt, send a written dispute letter within 30 days",
+          seekHelpStep(lang),
+        ],
+  },
+  {
+    id: "agency-notice-respond",
+    family: "agency_notice",
+    strings: {
+      en: {
+        title: "Respond to the government notice",
+        explanation: "A government agency has sent you a formal notice. These often have strict deadlines and may require a written response.",
+        consequence: "Failing to respond to a government notice may result in fines, penalties, or enforcement action",
+      },
+      es: {
+        title: "Responder al aviso gubernamental",
+        explanation: "Una agencia del gobierno le ha enviado un aviso formal. Estos a menudo tienen plazos estrictos y pueden requerir una respuesta por escrito.",
+        consequence: "No responder a un aviso gubernamental puede resultar en multas, sanciones o acciones de cumplimiento",
+      },
+    },
+    buildSteps: (f, lang) => lang === "es"
+      ? [
+          deadlineStep(f, lang),
+          senderStep(f, lang),
+          "Lea el aviso completo y determine que accion se requiere",
+          "Responda por escrito antes de la fecha limite, conservando una copia",
+          seekHelpStep(lang),
+        ]
+      : [
+          deadlineStep(f, lang),
+          senderStep(f, lang),
+          "Read the entire notice and determine what action is required",
+          "Respond in writing before the deadline, keeping a copy for your records",
+          seekHelpStep(lang),
+        ],
+  },
+  {
+    id: "eviction-respond",
+    family: "eviction",
+    strings: {
+      en: {
+        title: "Respond to the eviction notice",
+        explanation: "Your landlord or property manager has started an eviction process. You may have rights to respond, cure the issue, or contest the eviction.",
+        consequence: "Not responding to an eviction notice may result in losing your housing",
+      },
+      es: {
+        title: "Responder al aviso de desalojo",
+        explanation: "Su arrendador o administrador de propiedad ha iniciado un proceso de desalojo. Puede tener derecho a responder, remediar el problema o contestar el desalojo.",
+        consequence: "No responder a un aviso de desalojo puede resultar en la perdida de su vivienda",
+      },
+    },
+    buildSteps: (f, lang) => lang === "es"
+      ? [
+          "Determine el tipo de aviso (3 dias, 30 dias, 60 dias) y la fecha limite para responder",
+          senderStep(f, lang),
+          "Verifique que el aviso fue entregado correctamente segun la ley local",
+          "Si tiene derecho a remediar (por ejemplo, pagar renta atrasada), haga el pago antes de la fecha limite",
+          seekHelpStep(lang),
+        ]
+      : [
+          "Determine the notice type (3-day, 30-day, 60-day) and the deadline to respond",
+          senderStep(f, lang),
+          "Verify the notice was properly served according to local law",
+          "If you have the right to cure (e.g., pay overdue rent), make the payment before the deadline",
+          seekHelpStep(lang),
+        ],
+  },
+  {
+    id: "cease-desist-respond",
+    family: "cease_and_desist",
+    strings: {
+      en: {
+        title: "Review the cease and desist letter",
+        explanation: "Someone is demanding you stop a specific activity. A cease and desist letter is not a court order, but it signals potential legal action.",
+        consequence: "Ignoring a cease and desist may lead to a lawsuit if the sender follows through",
+      },
+      es: {
+        title: "Revise la carta de cese y desistimiento",
+        explanation: "Alguien exige que deje de realizar una actividad especifica. Una carta de cese y desistimiento no es una orden judicial, pero indica una posible accion legal.",
+        consequence: "Ignorar una carta de cese y desistimiento puede resultar en una demanda si el remitente procede",
+      },
+    },
+    buildSteps: (f, lang) => lang === "es"
+      ? [
+          deadlineStep(f, lang),
+          senderStep(f, lang),
+          "Lea cuidadosamente que actividad se le pide dejar de hacer",
+          "No responda impulsivamente; considere si la demanda tiene merito",
+          seekHelpStep(lang),
+        ]
+      : [
+          deadlineStep(f, lang),
+          senderStep(f, lang),
+          "Read carefully what activity you are being asked to stop",
+          "Do not respond impulsively; consider whether the claim has merit",
+          seekHelpStep(lang),
+        ],
+  },
 ];
 
-export function findMatchingTemplate(docType: string | null | undefined): ActionTemplate | null {
-  if (!docType) return null;
-  const lower = docType.toLowerCase();
-  return ACTION_TEMPLATES.find((t) => t.patterns.some((p) => p.test(lower))) ?? null;
+export function findTemplateByFamily(family: DocumentFamily): ActionTemplate | null {
+  if (family === "other") return null;
+  return ACTION_TEMPLATES.find((t) => t.family === family) ?? null;
 }
