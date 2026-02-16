@@ -16,6 +16,7 @@ import {
   computeDocumentFamily,
   computeResponseSignals,
   computeResponsePlan,
+  computeTimeSensitivity,
 } from "../src/hooks/controllers/workspace/workspaceDerived";
 import { VERDICT_FIXTURES } from "../src/data/verdict-fixtures";
 
@@ -742,5 +743,37 @@ assert(dcPlan.destination === "sender", "debt-collection: destination is sender"
 const sfInstr = computeActionInstructions({ language: "en", extracted: sfData, activeEarliestDeadlineISO: "2026-03-20", activeDocumentType: "summons" });
 assert(sfInstr[0].id === "summons-respond", "summons-full: still matches summons-respond template");
 assert(sfInstr[0].steps.some(s => s.toLowerCase().includes("response")), "summons-full: steps include response instructions");
+
+// ─── Case 36: Time sensitivity and Jurisdiction tests ─────────────
+
+console.log("\n--- Time sensitivity and Jurisdiction tests ---");
+
+const now = new Date("2026-02-15");
+
+// Critical: 0-2 days
+assert(computeTimeSensitivity({ deadlineISO: "2026-02-15", now }) === "critical", "today -> critical");
+assert(computeTimeSensitivity({ deadlineISO: "2026-02-17", now }) === "critical", "2 days -> critical");
+assert(computeTimeSensitivity({ deadlineISO: "2026-02-10", now }) === "critical", "past -> critical");
+
+// Urgent: 3-6 days
+assert(computeTimeSensitivity({ deadlineISO: "2026-02-18", now }) === "urgent", "3 days -> urgent");
+assert(computeTimeSensitivity({ deadlineISO: "2026-02-21", now }) === "urgent", "6 days -> urgent");
+
+// Moderate: 7-14 days
+assert(computeTimeSensitivity({ deadlineISO: "2026-02-22", now }) === "moderate", "7 days -> moderate");
+assert(computeTimeSensitivity({ deadlineISO: "2026-03-01", now }) === "moderate", "14 days -> moderate");
+
+// None: >14 days or no deadline
+assert(computeTimeSensitivity({ deadlineISO: "2026-03-02", now }) === "none", "15 days -> none");
+assert(computeTimeSensitivity({ deadlineISO: null, now }) === "none", "null -> none");
+
+// Jurisdiction
+const srData2 = VERDICT_FIXTURES.find((f) => f.name === "summons-full")!.data;
+const srExtracted2 = normalizeExtractedFields(srData2);
+const srSignals2 = computeResponseSignals({ family: "summons", extracted: srExtracted2 });
+assert(srSignals2.jurisdictionState === "CA", "summons-full jurisdiction -> CA");
+
+const dcSignals2 = computeResponseSignals({ family: "debt_collection", extracted: { courtAddress: "New York, NY 10013" } });
+assert(dcSignals2.jurisdictionState === "NY", "manual address jurisdiction -> NY");
 
 console.log("\nAll tests passed.");

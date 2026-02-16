@@ -20,6 +20,32 @@ export type TimelineRow = {
   sourceText: string;
 };
 
+export type TimeSensitivity = "none" | "moderate" | "urgent" | "critical";
+
+export function computeTimeSensitivity(args: {
+  deadlineISO?: string | null;
+  now?: Date;
+}): TimeSensitivity {
+  const { deadlineISO, now = new Date() } = args;
+  if (!deadlineISO) return "none";
+
+  const deadline = new Date(deadlineISO);
+  if (Number.isNaN(deadline.getTime())) return "none";
+
+  // Normalize to start of day for both
+  const dDate = new Date(deadline.getFullYear(), deadline.getMonth(), deadline.getDate());
+  const nDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  const diffTime = dDate.getTime() - nDate.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+  if (diffDays < 0) return "critical"; // Overdue is critical
+  if (diffDays <= 2) return "critical";
+  if (diffDays <= 6) return "urgent";
+  if (diffDays <= 14) return "moderate";
+  return "none";
+}
+
 export type DeadlineReminder = {
   label: string;
   reminderDateIso: string | null;
@@ -217,6 +243,8 @@ export type ResponseSignals = {
   responseDeadlineISO?: string;
   responseDestination: "court" | "sender" | "agency" | "unknown";
   responseChannels: ("email" | "mail" | "portal" | "in_person" | "phone")[];
+  timeSensitivity: TimeSensitivity;
+  jurisdictionState?: string;
   missing: {
     deadline: boolean;
     sender: boolean;
@@ -299,8 +327,9 @@ export function computeResponseSignals(args: {
   family: DocumentFamily;
   extracted: ExtractedFields;
   activeEarliestDeadlineISO?: string | null;
+  now?: Date;
 }): ResponseSignals {
-  const { family, extracted, activeEarliestDeadlineISO } = args;
+  const { family, extracted, activeEarliestDeadlineISO, now } = args;
 
   const hasContact = Boolean(
     extracted.senderEmail || extracted.senderPhone || extracted.senderAddress
@@ -318,9 +347,21 @@ export function computeResponseSignals(args: {
   if (extracted.senderAddress) responseChannels.push("mail");
   if (extracted.courtWebsite) responseChannels.push("portal");
 
+  const timeSensitivity = computeTimeSensitivity({ deadlineISO: activeEarliestDeadlineISO, now });
+
+  // Look for 2-letter state code in court address (e.g., ", CA 90012" or " New York, NY ")
+  let jurisdictionState: string | undefined;
+  if (extracted.courtAddress) {
+    const match = extracted.courtAddress.match(/,\s*([A-Z]{2})\s+\d{5}/);
+    if (match) {
+      jurisdictionState = match[1];
+    }
+  }
+
   const signals: ResponseSignals = {
     responseDestination,
     responseChannels,
+    timeSensitivity,
     missing: {
       deadline: !activeEarliestDeadlineISO,
       sender: !hasContact && !extracted.senderName,
@@ -328,6 +369,10 @@ export function computeResponseSignals(args: {
       channel: responseChannels.length === 0,
     },
   };
+
+  if (jurisdictionState) {
+    signals.jurisdictionState = jurisdictionState;
+  }
 
   if (activeEarliestDeadlineISO) {
     signals.responseDeadlineISO = activeEarliestDeadlineISO;

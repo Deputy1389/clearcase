@@ -297,6 +297,20 @@ export default function WorkspaceScreen({
                     </Text>
                   </View>
                 ) : null}
+                {responseSignals.responseDeadlineISO && responseSignals.timeSensitivity !== "none" ? (
+                  <Text style={[styles.actionContactLine, { color: responseSignals.timeSensitivity === "critical" ? "#B91C1C" : responseSignals.timeSensitivity === "urgent" ? "#B45309" : palette.text }]}>
+                    {language === "es" ? "Urgencia: " : "Urgency: "}
+                    {responseSignals.timeSensitivity === "critical" ? (language === "es" ? "Critica" : "Critical")
+                      : responseSignals.timeSensitivity === "urgent" ? (language === "es" ? "Urgente" : "Urgent")
+                      : (language === "es" ? "Moderada" : "Moderate")}
+                  </Text>
+                ) : null}
+                {responseSignals.jurisdictionState ? (
+                  <Text style={styles.actionContactLine}>
+                    {language === "es" ? "Jurisdiccion: " : "Jurisdiction: "}
+                    {responseSignals.jurisdictionState}
+                  </Text>
+                ) : null}
                 {responseSignals.missing.channel ? (
                   <Text style={[styles.cardBody, { fontStyle: "italic", marginTop: 4, marginBottom: 0 }]}>
                     {language === "es"
