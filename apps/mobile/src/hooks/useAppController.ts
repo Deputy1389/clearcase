@@ -60,6 +60,18 @@ export function useAppController() {
     language: ui.language
   };
 
+  // Wire paywall callbacks
+  ui.paywallCallbacks.current = {
+    sendTrackedEvent: async () => {}, // TODO: Implement global tracking if needed
+    loadDashboard: cases.loadDashboard
+  };
+
+  // Wire cases callbacks
+  cases.casesCallbacks.current = {
+    applyServerMeState: auth.authCallbacks.current.applyServerMeState,
+    loadPaywallConfigState: ui.loadPaywallConfigState
+  };
+
   // Wire upload callbacks
   upload.uploadCallbacks.current = {
     createCaseWithTitle: cases.createCaseWithTitle,

@@ -316,17 +316,23 @@ function buildChannels(f: ExtractedFields, es: boolean): string[] {
   return ch;
 }
 
-function buildMissingInfo(f: ExtractedFields, hasDeadline: boolean, es: boolean): string[] {
+function buildMissingInfoStrings(signals: ResponseSignals, es: boolean): string[] {
   const missing: string[] = [];
-  if (!hasDeadline) {
+  if (signals.missing.deadline) {
     missing.push(es
       ? "No pudimos encontrar una fecha limite en el documento"
       : "We could not find a deadline in the document");
   }
-  if (!f.senderName) {
+  if (signals.missing.sender) {
     missing.push(es
       ? "No pudimos identificar quien envio este documento"
       : "We could not identify who sent this document");
+  }
+  if (signals.missing.court && (signals.responseDestination === "court" || signals.missing.sender)) {
+    // Only flag missing court if it's likely a court document or we don't even have a sender
+    missing.push(es
+      ? "No se identifico un tribunal en este documento"
+      : "No court was identified in this document");
   }
   return missing;
 }
@@ -366,8 +372,9 @@ export function computeActionInstructions(args: {
   activeTimeSensitive?: boolean;
   extracted?: Record<string, unknown> | null;
   latestVerdictOutput?: Record<string, unknown> | null;
+  responseSignals?: ResponseSignals;
 }): ActionInstruction[] {
-  const { language, activeDocumentType, activeEarliestDeadlineISO, extracted } = args;
+  const { language, activeDocumentType, activeEarliestDeadlineISO, extracted, responseSignals } = args;
   const es = language === "es";
 
   const fields = normalizeExtractedFields(extracted ?? null);
@@ -405,7 +412,14 @@ export function computeActionInstructions(args: {
   const contact = buildContact(fields);
   const court = buildCourt(fields);
   const channels = buildChannels(fields, es);
-  const missingInfo = buildMissingInfo(fields, hasDeadline, es);
+
+  const signals = responseSignals ?? computeResponseSignals({
+    family,
+    extracted: fields,
+    activeEarliestDeadlineISO,
+  });
+
+  const missingInfo = buildMissingInfoStrings(signals, es);
   const confidence = computeConfidence(hasDeadline, hasIssuer, Boolean(template));
 
   const instruction: ActionInstruction = {

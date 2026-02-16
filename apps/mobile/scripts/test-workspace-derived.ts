@@ -186,7 +186,7 @@ assert(ai1[0].steps.length === 5, "subpoena → 5 steps");
 assert(ai1[0].contact === undefined, "subpoena no contact → contact undefined");
 assert(ai1[0].deadlineISO === undefined, "subpoena no deadline → deadlineISO undefined");
 assert(ai1[0].confidence === 40, "subpoena no contact/deadline → confidence 40");
-assert(ai1[0].missingInfo !== undefined && ai1[0].missingInfo.length === 2, "subpoena no fields → 2 missing info lines");
+assert(ai1[0].missingInfo !== undefined && ai1[0].missingInfo.length === 3, "subpoena no fields → 3 missing info lines");
 
 // ─── Case 13: Subpoena with deadline + email (high confidence) ─────
 
@@ -263,7 +263,7 @@ assert(ai6.length === 1, "unknown docType → generic fallback (1 instruction)")
 assert(ai6[0].id === "generic-respond", "unknown docType → generic id");
 assert(ai6[0].steps.length === 5, "generic → 5 steps");
 assert(ai6[0].confidence === 60, "generic with deadline only → confidence 60");
-assert(ai6[0].missingInfo !== undefined && ai6[0].missingInfo.length === 1, "generic deadline-only → 1 missing (sender)");
+assert(ai6[0].missingInfo !== undefined && ai6[0].missingInfo.length === 2, "generic deadline-only → 2 missing (sender, court)");
 
 // ─── Case 18: Generic fallback — null doc type ─────────────────────
 
@@ -275,7 +275,7 @@ const ai7 = computeActionInstructions({
 assert(ai7.length === 1, "null docType → generic fallback (always present)");
 assert(ai7[0].id === "generic-respond", "null docType → generic id");
 assert(ai7[0].confidence === 40, "null docType no fields → confidence 40");
-assert(ai7[0].missingInfo !== undefined && ai7[0].missingInfo.length === 2, "null docType no fields → 2 missing");
+assert(ai7[0].missingInfo !== undefined && ai7[0].missingInfo.length === 3, "null docType no fields → 3 missing");
 
 // ─── Case 19: Generic fallback Spanish ──────────────────────────────
 
@@ -541,7 +541,7 @@ const cdInstrBare = computeActionInstructions({
 });
 assert(cdInstrBare[0].id === "cease-desist-respond", "cease-desist bare → still template match");
 assert(cdInstrBare[0].confidence === 40, "cease-desist bare → confidence 40");
-assert(cdInstrBare[0].missingInfo !== undefined && cdInstrBare[0].missingInfo.length === 2, "cease-desist bare → 2 missing info");
+assert(cdInstrBare[0].missingInfo !== undefined && cdInstrBare[0].missingInfo.length === 3, "cease-desist bare → 3 missing info");
 
 // ─── Case 26: Unknown-other fixture → generic fallback ──────────────
 
@@ -665,5 +665,40 @@ assert(rsMinimal.responseChannels.length === 0, "signals summons-minimal: no cha
 assert(rsMinimal.missing.sender === false, "signals summons-minimal: sender not missing (has senderName)");
 assert(rsMinimal.missing.channel === true, "signals summons-minimal: channel missing");
 assert(rsMinimal.missing.court === true, "signals summons-minimal: court missing");
+
+// ─── Case 34: Confidence integrity tests ───────────────────────────
+
+console.log("\n--- Confidence integrity tests ---");
+
+for (const fixture of VERDICT_FIXTURES) {
+  const instr = computeActionInstructions({
+    language: "en",
+    activeDocumentType: fixture.data.documentType as string,
+    extracted: fixture.data,
+  });
+  const conf = instr[0].confidence || 0;
+  assert(conf >= 0 && conf <= 100, `fixture ${fixture.name}: confidence ${conf} is in [0, 100]`);
+  assert([40, 60, 80].includes(conf), `fixture ${fixture.name}: confidence ${conf} matches allowed tiers`);
+}
+
+// Generic fallback returns confidence <= template match for same signals
+// For same fields (issuer + deadline), generic should be 80, template should be 80.
+// Let's test a case where we have issuer and deadline.
+const fieldsWithBoth = { issuingParty: "Some Corp", deadlines: { signals: [{ dateIso: "2026-01-01" }] } };
+const aiTemplate = computeActionInstructions({
+  language: "en",
+  activeDocumentType: "summons",
+  activeEarliestDeadlineISO: "2026-01-01",
+  extracted: fieldsWithBoth,
+});
+const aiGeneric = computeActionInstructions({
+  language: "en",
+  activeDocumentType: "unknown",
+  activeEarliestDeadlineISO: "2026-01-01",
+  extracted: fieldsWithBoth,
+});
+assert(aiGeneric[0].confidence! <= aiTemplate[0].confidence!, "generic confidence <= template confidence for same signals");
+assert(aiGeneric[0].confidence === 80, "generic both fields -> 80");
+assert(aiTemplate[0].confidence === 80, "template both fields -> 80");
 
 console.log("\nAll tests passed.");

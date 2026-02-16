@@ -78,18 +78,6 @@ export function useWorkspaceDerived(input: DerivedInput) {
     [latestVerdictOutput]
   );
 
-  const actionInstructions = useMemo(
-    () => computeActionInstructions({
-      language,
-      activeDocumentType,
-      activeEarliestDeadlineISO: activeEarliestDeadline,
-      activeTimeSensitive,
-      extracted: latestVerdictOutput,
-      latestVerdictOutput,
-    }),
-    [language, activeDocumentType, activeEarliestDeadline, activeTimeSensitive, latestVerdictOutput]
-  );
-
   const responseSignals = useMemo(() => {
     const family = computeDocumentFamily({ docType: activeDocumentType });
     const extracted = normalizeExtractedFields(latestVerdictOutput);
@@ -99,6 +87,19 @@ export function useWorkspaceDerived(input: DerivedInput) {
       activeEarliestDeadlineISO: activeEarliestDeadline,
     });
   }, [activeDocumentType, latestVerdictOutput, activeEarliestDeadline]);
+
+  const actionInstructions = useMemo(
+    () => computeActionInstructions({
+      language,
+      activeDocumentType,
+      activeEarliestDeadlineISO: activeEarliestDeadline,
+      activeTimeSensitive,
+      extracted: latestVerdictOutput,
+      latestVerdictOutput,
+      responseSignals,
+    }),
+    [language, activeDocumentType, activeEarliestDeadline, activeTimeSensitive, latestVerdictOutput, responseSignals]
+  );
 
   return useMemo(() => ({
     activeDocumentType,
