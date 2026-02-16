@@ -1,0 +1,14 @@
+{
+  "documentType": "government_agency_notice",
+  "issuingParty": "State Department of Labor",
+  "contactEmail": "compliance@labor.state.example.gov",
+  "contactAddress": "200 Constitution Ave, Sacramento, CA 95814",
+  "phone": "(916) 555-0300",
+  "caseNumber": "DOL-ENF-2026-0088",
+  "sources": ["Page 1: 'NOTICE OF VIOLATION'"],
+  "deadlines": {
+    "signals": [
+      { "dateIso": "2026-03-15", "sourceText": "Response required by", "kind": "deadline", "confidence": 0.90 }
+    ]
+  }
+}

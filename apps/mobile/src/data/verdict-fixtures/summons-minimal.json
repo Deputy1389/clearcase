@@ -1,0 +1,9 @@
+{
+  "documentType": "complaint_and_summons",
+  "senderName": "County Clerk",
+  "deadlines": {
+    "signals": [
+      { "dateIso": "2026-04-15", "sourceText": "Court date", "kind": "hearing" }
+    ]
+  }
+}

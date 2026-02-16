@@ -1,0 +1,13 @@
+{
+  "documentType": "eviction_notice_3day",
+  "issuingParty": "Pacific Property Management",
+  "contactPhone": "(310) 555-0411",
+  "contactAddress": "8900 Wilshire Blvd, Beverly Hills, CA 90211",
+  "courtName": "Los Angeles County Superior Court",
+  "caseNumber": "24SMUD-00199",
+  "deadlines": {
+    "signals": [
+      { "dateIso": "2026-02-18", "sourceText": "3-day notice expires", "kind": "deadline", "confidence": 0.91 }
+    ]
+  }
+}

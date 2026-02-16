@@ -1,0 +1,12 @@
+{
+  "documentType": "cease_and_desist",
+  "attorneyName": "Johnson & Park LLP",
+  "email": "jpark@johnsonpark.law",
+  "contactAddress": "350 S Grand Ave, Suite 3100, Los Angeles, CA 90071",
+  "sources": ["Page 1: 'CEASE AND DESIST NOTICE'", "Page 2: 'you must immediately stop'"],
+  "deadlines": {
+    "signals": [
+      { "dateIso": "2026-03-05", "sourceText": "Compliance deadline", "kind": "deadline", "confidence": 0.72 }
+    ]
+  }
+}

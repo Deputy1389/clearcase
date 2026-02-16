@@ -1,0 +1,12 @@
+{
+  "documentType": "debt_collection_notice",
+  "senderName": "National Recovery Associates",
+  "contactPhone": "(800) 555-0234",
+  "address": "PO Box 4400, Dallas, TX 75208",
+  "website": "https://www.nra-collections.example.com",
+  "deadlines": {
+    "signals": [
+      { "dateIso": "2026-04-01", "sourceText": "Dispute deadline (30 days)", "kind": "deadline", "confidence": 0.78 }
+    ]
+  }
+}

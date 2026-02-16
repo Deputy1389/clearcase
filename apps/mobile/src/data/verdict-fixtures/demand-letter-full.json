@@ -1,0 +1,13 @@
+{
+  "documentType": "demand_letter",
+  "attorneyName": "Rebecca Torres, Esq.",
+  "contactEmail": "rtorres@torreslaw.com",
+  "contactPhone": "(415) 555-0198",
+  "address": "500 California St, Suite 1200, San Francisco, CA 94104",
+  "sources": ["Page 1: 'DEMAND FOR PAYMENT'", "Page 3: 'failure to respond within 15 days'"],
+  "deadlines": {
+    "signals": [
+      { "dateIso": "2026-03-01", "sourceText": "Payment demand deadline", "kind": "deadline", "confidence": 0.85 }
+    ]
+  }
+}

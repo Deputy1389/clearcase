@@ -1,0 +1,16 @@
+{
+  "documentType": "subpoena_duces_tecum",
+  "issuingParty": "District Attorney, County of Riverside",
+  "contactEmail": "civilsubpoena@rivco.da.gov",
+  "courtName": "Riverside County Superior Court",
+  "courtAddress": "4050 Main St, Riverside, CA 92501",
+  "caseNumber": "RIC-2026-00312",
+  "phone": "(951) 555-0177",
+  "sources": ["Page 1: 'SUBPOENA DUCES TECUM'", "Page 2: 'produce the following records'"],
+  "deadlines": {
+    "signals": [
+      { "dateIso": "2026-03-10", "sourceText": "Production deadline", "kind": "deadline", "confidence": 0.95 },
+      { "dateIso": "2026-03-25", "sourceText": "Court appearance", "kind": "hearing", "confidence": 0.88 }
+    ]
+  }
+}

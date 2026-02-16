@@ -14,6 +14,7 @@ import {
   computeActionInstructions,
   normalizeExtractedFields,
 } from "../src/hooks/controllers/workspace/workspaceDerived";
+import { VERDICT_FIXTURES } from "../src/data/verdict-fixtures";
 
 function assert(condition: boolean, message: string) {
   if (!condition) throw new Error(`FAIL: ${message}`);
@@ -295,5 +296,101 @@ const ai9 = computeActionInstructions({
 });
 assert(ai9[0].confidence === 80, "generic deadline+issuer → confidence 80");
 assert(ai9[0].missingInfo === undefined, "generic both fields → no missing info");
+
+// ─── Fixture-based normalizer tests ─────────────────────────────────
+
+console.log("\n--- Fixture normalizer tests ---");
+
+// All fixtures must normalize without throwing
+for (const fixture of VERDICT_FIXTURES) {
+  const fields = normalizeExtractedFields(fixture.data);
+  assert(typeof fields === "object" && fields !== null, `fixture ${fixture.name}: normalizes without crash`);
+  // Every field must be string | string[] | undefined — never null, never number
+  for (const [key, val] of Object.entries(fields)) {
+    if (val === undefined) continue;
+    if (Array.isArray(val)) {
+      assert(val.every((v) => typeof v === "string"), `fixture ${fixture.name}: ${key} array contains only strings`);
+    } else {
+      assert(typeof val === "string", `fixture ${fixture.name}: ${key} is string (got ${typeof val})`);
+      assert(val.trim().length > 0, `fixture ${fixture.name}: ${key} is non-blank`);
+    }
+  }
+}
+
+// summons-full: all contact + court fields present
+const sfFields = normalizeExtractedFields(VERDICT_FIXTURES.find((f) => f.name === "summons-full")!.data);
+assert(sfFields.senderName === "Law Offices of Martinez & Chen", "fixture summons-full: senderName");
+assert(sfFields.senderEmail === "service@martinezchen.law", "fixture summons-full: senderEmail");
+assert(sfFields.senderPhone === "(213) 555-0142", "fixture summons-full: senderPhone");
+assert(sfFields.senderAddress === "1200 Main St, Suite 400, Los Angeles, CA 90012", "fixture summons-full: senderAddress");
+assert(sfFields.courtName === "Superior Court of California, County of Los Angeles", "fixture summons-full: courtName");
+assert(sfFields.courtAddress === "111 N Hill St, Los Angeles, CA 90012", "fixture summons-full: courtAddress");
+assert(sfFields.courtWebsite === "https://www.lacourt.org", "fixture summons-full: courtWebsite");
+assert(sfFields.caseNumber === "23STCV-04821", "fixture summons-full: caseNumber");
+assert(sfFields.sources !== undefined && sfFields.sources.length === 2, "fixture summons-full: 2 sources");
+
+// summons-minimal: only senderName from senderName field
+const smFields = normalizeExtractedFields(VERDICT_FIXTURES.find((f) => f.name === "summons-minimal")!.data);
+assert(smFields.senderName === "County Clerk", "fixture summons-minimal: senderName from senderName");
+assert(smFields.senderEmail === undefined, "fixture summons-minimal: no email");
+assert(smFields.courtName === undefined, "fixture summons-minimal: no court");
+
+// demand-letter-full: attorneyName maps to senderName, address maps to senderAddress
+const dfFields = normalizeExtractedFields(VERDICT_FIXTURES.find((f) => f.name === "demand-letter-full")!.data);
+assert(dfFields.senderName === "Rebecca Torres, Esq.", "fixture demand-letter-full: senderName from attorneyName");
+assert(dfFields.senderEmail === "rtorres@torreslaw.com", "fixture demand-letter-full: senderEmail");
+assert(dfFields.senderAddress === "500 California St, Suite 1200, San Francisco, CA 94104", "fixture demand-letter-full: senderAddress from address");
+
+// demand-letter-sparse: from field maps to senderName
+const dsFields = normalizeExtractedFields(VERDICT_FIXTURES.find((f) => f.name === "demand-letter-sparse")!.data);
+assert(dsFields.senderName === "Unknown Attorney Office", "fixture demand-letter-sparse: senderName from from");
+assert(dsFields.senderEmail === undefined, "fixture demand-letter-sparse: no email");
+assert(dsFields.senderPhone === undefined, "fixture demand-letter-sparse: no phone");
+
+// subpoena-records: issuingParty → senderName, phone (not contactPhone) → senderPhone
+const srFields = normalizeExtractedFields(VERDICT_FIXTURES.find((f) => f.name === "subpoena-records")!.data);
+assert(srFields.senderName === "District Attorney, County of Riverside", "fixture subpoena-records: senderName from issuingParty");
+assert(srFields.senderEmail === "civilsubpoena@rivco.da.gov", "fixture subpoena-records: senderEmail");
+assert(srFields.senderPhone === "(951) 555-0177", "fixture subpoena-records: senderPhone from phone");
+assert(srFields.courtName === "Riverside County Superior Court", "fixture subpoena-records: courtName");
+assert(srFields.caseNumber === "RIC-2026-00312", "fixture subpoena-records: caseNumber");
+
+// debt-collection: senderName field, website present, no court
+const dcFields = normalizeExtractedFields(VERDICT_FIXTURES.find((f) => f.name === "debt-collection")!.data);
+assert(dcFields.senderName === "National Recovery Associates", "fixture debt-collection: senderName");
+assert(dcFields.senderPhone === "(800) 555-0234", "fixture debt-collection: senderPhone");
+assert(dcFields.senderAddress === "PO Box 4400, Dallas, TX 75208", "fixture debt-collection: senderAddress from address");
+assert(dcFields.website === "https://www.nra-collections.example.com", "fixture debt-collection: website");
+assert(dcFields.courtName === undefined, "fixture debt-collection: no court");
+
+// agency-notice: issuingParty, contactEmail, contactAddress, phone
+const anFields = normalizeExtractedFields(VERDICT_FIXTURES.find((f) => f.name === "agency-notice")!.data);
+assert(anFields.senderName === "State Department of Labor", "fixture agency-notice: senderName from issuingParty");
+assert(anFields.senderEmail === "compliance@labor.state.example.gov", "fixture agency-notice: senderEmail");
+assert(anFields.senderAddress === "200 Constitution Ave, Sacramento, CA 95814", "fixture agency-notice: senderAddress from contactAddress");
+assert(anFields.senderPhone === "(916) 555-0300", "fixture agency-notice: senderPhone from phone");
+assert(anFields.caseNumber === "DOL-ENF-2026-0088", "fixture agency-notice: caseNumber");
+
+// eviction-3day: issuingParty, contactPhone, courtName, caseNumber
+const e3Fields = normalizeExtractedFields(VERDICT_FIXTURES.find((f) => f.name === "eviction-3day")!.data);
+assert(e3Fields.senderName === "Pacific Property Management", "fixture eviction-3day: senderName");
+assert(e3Fields.senderPhone === "(310) 555-0411", "fixture eviction-3day: senderPhone from contactPhone");
+assert(e3Fields.senderAddress === "8900 Wilshire Blvd, Beverly Hills, CA 90211", "fixture eviction-3day: senderAddress from contactAddress");
+assert(e3Fields.courtName === "Los Angeles County Superior Court", "fixture eviction-3day: courtName");
+assert(e3Fields.senderEmail === undefined, "fixture eviction-3day: no email");
+
+// unknown-other: no useful fields
+const uoFields = normalizeExtractedFields(VERDICT_FIXTURES.find((f) => f.name === "unknown-other")!.data);
+assert(uoFields.senderName === undefined, "fixture unknown-other: no senderName");
+assert(uoFields.senderEmail === undefined, "fixture unknown-other: no email");
+assert(uoFields.courtName === undefined, "fixture unknown-other: no court");
+assert(uoFields.caseNumber === undefined, "fixture unknown-other: no caseNumber");
+
+// cease-desist: attorneyName, email (not contactEmail)
+const cdFields = normalizeExtractedFields(VERDICT_FIXTURES.find((f) => f.name === "cease-desist")!.data);
+assert(cdFields.senderName === "Johnson & Park LLP", "fixture cease-desist: senderName from attorneyName");
+assert(cdFields.senderEmail === "jpark@johnsonpark.law", "fixture cease-desist: senderEmail from email");
+assert(cdFields.senderAddress === "350 S Grand Ave, Suite 3100, Los Angeles, CA 90071", "fixture cease-desist: senderAddress from contactAddress");
+assert(cdFields.sources !== undefined && cdFields.sources.length === 2, "fixture cease-desist: 2 sources");
 
 console.log("\nAll tests passed.");

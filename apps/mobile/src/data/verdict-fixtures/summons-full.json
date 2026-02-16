@@ -1,0 +1,17 @@
+{
+  "documentType": "summons",
+  "issuingParty": "Law Offices of Martinez & Chen",
+  "contactEmail": "service@martinezchen.law",
+  "contactPhone": "(213) 555-0142",
+  "contactAddress": "1200 Main St, Suite 400, Los Angeles, CA 90012",
+  "courtName": "Superior Court of California, County of Los Angeles",
+  "courtAddress": "111 N Hill St, Los Angeles, CA 90012",
+  "courtWebsite": "https://www.lacourt.org",
+  "caseNumber": "23STCV-04821",
+  "sources": ["Page 1: 'You are hereby summoned'", "Page 2: 'You must file a response within 30 days'"],
+  "deadlines": {
+    "signals": [
+      { "dateIso": "2026-03-20", "sourceText": "Response deadline", "kind": "deadline", "confidence": 0.92 }
+    ]
+  }
+}
