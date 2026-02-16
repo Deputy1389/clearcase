@@ -8,7 +8,7 @@ export function useWorkspaceController(ui: any, cases: any, upload: any) {
   const uiState = useWorkspaceUI(ui, cases);
   const summary = useWorkspaceSummary(ui, cases, uiState);
   const timeline = useWorkspaceTimeline(ui, cases, summary, uiState);
-  const actions = useWorkspaceUpload(ui, cases, uiState, upload);
+  const actions = useWorkspaceUpload(ui, cases, uiState, upload, summary, timeline);
 
   return useMemo(() => ({
     ...uiState,

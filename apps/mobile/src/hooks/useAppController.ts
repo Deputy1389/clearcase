@@ -80,11 +80,17 @@ export function useAppController() {
   const applyLanguageFromSettings = useCallback((lang: any) => ui.applyLanguageFromSettings(lang, cases.setMe), [ui.applyLanguageFromSettings, cases.setMe]);
 
   return useMemo(() => ({
+    // UI
     ...ui,
+    // Auth
     ...auth,
+    // Cases
     ...cases,
+    // Upload
     ...upload,
+    // Workspace
     ...workspace,
+    // Composer overrides
     togglePushNotifications,
     togglePushQuietHours,
     applyLanguageFromSettings

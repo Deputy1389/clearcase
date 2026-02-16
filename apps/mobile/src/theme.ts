@@ -30,16 +30,16 @@ export const spacing = {
   sm: 8,
   md: 12,
   lg: 16,
-  xl: 20,
-  xxl: 24,
-  xxxl: 32
+  xl: 24,
+  xxl: 32,
+  xxxl: 40
 } as const;
 
 export const radius = {
   sm: 12,
   md: 16,
   lg: 20,
-  xl: 24,
+  xl: 28,
   round: 32,
   pill: 999
 } as const;
@@ -47,7 +47,7 @@ export const radius = {
 function buildShadow(opacity: number, blur: number, offsetY: number, elevation: number) {
   return Platform.select({
     ios: {
-      shadowColor: palette.text,
+      shadowColor: "#0F172A",
       shadowOpacity: opacity,
       shadowRadius: blur,
       shadowOffset: { width: 0, height: offsetY },
@@ -57,9 +57,9 @@ function buildShadow(opacity: number, blur: number, offsetY: number, elevation: 
 }
 
 export const shadow = {
-  card: buildShadow(0.07, 12, 3, 2),
-  hero: buildShadow(0.15, 16, 6, 4),
-  sheet: buildShadow(0.2, 24, -8, 8),
+  card: buildShadow(0.08, 16, 4, 3),
+  hero: buildShadow(0.18, 20, 8, 6),
+  sheet: buildShadow(0.25, 32, -10, 10),
   button: buildShadow(0.15, 12, 4, 3),
   subtle: buildShadow(0.06, 16, 4, 2),
 } as const;

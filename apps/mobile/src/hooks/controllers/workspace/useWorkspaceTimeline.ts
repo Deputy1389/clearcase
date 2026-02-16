@@ -251,6 +251,19 @@ export function useWorkspaceTimeline(ui: any, cases: any, summary: any, uiState:
     return groups;
   }, [premiumActionSteps]);
 
+  const workspaceChecklistItems = useMemo(() => {
+    if (!plusEnabled) {
+      return summary.workspaceNextSteps.map((text: string, index: number) => ({
+        id: `free-step-${index}`,
+        text
+      }));
+    }
+    return premiumActionSteps.slice(0, 10).map((step) => ({
+      id: step.id,
+      text: step.title
+    }));
+  }, [plusEnabled, summary.workspaceNextSteps, premiumActionSteps]);
+
   const premiumStepSummaryLine = useMemo(() => {
     if (!plusEnabled) return null;
     if (language === "es") {
@@ -262,7 +275,6 @@ export function useWorkspaceTimeline(ui: any, cases: any, summary: any, uiState:
   const weeklyAssuranceData = useMemo(() => ({ message: "No changes.", receiptCount: 0, confidence: "low" as const, uncertainty: "" }), []);
   const weeklyCheckInStatus = useMemo(() => "", []);
   const weeklyCheckInAction = useMemo(() => "", []);
-  const workspaceChecklistItems = useMemo(() => [], []);
 
   return useMemo(() => ({
     latestVerdictOutput,
@@ -278,6 +290,7 @@ export function useWorkspaceTimeline(ui: any, cases: any, summary: any, uiState:
     weeklyAssuranceData,
     caseWatchEnabled,
     packetHistoryEntries,
+    timelineRows: packetHistoryEntries,
     watchMicroEvents,
     watchStatusLine,
     weeklyCheckInStatus,

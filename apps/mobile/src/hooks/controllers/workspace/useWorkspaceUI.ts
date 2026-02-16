@@ -117,6 +117,13 @@ export function useWorkspaceUI(ui: any, cases: any) {
   const [creatingConsultLink, setCreatingConsultLink] = useState(false);
   const [disablingConsultToken, setDisablingConsultToken] = useState<string | null>(null);
 
+  const setStepProgress = useCallback((stepId: string, next: StepProgress): void => {
+    setStepProgressMap((current) => ({
+      ...current,
+      [stepId]: next
+    }));
+  }, []);
+
   const localizedCaseStatus = useCallback((value: string | null | undefined, lang: any = "en"): string => {
     const normalized = (value ?? "").trim().toLowerCase();
     if (!normalized) return lang === "es" ? "Abierto" : "Open";
@@ -261,12 +268,18 @@ export function useWorkspaceUI(ui: any, cases: any) {
     plainMeaningRows, setPlainMeaningRows,
     plainMeaningBoundary, setPlainMeaningBoundary,
     intakeDraft, setIntakeDraft,
-    stepProgressMap, setStepProgressMap,
+    stepProgressMap, setStepProgressMap, setStepProgress,
     intakeModalOpen, setIntakeModalOpen,
     consultLinks, setConsultLinks,
     loadingConsultLinks, setLoadingConsultLinks,
     creatingConsultLink, setCreatingConsultLink,
     disablingConsultToken, setDisablingConsultToken,
+    legalReturnScreen: ui.legalReturnScreen, setLegalReturnScreen: ui.setLegalReturnScreen,
+    legalAidSearch: ui.legalAidSearch, setLegalAidSearch: ui.setLegalAidSearch,
+    selectedTemplate: ui.selectedTemplate, setSelectedTemplate: ui.setSelectedTemplate,
+    pushEnabled: ui.pushEnabled, setPushEnabled: ui.setPushEnabled,
+    pushQuietHoursEnabled: ui.pushQuietHoursEnabled, setPushQuietHoursEnabled: ui.setPushQuietHoursEnabled,
+    savingPushPreferences: ui.savingPushPreferences, setSavingPushPreferences: ui.setSavingPushPreferences,
     localizedCaseStatus, stepGroupLabel, intakeSectionLabel, intakePlaceholder,
     accountInitials, assetViewerIsPdf, assetViewerIsImage, assetViewerRenderUrl,
     closeAssetViewer, buildViewerUrlWithPdfControls,
@@ -277,8 +290,10 @@ export function useWorkspaceUI(ui: any, cases: any) {
     savingCaseContext, savingWatchMode, assetViewerOpen, assetViewerAsset, assetViewerUrl,
     assetViewerPdfPage, assetViewerPdfZoom, assetViewerImageZoom, assetViewerImagePan,
     assetViewerImageBounds, assetViewerLoading, plainMeaningOpen, loadingPlainMeaning,
-    plainMeaningRows, plainMeaningBoundary, intakeDraft, stepProgressMap, intakeModalOpen,
+    plainMeaningRows, plainMeaningBoundary, intakeDraft, stepProgressMap, setStepProgress, intakeModalOpen,
     consultLinks, loadingConsultLinks, creatingConsultLink, disablingConsultToken,
+    ui.legalReturnScreen, ui.legalAidSearch, ui.selectedTemplate, ui.pushEnabled, 
+    ui.pushQuietHoursEnabled, ui.savingPushPreferences,
     localizedCaseStatus, stepGroupLabel, intakeSectionLabel, intakePlaceholder,
     accountInitials, assetViewerIsPdf, assetViewerIsImage, assetViewerRenderUrl,
     closeAssetViewer, buildViewerUrlWithPdfControls,

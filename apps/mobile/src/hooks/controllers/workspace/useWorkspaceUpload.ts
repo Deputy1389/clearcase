@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from "react";
-import { Alert, Linking, Share, LayoutAnimation } from "react-native";
+import { Alert, Linking, Share } from "react-native";
 import { 
   getCaseAssetAccess, 
   getConsultPacketLinks, 
@@ -14,9 +14,9 @@ import {
 import { withNetworkHint, isPlusRequiredApiError, parseFreeLimitApiError, isFreeOcrDisabledApiError, formatLimitResetAt } from "../../../utils/error-helpers";
 import { manualCategoryLabel } from "../../../utils/case-logic";
 
-export function useWorkspaceUpload(ui: any, cases: any, uiState: any, upload: any) {
+export function useWorkspaceUpload(ui: any, cases: any, uiState: any, upload: any, summary: any, timeline: any) {
   const { language, apiBase, headers, offlineMode, showBanner, promptPlusUpgrade, openPaywall } = ui;
-  const { selectedCaseId, selectedCase, loadDashboard, loadCase, loadCaseAssetsForSelectedCase } = cases;
+  const { selectedCaseId, selectedCase, loadDashboard, loadCase } = cases;
   const { waitForCaseInsight } = upload;
 
   const toggleCaseWatchMode = useCallback(async () => {
@@ -30,7 +30,7 @@ export function useWorkspaceUpload(ui: any, cases: any, uiState: any, upload: an
       return;
     }
 
-    const currentMode = uiState.caseWatchEnabled;
+    const currentMode = timeline.caseWatchEnabled;
     const nextMode = !currentMode;
 
     uiState.setSavingWatchMode(true);
@@ -43,7 +43,7 @@ export function useWorkspaceUpload(ui: any, cases: any, uiState: any, upload: an
     } finally {
       uiState.setSavingWatchMode(false);
     }
-  }, [uiState.plusEnabled, selectedCaseId, offlineMode, uiState.caseWatchEnabled, apiBase, headers, language, loadCase, showBanner, promptPlusUpgrade]);
+  }, [uiState.plusEnabled, selectedCaseId, offlineMode, timeline.caseWatchEnabled, apiBase, headers, language, loadCase, showBanner, promptPlusUpgrade]);
 
   const loadConsultPacketLinks = useCallback(async (id: string) => {
     if (offlineMode) return;
@@ -91,7 +91,7 @@ export function useWorkspaceUpload(ui: any, cases: any, uiState: any, upload: an
   }, [selectedCaseId, apiBase, headers, language, loadConsultPacketLinks, showBanner, uiState.setDisablingConsultToken]);
 
   const buildLawyerReadySummaryText = useCallback(() => {
-    const s = uiState.lawyerReadySummary;
+    const s = summary.lawyerReadySummary;
     const lines = [
       `# ${s.caseTitle}`,
       "",
@@ -129,23 +129,23 @@ export function useWorkspaceUpload(ui: any, cases: any, uiState: any, upload: an
       s.disclaimer
     ];
     return lines.join("\n");
-  }, [uiState.lawyerReadySummary]);
+  }, [summary.lawyerReadySummary]);
 
   const shareLawyerReadySummary = useCallback(async () => {
     const text = buildLawyerReadySummaryText();
     try {
       await Share.share({
         message: text,
-        title: uiState.lawyerReadySummary.caseTitle
+        title: summary.lawyerReadySummary.caseTitle
       });
     } catch (error) {
       Alert.alert("Share failed", "Could not open share sheet.");
     }
-  }, [buildLawyerReadySummaryText, uiState.lawyerReadySummary.caseTitle]);
+  }, [buildLawyerReadySummaryText, summary.lawyerReadySummary.caseTitle]);
 
   const emailLawyerReadySummary = useCallback(async () => {
     const text = buildLawyerReadySummaryText();
-    const subject = `ClearCase: Lawyer-Ready Summary - ${uiState.lawyerReadySummary.caseTitle}`;
+    const subject = `ClearCase: Lawyer-Ready Summary - ${summary.lawyerReadySummary.caseTitle}`;
     const url = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`;
     try {
       const supported = await Linking.canOpenURL(url);
@@ -157,7 +157,7 @@ export function useWorkspaceUpload(ui: any, cases: any, uiState: any, upload: an
     } catch (error) {
       Alert.alert("Email failed", "Could not open email app.");
     }
-  }, [buildLawyerReadySummaryText, uiState.lawyerReadySummary.caseTitle]);
+  }, [buildLawyerReadySummaryText, summary.lawyerReadySummary.caseTitle]);
   
   const openViewerUrlExternally = useCallback(async () => {
     if (uiState.assetViewerUrl) {

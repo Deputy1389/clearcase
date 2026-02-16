@@ -403,6 +403,7 @@ export function useUploadProcessing(
 
   // Sheet / flow entry points
   async function openUploadSheetForCase(caseId: string | null): Promise<void> {
+    console.log("openUploadSheetForCase", caseId);
     setUploadTargetCaseId(caseId);
     setUploadDescription("");
     setUploadCaseTitle("");
@@ -410,6 +411,7 @@ export function useUploadProcessing(
   }
 
   async function homeUploadFlow(): Promise<void> {
+    console.log("homeUploadFlow triggered");
     await openUploadSheetForCase(null);
   }
 
