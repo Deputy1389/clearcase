@@ -11,11 +11,12 @@ import {
   computeDocumentFamily,
   normalizeExtractedFields,
   computeResponseSignals,
+  computeResponsePlan,
 } from "./workspaceDerived";
 import type { AppLanguage, CaseSeverity, UploadStage } from "../../../types";
 import type { CaseDetail, CaseSummary } from "../../../api";
 
-export type { TimelineRow, ActionInstruction, ResponseSignals } from "./workspaceDerived";
+export type { TimelineRow, ActionInstruction, ResponseSignals, ResponsePlan } from "./workspaceDerived";
 
 type DerivedInput = {
   language: AppLanguage;
@@ -88,6 +89,16 @@ export function useWorkspaceDerived(input: DerivedInput) {
     });
   }, [activeDocumentType, latestVerdictOutput, activeEarliestDeadline]);
 
+  const responsePlan = useMemo(() => {
+    const family = computeDocumentFamily({ docType: activeDocumentType });
+    const extracted = normalizeExtractedFields(latestVerdictOutput);
+    return computeResponsePlan({
+      family,
+      extracted,
+      signals: responseSignals,
+    });
+  }, [activeDocumentType, latestVerdictOutput, responseSignals]);
+
   const actionInstructions = useMemo(
     () => computeActionInstructions({
       language,
@@ -97,8 +108,9 @@ export function useWorkspaceDerived(input: DerivedInput) {
       extracted: latestVerdictOutput,
       latestVerdictOutput,
       responseSignals,
+      responsePlan,
     }),
-    [language, activeDocumentType, activeEarliestDeadline, activeTimeSensitive, latestVerdictOutput, responseSignals]
+    [language, activeDocumentType, activeEarliestDeadline, activeTimeSensitive, latestVerdictOutput, responseSignals, responsePlan]
   );
 
   return useMemo(() => ({
@@ -114,6 +126,7 @@ export function useWorkspaceDerived(input: DerivedInput) {
     timelineRows,
     actionInstructions,
     responseSignals,
+    responsePlan,
   }), [
     activeDocumentType,
     activeEarliestDeadline,
@@ -127,5 +140,6 @@ export function useWorkspaceDerived(input: DerivedInput) {
     timelineRows,
     actionInstructions,
     responseSignals,
+    responsePlan,
   ]);
 }

@@ -204,6 +204,8 @@ export function normalizeExtractedFields(
   if (caseNumber) fields.caseNumber = caseNumber;
   const website = str(v.website);
   if (website) fields.website = website;
+  const appearanceDateISO = str(v.appearanceDateISO) ?? str(v.appearanceDate);
+  if (appearanceDateISO) fields.appearanceDateISO = appearanceDateISO;
   const sources = asStringArray(v.sources);
   if (sources.length > 0) fields.sources = sources;
   return fields;
@@ -222,6 +224,76 @@ export type ResponseSignals = {
     channel: boolean;
   };
 };
+
+export type ResponsePlan = {
+  requiredActions: ("respond" | "appear" | "produce_documents" | "file_answer" | "dispute" | "pay" | "negotiate")[];
+  proofToKeep: string[];                 // always safe items like “copies”, “receipts”, “screenshots”
+  destination: ResponseSignals["responseDestination"];
+  channels: ResponseSignals["responseChannels"];
+  deadlineISO?: string;
+};
+
+export function computeResponsePlan(args: {
+  family: DocumentFamily;
+  extracted: ExtractedFields;
+  signals: ResponseSignals;
+}): ResponsePlan {
+  const { family, extracted, signals } = args;
+  const actions: ResponsePlan["requiredActions"] = [];
+
+  switch (family) {
+    case "summons":
+    case "small_claims":
+      if (extracted.appearanceDateISO) {
+        actions.push("appear");
+      } else if (extracted.courtName) {
+        actions.push("file_answer");
+      } else {
+        actions.push("respond");
+      }
+      break;
+    case "subpoena":
+      actions.push("produce_documents");
+      if (extracted.appearanceDateISO) {
+        actions.push("appear");
+      }
+      break;
+    case "demand_letter":
+      actions.push("respond");
+      actions.push("negotiate");
+      break;
+    case "debt_collection":
+    case "collections_validation":
+      actions.push("dispute");
+      actions.push("respond");
+      break;
+    case "agency_notice":
+      actions.push("respond");
+      break;
+    case "eviction":
+      actions.push("respond");
+      // Usually implies potential appearance
+      actions.push("appear");
+      break;
+    case "cease_and_desist":
+      actions.push("respond");
+      break;
+    case "lien":
+      actions.push("respond");
+      actions.push("pay");
+      break;
+    default:
+      actions.push("respond");
+  }
+
+  return {
+    requiredActions: actions,
+    proofToKeep: ["copies of what you send", "delivery proof if available", "receipts"],
+    destination: signals.responseDestination,
+    channels: signals.responseChannels,
+    deadlineISO: signals.responseDeadlineISO,
+  };
+}
 
 export function computeResponseSignals(args: {
   family: DocumentFamily;
@@ -367,6 +439,29 @@ function buildGenericFallbackSteps(f: ExtractedFields, lang: "en" | "es"): strin
   ];
 }
 
+function projectPlanToSteps(plan: ResponsePlan, es: boolean): string[] {
+  const steps: string[] = [];
+  if (plan.requiredActions.includes("file_answer")) {
+    steps.push(es ? "Prepare su respuesta formal (contestacion) para el tribunal" : "Prepare your formal response (answer) for the court");
+  }
+  if (plan.requiredActions.includes("appear")) {
+    steps.push(es ? "Asegurese de comparecer en la fecha y lugar indicados" : "Ensure you appear at the indicated date and location");
+  }
+  if (plan.requiredActions.includes("produce_documents")) {
+    steps.push(es ? "Reuna y presente los documentos solicitados" : "Gather and produce the requested documents");
+  }
+  if (plan.requiredActions.includes("dispute")) {
+    steps.push(es ? "Envie una carta de disputa por escrito para proteger sus derechos" : "Send a written dispute letter to protect your rights");
+  }
+  if (plan.requiredActions.includes("pay")) {
+    steps.push(es ? "Considere realizar el pago para resolver el asunto y evitar gravamenes" : "Consider making the payment to resolve the matter and avoid liens");
+  }
+  if (plan.requiredActions.includes("negotiate")) {
+    steps.push(es ? "Considere negociar un acuerdo o plan de pago" : "Consider negotiating a settlement or payment plan");
+  }
+  return steps;
+}
+
 export function computeActionInstructions(args: {
   language: AppLanguage;
   activeDocumentType?: string | null;
@@ -375,8 +470,9 @@ export function computeActionInstructions(args: {
   extracted?: Record<string, unknown> | null;
   latestVerdictOutput?: Record<string, unknown> | null;
   responseSignals?: ResponseSignals;
+  responsePlan?: ResponsePlan;
 }): ActionInstruction[] {
-  const { language, activeDocumentType, activeEarliestDeadlineISO, extracted, responseSignals } = args;
+  const { language, activeDocumentType, activeEarliestDeadlineISO, extracted, responseSignals, responsePlan } = args;
   const es = language === "es";
 
   const fields = normalizeExtractedFields(extracted ?? null);
@@ -385,6 +481,18 @@ export function computeActionInstructions(args: {
 
   const family = computeDocumentFamily({ docType: activeDocumentType, extracted: fields });
   const template = findTemplateByFamily(family);
+
+  const signals = responseSignals ?? computeResponseSignals({
+    family,
+    extracted: fields,
+    activeEarliestDeadlineISO,
+  });
+
+  const plan = responsePlan ?? computeResponsePlan({
+    family,
+    extracted: fields,
+    signals,
+  });
 
   let id: string;
   let title: string;
@@ -399,6 +507,14 @@ export function computeActionInstructions(args: {
     explanation = s.explanation;
     consequence = s.consequence;
     steps = template.buildSteps(fields, language);
+    
+    // Incorporate plan actions into steps if not already present
+    const planSteps = projectPlanToSteps(plan, es);
+    for (const ps of planSteps) {
+      if (!steps.some(s => s.toLowerCase().includes(ps.toLowerCase().substring(0, 10)))) {
+        steps.push(ps);
+      }
+    }
   } else {
     id = "generic-respond";
     title = es ? "Como responder" : "How to respond";
@@ -408,18 +524,21 @@ export function computeActionInstructions(args: {
     consequence = es
       ? "Ignorar documentos legales puede tener consecuencias serias"
       : "Ignoring legal documents can have serious consequences";
-    steps = buildGenericFallbackSteps(fields, language);
+    
+    const planSteps = projectPlanToSteps(plan, es);
+    if (planSteps.length > 0) {
+      steps = [
+        ...planSteps,
+        ...buildGenericFallbackSteps(fields, language).slice(0, 3)
+      ];
+    } else {
+      steps = buildGenericFallbackSteps(fields, language);
+    }
   }
 
   const contact = buildContact(fields);
   const court = buildCourt(fields);
   const channels = buildChannels(fields, es);
-
-  const signals = responseSignals ?? computeResponseSignals({
-    family,
-    extracted: fields,
-    activeEarliestDeadlineISO,
-  });
 
   const missingInfo = buildMissingInfoStrings(signals, es);
   const confidence = computeConfidence(hasDeadline, hasIssuer, Boolean(template));

@@ -15,6 +15,7 @@ import {
   normalizeExtractedFields,
   computeDocumentFamily,
   computeResponseSignals,
+  computeResponsePlan,
 } from "../src/hooks/controllers/workspace/workspaceDerived";
 import { VERDICT_FIXTURES } from "../src/data/verdict-fixtures";
 
@@ -182,7 +183,7 @@ const ai1 = computeActionInstructions({
 });
 assert(ai1.length === 1, "subpoena → 1 action instruction");
 assert(ai1[0].id === "subpoena-respond", "subpoena → template id");
-assert(ai1[0].steps.length === 5, "subpoena → 5 steps");
+assert(ai1[0].steps.length === 6, "subpoena → 6 steps (template + plan)");
 assert(ai1[0].contact === undefined, "subpoena no contact → contact undefined");
 assert(ai1[0].deadlineISO === undefined, "subpoena no deadline → deadlineISO undefined");
 assert(ai1[0].confidence === 40, "subpoena no contact/deadline → confidence 40");
@@ -212,6 +213,7 @@ assert(ai2[0].court!.name === "Superior Court of LA", "subpoena → court.name")
 assert(ai2[0].court!.caseNumber === "BC-2026-1234", "subpoena → court.caseNumber");
 assert(ai2[0].confidence === 80, "subpoena deadline+issuer → confidence 80");
 assert(ai2[0].missingInfo === undefined, "subpoena with all fields → no missing info");
+assert(ai2[0].steps.length === 6, "subpoena → 6 steps");
 assert(ai2[0].steps[2].includes("Smith & Associates"), "subpoena → step 3 includes issuing party");
 
 // ─── Case 14: Subpoena Spanish ─────────────────────────────────────
@@ -238,6 +240,7 @@ const ai4 = computeActionInstructions({
 assert(ai4.length === 1, "summons → 1 instruction");
 assert(ai4[0].id === "summons-respond", "summons → template id");
 assert(ai4[0].confidence === 80, "summons deadline+issuer → confidence 80");
+assert(ai4[0].steps.length === 5, "summons → 5 steps (plan respond added no step)");
 
 // ─── Case 16: Demand letter template match ──────────────────────────
 
@@ -250,6 +253,7 @@ const ai5 = computeActionInstructions({
 assert(ai5.length === 1, "demand letter → 1 instruction");
 assert(ai5[0].id === "demand-letter-respond", "demand letter → template id");
 assert(ai5[0].confidence === 40, "demand letter no fields → confidence 40");
+assert(ai5[0].steps.length === 6, "demand letter → 6 steps");
 
 // ─── Case 17: Generic fallback — unknown doc type ───────────────────
 
@@ -449,7 +453,7 @@ const dcInstr = computeActionInstructions({
 assert(dcInstr.length === 1, "debt-collection fixture → 1 instruction");
 assert(dcInstr[0].id === "debt-collection-respond", "debt-collection → template id (not generic)");
 assert(dcInstr[0].title === "Respond to the debt collection notice", "debt-collection → correct title");
-assert(dcInstr[0].steps.length === 5, "debt-collection → 5 steps");
+assert(dcInstr[0].steps.length === 5, "debt-collection → 5 steps (plan dispute deduped)");
 assert(dcInstr[0].deadlineISO === "2026-04-15", "debt-collection → deadline passed through");
 assert(dcInstr[0].contact !== undefined, "debt-collection → contact present");
 assert(dcInstr[0].contact!.name === "National Recovery Associates", "debt-collection → contact.name");
@@ -496,7 +500,7 @@ const evInstr = computeActionInstructions({
 });
 assert(evInstr[0].id === "eviction-respond", "eviction → template id (not generic)");
 assert(evInstr[0].title === "Respond to the eviction notice", "eviction → correct title");
-assert(evInstr[0].steps.length === 5, "eviction → 5 steps");
+assert(evInstr[0].steps.length === 6, "eviction → 6 steps");
 assert(evInstr[0].steps[0].includes("3-day"), "eviction → first step mentions notice types");
 assert(evInstr[0].contact !== undefined, "eviction → contact present");
 assert(evInstr[0].contact!.name === "Pacific Property Management", "eviction → contact.name");
@@ -700,5 +704,43 @@ const aiGeneric = computeActionInstructions({
 assert(aiGeneric[0].confidence! <= aiTemplate[0].confidence!, "generic confidence <= template confidence for same signals");
 assert(aiGeneric[0].confidence === 80, "generic both fields -> 80");
 assert(aiTemplate[0].confidence === 80, "template both fields -> 80");
+
+// ─── Case 35: ResponsePlan tests ───────────────────────────────────
+
+console.log("\n--- ResponsePlan tests ---");
+
+// 1. summons-full
+const sfData = VERDICT_FIXTURES.find((f) => f.name === "summons-full")!.data;
+const sfExtracted = normalizeExtractedFields(sfData);
+const sfSignals = computeResponseSignals({ family: "summons", extracted: sfExtracted, activeEarliestDeadlineISO: "2026-03-20" });
+const sfPlan = computeResponsePlan({ family: "summons", extracted: sfExtracted, signals: sfSignals });
+
+assert(sfPlan.requiredActions.includes("file_answer"), "summons-full: requiredActions includes file_answer");
+assert(sfPlan.destination === "court", "summons-full: destination is court");
+assert(sfPlan.deadlineISO === "2026-03-20", "summons-full: deadline passthrough");
+
+// 2. subpoena-records
+const srData = VERDICT_FIXTURES.find((f) => f.name === "subpoena-records")!.data;
+const srExtracted = normalizeExtractedFields(srData);
+const srSignals = computeResponseSignals({ family: "subpoena", extracted: srExtracted });
+const srPlan = computeResponsePlan({ family: "subpoena", extracted: srExtracted, signals: srSignals });
+
+assert(srPlan.requiredActions.includes("produce_documents"), "subpoena-records: requiredActions includes produce_documents");
+assert(srPlan.channels.includes("email"), "subpoena-records: channels include email");
+
+// 3. debt-collection
+const dcData = VERDICT_FIXTURES.find((f) => f.name === "debt-collection")!.data;
+const dcExtracted = normalizeExtractedFields(dcData);
+const dcSignals = computeResponseSignals({ family: "debt_collection", extracted: dcExtracted });
+const dcPlan = computeResponsePlan({ family: "debt_collection", extracted: dcExtracted, signals: dcSignals });
+
+assert(dcPlan.requiredActions.includes("dispute"), "debt-collection: requiredActions includes dispute");
+assert(dcPlan.requiredActions.includes("respond"), "debt-collection: requiredActions includes respond");
+assert(dcPlan.destination === "sender", "debt-collection: destination is sender");
+
+// ActionInstructions still match prior behavior (check key fields)
+const sfInstr = computeActionInstructions({ language: "en", extracted: sfData, activeEarliestDeadlineISO: "2026-03-20", activeDocumentType: "summons" });
+assert(sfInstr[0].id === "summons-respond", "summons-full: still matches summons-respond template");
+assert(sfInstr[0].steps.some(s => s.toLowerCase().includes("response")), "summons-full: steps include response instructions");
 
 console.log("\nAll tests passed.");

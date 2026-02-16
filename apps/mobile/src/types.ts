@@ -89,6 +89,7 @@ export type ExtractedFields = {
   courtWebsite?: string;
   caseNumber?: string;
   website?: string;
+  appearanceDateISO?: string;
   sources?: string[];
 };
 
