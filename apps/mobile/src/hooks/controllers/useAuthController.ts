@@ -1,10 +1,18 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useRef } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "../useAuth";
 import { STORAGE_ONBOARDED } from "../../constants";
 
 export function useAuthController(ui: any) {
   const [slide, setSlide] = useState(0);
+  const authCallbacks = useRef<any>({
+    resetAppState: () => {},
+    applyOfflineSession: () => {},
+    applyServerMeState: async () => {},
+    applyAuthSuccess: () => {},
+    applyOfflineFallback: () => {},
+    language: ui.language
+  });
 
   const {
     authMode, setAuthMode,
@@ -40,11 +48,11 @@ export function useAuthController(ui: any) {
     detectLanApiBase: ui.detectLanApiBase,
     persistConnection: ui.persistConnection
   }, {
-    resetAppState: () => {}, // Wired in composer
-    applyOfflineSession: () => {}, // Wired in composer
-    applyServerMeState: async () => {}, // Wired in composer
-    applyAuthSuccess: () => {}, // Wired in composer
-    applyOfflineFallback: () => {}, // Wired in composer
+    resetAppState: () => authCallbacks.current.resetAppState(),
+    applyOfflineSession: (...args: any[]) => authCallbacks.current.applyOfflineSession(...args),
+    applyServerMeState: (...args: any[]) => authCallbacks.current.applyServerMeState(...args),
+    applyAuthSuccess: (...args: any[]) => authCallbacks.current.applyAuthSuccess(...args),
+    applyOfflineFallback: () => authCallbacks.current.applyOfflineFallback(),
     language: ui.language
   });
 
@@ -71,7 +79,8 @@ export function useAuthController(ui: any) {
     agreeAndContinue,
     resolveAuthApiBase,
     slide, setSlide,
-    completeOnboarding
+    completeOnboarding,
+    authCallbacks
   }), [
     authMode, authName, authZip, authEmail, authPassword,
     authIntent, authBusy, authStage, isBootstrapping, slide,

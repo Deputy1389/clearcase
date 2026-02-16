@@ -1,14 +1,25 @@
-import { useState, useMemo } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useLanguage } from "../useLanguage";
 import { useNavigation } from "../useNavigation";
 import { useConnection } from "../useConnection";
 import { usePaywall } from "../usePaywall";
+import * as Haptics from "expo-haptics";
 
 export function useUiController() {
   const { language, setLanguage, setLanguageWithPersistence, loadPersistedLanguage } = useLanguage();
   const { screen, setScreen, postLanguageScreen, setPostLanguageScreen, goBack } = useNavigation();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [legalReturnScreen, setLegalReturnScreen] = useState<string>("home");
+  
+  const [legalAidSearch, setLegalAidSearch] = useState("");
+  const [selectedTemplate, setSelectedTemplate] = useState(null);
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [pushQuietHoursEnabled, setPushQuietHoursEnabled] = useState(false);
+  const [savingPushPreferences, setSavingPushPreferences] = useState(false);
+
+  const hapticTap = useCallback(() => {
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  }, []);
 
   const {
     apiBase, setApiBase,
@@ -46,6 +57,12 @@ export function useUiController() {
     screen, setScreen, postLanguageScreen, setPostLanguageScreen, goBack,
     drawerOpen, setDrawerOpen,
     legalReturnScreen, setLegalReturnScreen,
+    legalAidSearch, setLegalAidSearch,
+    selectedTemplate, setSelectedTemplate,
+    pushEnabled, setPushEnabled,
+    pushQuietHoursEnabled, setPushQuietHoursEnabled,
+    savingPushPreferences, setSavingPushPreferences,
+    hapticTap,
     apiBase, setApiBase,
     apiBaseInput, setApiBaseInput,
     connStatus, setConnStatus,
@@ -72,12 +89,12 @@ export function useUiController() {
     promptPlusUpgrade,
     paywallCallbacks
   }), [
-    language, screen, postLanguageScreen, drawerOpen, legalReturnScreen,
-    apiBase, apiBaseInput, connStatus, connMessage, offlineMode, banner,
-    subject, subjectInput, email, emailInput, headers,
-    showBanner, verifyConnection, detectLanApiBase, persistConnection, applyConnection,
-    setLanguageWithPersistence, loadPersistedLanguage, goBack,
-    paywallConfig, planTier, startingCheckout, planSheetOpen,
-    loadPaywallConfigState, startPlusCheckout, openPaywall, promptPlusUpgrade, paywallCallbacks
+    language, screen, drawerOpen, legalReturnScreen, legalAidSearch,
+    selectedTemplate, pushEnabled, pushQuietHoursEnabled, savingPushPreferences,
+    hapticTap, apiBase, apiBaseInput, connStatus, connMessage, offlineMode,
+    banner, subject, subjectInput, email, emailInput, headers,
+    showBanner, verifyConnection, detectLanApiBase, persistConnection,
+    applyConnection, paywallConfig, planTier, startingCheckout, planSheetOpen,
+    loadPaywallConfigState, startPlusCheckout, openPaywall, promptPlusUpgrade
   ]);
 }

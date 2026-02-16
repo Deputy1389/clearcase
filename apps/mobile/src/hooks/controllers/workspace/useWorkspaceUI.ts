@@ -1,7 +1,7 @@
-import { useState, useRef, useMemo, useCallback } from "react";
+import { useState, useRef, useMemo, useCallback, useEffect } from "react";
 import { LayoutAnimation, Platform } from "react-native";
 import { manualCategoryLabel } from "../../../utils/case-logic";
-import { titleize } from "../../../utils/formatting";
+import { titleize, clamp } from "../../../utils/formatting";
 import { emptyIntakeDraft } from "../../../utils/parsing";
 import { onboardingSlidesByLanguage } from "../../../data/onboarding-slides";
 import type { IntakeDraft, PremiumStepGroup, StepProgress } from "../../../types";
@@ -82,6 +82,23 @@ export function useWorkspaceUI(ui: any, cases: any) {
   const [assetViewerLoading, setAssetViewerLoading] = useState(false);
   const assetViewerImagePanRef = useRef({ x: 0, y: 0 });
   const assetViewerImagePanStartRef = useRef({ x: 0, y: 0 });
+
+  useEffect(() => {
+    assetViewerImagePanRef.current = assetViewerImagePan;
+  }, [assetViewerImagePan]);
+
+  useEffect(() => {
+    setAssetViewerImagePan((current) => {
+      const maxX = ((Math.max(assetViewerImageZoom, 1) - 1) * assetViewerImageBounds.width) / 2;
+      const maxY = ((Math.max(assetViewerImageZoom, 1) - 1) * assetViewerImageBounds.height) / 2;
+      const next = {
+        x: clamp(current.x, -maxX, maxX),
+        y: clamp(current.y, -maxY, maxY)
+      };
+      if (next.x === current.x && next.y === current.y) return current;
+      return next;
+    });
+  }, [assetViewerImageBounds.height, assetViewerImageBounds.width, assetViewerImageZoom]);
 
   // Plain Meaning
   const [plainMeaningOpen, setPlainMeaningOpen] = useState(false);
