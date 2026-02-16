@@ -109,7 +109,8 @@ export default function WorkspaceScreen({
     closeAssetViewer,
     openViewerUrlExternally,
     timelineRows,
-    actionInstructions
+    actionInstructions,
+    responseSignals
   } = workspace;
   const { localizedCaseStatus, formatUploadStage, manualCategoryLabel: manualLabel } = helpers;
 
@@ -260,7 +261,52 @@ export default function WorkspaceScreen({
 
         {/* Action Instructions Section */}
         {actionInstructions && actionInstructions.length > 0 ? (
-          <ActionLayerCard instruction={actionInstructions[0]} language={language} styles={styles} palette={palette} />
+          <>
+            <ActionLayerCard instruction={actionInstructions[0]} language={language} styles={styles} palette={palette} />
+            {responseSignals ? (
+              <View style={styles.actionContactCard}>
+                <Text style={styles.miniLabel}>{language === "es" ? "DETALLES DE RESPUESTA" : "RESPONSE DETAILS"}</Text>
+                <Text style={styles.actionContactLine}>
+                  {language === "es" ? "Destino: " : "Destination: "}
+                  {responseSignals.responseDestination === "court"
+                    ? (language === "es" ? "Tribunal" : "Court")
+                    : responseSignals.responseDestination === "sender"
+                      ? (language === "es" ? "Remitente" : "Sender")
+                      : responseSignals.responseDestination === "agency"
+                        ? (language === "es" ? "Agencia" : "Agency")
+                        : (language === "es" ? "Desconocido" : "Unknown")}
+                </Text>
+                {responseSignals.responseChannels.length > 0 ? (
+                  <Text style={styles.actionContactLine}>
+                    {language === "es" ? "Metodos: " : "Methods: "}
+                    {responseSignals.responseChannels.map((ch) => {
+                      if (ch === "email") return language === "es" ? "Correo" : "Email";
+                      if (ch === "phone") return language === "es" ? "Telefono" : "Phone";
+                      if (ch === "mail") return language === "es" ? "Correo postal" : "Mail";
+                      if (ch === "portal") return "Portal";
+                      if (ch === "in_person") return language === "es" ? "En persona" : "In person";
+                      return ch;
+                    }).join(", ")}
+                  </Text>
+                ) : null}
+                {responseSignals.responseDeadlineISO ? (
+                  <View style={styles.actionDeadlineRow}>
+                    <Feather name="clock" size={13} color={palette.primary} />
+                    <Text style={styles.actionDeadlineText}>
+                      {language === "es" ? "Responder antes de" : "Respond by"}: {fmtDate(responseSignals.responseDeadlineISO, language)}
+                    </Text>
+                  </View>
+                ) : null}
+                {responseSignals.missing.channel ? (
+                  <Text style={[styles.cardBody, { fontStyle: "italic", marginTop: 4, marginBottom: 0 }]}>
+                    {language === "es"
+                      ? "No se encontro metodo de respuesta en este documento aun."
+                      : "No response method found in this document yet."}
+                  </Text>
+                ) : null}
+              </View>
+            ) : null}
+          </>
         ) : null}
 
         {/* Watch Section */}

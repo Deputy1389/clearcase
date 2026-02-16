@@ -1,6 +1,6 @@
 import type { CaseSummary, CaseDetail, CaseAsset, MeResponse, ConsultPacketLink, PlainMeaningRow, ManualDocumentType } from "../api";
 import type { AppLanguage, BannerTone, ConnStatus, PlanTier, Screen, ContentScreen, UploadStage, CaseSeverity, WorkspaceAccordionKey, StepProgress, PremiumActionStep, IntakeDraft, PaywallConfigState } from "../types";
-import type { TimelineRow, ActionInstruction } from "../hooks/controllers/workspace/workspaceDerived";
+import type { TimelineRow, ActionInstruction, ResponseSignals } from "../hooks/controllers/workspace/workspaceDerived";
 
 // Navigation bundle
 export interface NavigationBundle {
@@ -206,6 +206,8 @@ export interface WorkspaceBundle {
   timelineRows?: TimelineRow[];
   // Action instructions (how to respond)
   actionInstructions?: ActionInstruction[];
+  // Response signals (destination, channels, missing info)
+  responseSignals?: ResponseSignals;
   // Evidence
   evidenceCompleteness: { score: number; status: string; missing: string[] };
   // Cost saving
