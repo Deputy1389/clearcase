@@ -209,6 +209,61 @@ export function normalizeExtractedFields(
   return fields;
 }
 
+// ── Response signals ────────────────────────────────────────────────
+
+export type ResponseSignals = {
+  responseDeadlineISO?: string;
+  responseDestination: "court" | "sender" | "agency" | "unknown";
+  responseChannels: ("email" | "mail" | "portal" | "in_person" | "phone")[];
+  missing: {
+    deadline: boolean;
+    sender: boolean;
+    court: boolean;
+    channel: boolean;
+  };
+};
+
+export function computeResponseSignals(args: {
+  family: DocumentFamily;
+  extracted: ExtractedFields;
+  activeEarliestDeadlineISO?: string | null;
+}): ResponseSignals {
+  const { family, extracted, activeEarliestDeadlineISO } = args;
+
+  const hasContact = Boolean(
+    extracted.senderEmail || extracted.senderPhone || extracted.senderAddress
+  );
+
+  let responseDestination: ResponseSignals["responseDestination"];
+  if (extracted.courtName) responseDestination = "court";
+  else if (hasContact) responseDestination = "sender";
+  else if (family === "agency_notice") responseDestination = "agency";
+  else responseDestination = "unknown";
+
+  const responseChannels: ResponseSignals["responseChannels"] = [];
+  if (extracted.senderEmail) responseChannels.push("email");
+  if (extracted.senderPhone) responseChannels.push("phone");
+  if (extracted.senderAddress) responseChannels.push("mail");
+  if (extracted.courtWebsite) responseChannels.push("portal");
+
+  const signals: ResponseSignals = {
+    responseDestination,
+    responseChannels,
+    missing: {
+      deadline: !activeEarliestDeadlineISO,
+      sender: !hasContact && !extracted.senderName,
+      court: !extracted.courtName,
+      channel: responseChannels.length === 0,
+    },
+  };
+
+  if (activeEarliestDeadlineISO) {
+    signals.responseDeadlineISO = activeEarliestDeadlineISO;
+  }
+
+  return signals;
+}
+
 // ── Document family classification ──────────────────────────────────
 
 export function computeDocumentFamily(args: {

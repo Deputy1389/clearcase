@@ -8,11 +8,14 @@ import {
   computeDeadlineGuardReminders,
   computeTimelineRows,
   computeActionInstructions,
+  computeDocumentFamily,
+  normalizeExtractedFields,
+  computeResponseSignals,
 } from "./workspaceDerived";
 import type { AppLanguage, CaseSeverity, UploadStage } from "../../../types";
 import type { CaseDetail, CaseSummary } from "../../../api";
 
-export type { TimelineRow, ActionInstruction } from "./workspaceDerived";
+export type { TimelineRow, ActionInstruction, ResponseSignals } from "./workspaceDerived";
 
 type DerivedInput = {
   language: AppLanguage;
@@ -87,6 +90,16 @@ export function useWorkspaceDerived(input: DerivedInput) {
     [language, activeDocumentType, activeEarliestDeadline, activeTimeSensitive, latestVerdictOutput]
   );
 
+  const responseSignals = useMemo(() => {
+    const family = computeDocumentFamily({ docType: activeDocumentType });
+    const extracted = normalizeExtractedFields(latestVerdictOutput);
+    return computeResponseSignals({
+      family,
+      extracted,
+      activeEarliestDeadlineISO: activeEarliestDeadline,
+    });
+  }, [activeDocumentType, latestVerdictOutput, activeEarliestDeadline]);
+
   return useMemo(() => ({
     activeDocumentType,
     activeEarliestDeadline,
@@ -99,6 +112,7 @@ export function useWorkspaceDerived(input: DerivedInput) {
     deadlineGuardReminders,
     timelineRows,
     actionInstructions,
+    responseSignals,
   }), [
     activeDocumentType,
     activeEarliestDeadline,
@@ -111,5 +125,6 @@ export function useWorkspaceDerived(input: DerivedInput) {
     deadlineGuardReminders,
     timelineRows,
     actionInstructions,
+    responseSignals,
   ]);
 }

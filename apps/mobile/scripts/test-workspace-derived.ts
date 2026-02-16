@@ -14,6 +14,7 @@ import {
   computeActionInstructions,
   normalizeExtractedFields,
   computeDocumentFamily,
+  computeResponseSignals,
 } from "../src/hooks/controllers/workspace/workspaceDerived";
 import { VERDICT_FIXTURES } from "../src/data/verdict-fixtures";
 
@@ -566,5 +567,103 @@ const dsInstr = computeActionInstructions({
 assert(dsInstr[0].id === "generic-respond", "demand-letter-sparse (legal_notice) → generic fallback");
 assert(dsInstr[0].contact !== undefined, "demand-letter-sparse → contact present (from field)");
 assert(dsInstr[0].confidence === 60, "demand-letter-sparse sender-only → confidence 60");
+
+// ─── Case 28: Response signals — summons-full (court destination) ────
+
+console.log("\n--- Response signals tests ---");
+
+const rsSummonsFull = computeResponseSignals({
+  family: "summons",
+  extracted: sfFields,
+  activeEarliestDeadlineISO: "2026-03-15",
+});
+assert(rsSummonsFull.responseDestination === "court", "signals summons-full: destination → court");
+assert(rsSummonsFull.responseDeadlineISO === "2026-03-15", "signals summons-full: deadline passed through");
+assert(rsSummonsFull.responseChannels.includes("portal"), "signals summons-full: portal channel (courtWebsite)");
+assert(rsSummonsFull.responseChannels.includes("email"), "signals summons-full: email channel");
+assert(rsSummonsFull.responseChannels.includes("phone"), "signals summons-full: phone channel");
+assert(rsSummonsFull.responseChannels.includes("mail"), "signals summons-full: mail channel");
+assert(rsSummonsFull.missing.deadline === false, "signals summons-full: deadline not missing");
+assert(rsSummonsFull.missing.sender === false, "signals summons-full: sender not missing");
+assert(rsSummonsFull.missing.court === false, "signals summons-full: court not missing");
+assert(rsSummonsFull.missing.channel === false, "signals summons-full: channel not missing");
+
+// ─── Case 29: Response signals — demand-letter-full (sender destination) ─
+
+const rsDemandFull = computeResponseSignals({
+  family: "demand_letter",
+  extracted: dfFields,
+  activeEarliestDeadlineISO: null,
+});
+assert(rsDemandFull.responseDestination === "sender", "signals demand-letter-full: destination → sender");
+assert(rsDemandFull.responseDeadlineISO === undefined, "signals demand-letter-full: no deadline → undefined");
+assert(rsDemandFull.responseChannels.includes("email"), "signals demand-letter-full: email channel");
+assert(rsDemandFull.responseChannels.includes("phone"), "signals demand-letter-full: phone channel");
+assert(rsDemandFull.responseChannels.includes("mail"), "signals demand-letter-full: mail channel");
+assert(!rsDemandFull.responseChannels.includes("portal"), "signals demand-letter-full: no portal (no courtWebsite)");
+assert(rsDemandFull.missing.deadline === true, "signals demand-letter-full: deadline missing");
+assert(rsDemandFull.missing.court === true, "signals demand-letter-full: court missing");
+assert(rsDemandFull.missing.channel === false, "signals demand-letter-full: channel not missing");
+
+// ─── Case 30: Response signals — unknown-other (all missing) ────────
+
+const rsUnknown = computeResponseSignals({
+  family: "other",
+  extracted: uoFields,
+  activeEarliestDeadlineISO: null,
+});
+assert(rsUnknown.responseDestination === "unknown", "signals unknown-other: destination → unknown");
+assert(rsUnknown.responseDeadlineISO === undefined, "signals unknown-other: no deadline");
+assert(rsUnknown.responseChannels.length === 0, "signals unknown-other: no channels");
+assert(rsUnknown.missing.deadline === true, "signals unknown-other: deadline missing");
+assert(rsUnknown.missing.sender === true, "signals unknown-other: sender missing");
+assert(rsUnknown.missing.court === true, "signals unknown-other: court missing");
+assert(rsUnknown.missing.channel === true, "signals unknown-other: channel missing");
+
+// ─── Case 31: Response signals — agency-notice (agency fallback) ────
+
+const rsAgencyBare = computeResponseSignals({
+  family: "agency_notice",
+  extracted: {},
+  activeEarliestDeadlineISO: null,
+});
+assert(rsAgencyBare.responseDestination === "agency", "signals agency bare: destination → agency (family fallback)");
+assert(rsAgencyBare.missing.sender === true, "signals agency bare: sender missing");
+
+// Agency with contact info → sender takes priority over agency fallback
+const rsAgencyFull = computeResponseSignals({
+  family: "agency_notice",
+  extracted: anFields,
+  activeEarliestDeadlineISO: "2026-04-01",
+});
+assert(rsAgencyFull.responseDestination === "sender", "signals agency-notice full: destination → sender (contact overrides agency)");
+assert(rsAgencyFull.responseChannels.includes("email"), "signals agency-notice full: email channel");
+assert(rsAgencyFull.missing.deadline === false, "signals agency-notice full: deadline not missing");
+
+// ─── Case 32: Response signals — eviction-3day (court w/ phone+mail) ─
+
+const rsEviction = computeResponseSignals({
+  family: "eviction",
+  extracted: e3Fields,
+  activeEarliestDeadlineISO: "2026-02-20",
+});
+assert(rsEviction.responseDestination === "court", "signals eviction-3day: destination → court");
+assert(rsEviction.responseChannels.includes("phone"), "signals eviction-3day: phone channel");
+assert(rsEviction.responseChannels.includes("mail"), "signals eviction-3day: mail channel");
+assert(!rsEviction.responseChannels.includes("email"), "signals eviction-3day: no email (fixture has none)");
+assert(rsEviction.missing.court === false, "signals eviction-3day: court not missing");
+
+// ─── Case 33: Response signals — summons-minimal (sender-only, sparse) ─
+
+const rsMinimal = computeResponseSignals({
+  family: "summons",
+  extracted: smFields,
+  activeEarliestDeadlineISO: null,
+});
+assert(rsMinimal.responseDestination === "unknown", "signals summons-minimal: destination → unknown (name only, no contact)");
+assert(rsMinimal.responseChannels.length === 0, "signals summons-minimal: no channels");
+assert(rsMinimal.missing.sender === false, "signals summons-minimal: sender not missing (has senderName)");
+assert(rsMinimal.missing.channel === true, "signals summons-minimal: channel missing");
+assert(rsMinimal.missing.court === true, "signals summons-minimal: court missing");
 
 console.log("\nAll tests passed.");
